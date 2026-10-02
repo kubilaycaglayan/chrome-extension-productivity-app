@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Productivity",
+  "version": "1.1.0",
+  "description": "Toggle between recent tabs and mark tabs with colored emoji markers.",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Productivity modules",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/module-settings.js", "content/tab-marker.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://arsiv.mackolik.com/Canli-Sonuclar*"],
+      "js": ["shared/mackolik-settings.js", "content/mackolik-priority-rows.js", "content/mackolik-featured-video.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://huggingface.co/*"],
+      "js": ["content/scrollbar-width.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": [
+        "content/youtube-section-toggle.js",
+        "content/youtube-shorts-blocker.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "commands": {
+    "toggle-last-tab": {
+      "suggested_key": {
+        "mac": "Command+Shift+D",
+        "default": "Ctrl+Shift+Tab"
+      },
+      "description": "Toggle between the two most recently visited tabs"
+    }
+  }
+}
