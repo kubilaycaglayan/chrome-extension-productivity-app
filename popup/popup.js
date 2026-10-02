@@ -4,7 +4,7 @@ const MODULES = [
   ["scrollbar-width", "Wider scrollbars", "Make Hugging Face scrollbars easier to grab."],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations."],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home."],
-  ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, and hide ads, the right panel, video, header, and menus."]
+  ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus."]
 ];
 
 const status = document.getElementById("status");

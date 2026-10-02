@@ -11,6 +11,12 @@ productivityModules.register("mackolik-featured-video", () => {
   let sortingDeferred = false;
   let highlightedTeams = mackolikSettings.defaults.map(name => mackolikSettings.normalize(name));
   let followedTeams = [];
+  let broadcastRequest = null;
+  let broadcastKey = null;
+  let broadcastData = null;
+  let broadcastError = false;
+  let broadcastFetchedAt = 0;
+  const broadcastCells = new Map();
   const title = document.createElement("h1");
   title.id = "productivity-mackolik-title";
   title.textContent = "Canlı Sonuçlar";
@@ -224,12 +230,23 @@ productivityModules.register("mackolik-featured-video", () => {
       vertical-align: middle !important;
     }
 
+    #dvScores .list-table tr.rows-bg > td[align="center"] > b {
+      display: none !important;
+    }
+
     /* The site's 12px team-name boxes clip text even inside taller rows. */
     #dvScores .teamDiv {
       height: auto !important;
       min-height: 24px !important;
       line-height: 24px !important;
       overflow: visible !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere;
+    }
+
+    #dvScores .list-table tr.row > td.productivity-broadcast {
+      padding-inline: 8px !important;
+      line-height: 1.3 !important;
       white-space: normal !important;
       overflow-wrap: anywhere;
     }
@@ -396,6 +413,7 @@ productivityModules.register("mackolik-featured-video", () => {
     }
     galaday.hidden = !hasGalatasarayGame;
     if (hasGalatasarayGame && heading.lastElementChild !== galaday) heading.appendChild(galaday);
+    updateBroadcasts();
     const selection = document.getSelection?.();
     const selectedNode = selection?.anchorNode;
     const selectedElement = selectedNode?.nodeType === 1 ? selectedNode : selectedNode?.parentElement;
@@ -404,6 +422,92 @@ productivityModules.register("mackolik-featured-video", () => {
     } else {
       sortingDeferred = false;
       priorityRows.refresh();
+    }
+  }
+
+  function broadcastSourceKey() {
+    const date = document.getElementById("txtCalendar")?.value?.trim();
+    return /^\d{2}\/\d{2}\/\d{4}$/.test(date || "") ? `date=${encodeURIComponent(date)}` : "group=0";
+  }
+
+  function updateBroadcasts() {
+    const rows = [...document.querySelectorAll(`#dvScores .list-table tr.row[${highlightAttribute}]`)]
+      .filter(row => /^row_\d+$/.test(row.id || ""));
+    for (const row of broadcastCells.keys()) if (!rows.includes(row)) restoreBroadcastCells(row);
+    if (!rows.length) {
+      broadcastRequest?.abort();
+      broadcastRequest = null;
+      broadcastKey = null;
+      broadcastData = null;
+      return;
+    }
+
+    const key = broadcastSourceKey();
+    if (broadcastKey !== key || Date.now() - broadcastFetchedAt > 5 * 60 * 1000) {
+      broadcastRequest?.abort();
+      broadcastKey = key;
+      broadcastData = null;
+      broadcastError = false;
+      broadcastFetchedAt = Date.now();
+      const request = new AbortController();
+      broadcastRequest = request;
+      fetch(`https://arsiv.mackolik.com/livescores/tvprogram.aspx?${key}`, { signal: request.signal })
+        .then(response => {
+          if (!response.ok) throw new Error(`TV program: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          if (!active || broadcastRequest !== request) return;
+          broadcastData = data;
+          broadcastRequest = null;
+          updateBroadcasts();
+        })
+        .catch(() => {
+          if (broadcastRequest !== request) return;
+          broadcastRequest = null;
+          broadcastError = true;
+          updateBroadcasts();
+        });
+    }
+    updateBroadcastCells(rows);
+  }
+
+  function restoreBroadcastCells(row) {
+    const state = broadcastCells.get(row);
+    if (!state) return;
+    for (const original of state.originals) row.insertBefore(original, state.cell.parentElement === row ? state.cell : null);
+    state.cell.remove();
+    broadcastCells.delete(row);
+  }
+
+  function updateBroadcastCells(rows) {
+    for (const row of rows) {
+      const id = row.id.slice(4);
+      const channels = Array.isArray(broadcastData?.[id])
+        ? [...new Set(broadcastData[id].map(entry => typeof entry?.[0] === "string" ? entry[0].trim() : "").filter(Boolean))]
+        : [];
+      let state = broadcastCells.get(row);
+      if (!state) {
+        const first = row.querySelector("td.td_HTScore");
+        if (!first) continue;
+        const originals = [first];
+        for (let index = 0; index < 3; index++) {
+          const next = originals[originals.length - 1].nextElementSibling;
+          if (!next || next.tagName !== "TD") break;
+          originals.push(next);
+        }
+        if (originals.length !== 4) continue;
+        const cell = document.createElement("td");
+        cell.className = "productivity-broadcast";
+        cell.colSpan = 4;
+        row.insertBefore(cell, first);
+        originals.forEach(original => original.remove());
+        state = { cell, originals };
+        broadcastCells.set(row, state);
+      }
+      const { cell } = state;
+      cell.textContent = channels.join(", ");
+      cell.setAttribute("aria-label", `TV yayını: ${channels.length ? channels.join(", ") : broadcastError ? "Bilgi alınamadı" : broadcastData ? "Bilgi yok" : "Yükleniyor"}`);
     }
   }
 
@@ -497,12 +601,14 @@ productivityModules.register("mackolik-featured-video", () => {
   document.addEventListener("selectionchange", onSelectionChanged);
   return () => {
     active = false;
+    broadcastRequest?.abort();
     if (startupTimer !== null) clearTimeout(startupTimer);
     observer.disconnect();
     if (refreshFrame !== null) cancelAnimationFrame(refreshFrame);
     priorityRows.cleanup();
     chrome.storage.onChanged.removeListener(onSettingsChanged);
     document.querySelectorAll(`[${highlightAttribute}]`).forEach(row => row.removeAttribute(highlightAttribute));
+    for (const row of broadcastCells.keys()) restoreBroadcastCells(row);
     document.removeEventListener("DOMContentLoaded", scheduleStartup);
     document.removeEventListener("selectionchange", onSelectionChanged);
     controlCleanups.forEach(cleanup => cleanup());
