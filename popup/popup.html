@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Productivity</title>
+    <link rel="stylesheet" href="popup.css">
+    <script src="../shared/mackolik-settings.js" defer></script>
+    <script src="popup.js" defer></script>
+  </head>
+  <body>
+    <h1>Productivity</h1>
+    <p class="intro">Choose which modules run.</p>
+    <main id="modules" aria-label="Extension modules"></main>
+    <form id="highlight-settings" class="highlight-settings">
+      <label for="highlight-teams" class="name">Mackolik · Main teams</label>
+      <p id="highlight-help" class="description">Mint highlights, with football matches first. One exact team name per line; case and accents are ignored. Clear the list to stop highlighting.</p>
+      <textarea id="highlight-teams" rows="6" aria-describedby="highlight-help" disabled></textarea>
+      <label for="followed-teams" class="name followed-label">Teams I follow</label>
+      <p id="followed-help" class="description">Gold highlights. Football matches appear below your main teams at the top; other sports keep their position. One exact team name per line.</p>
+      <textarea id="followed-teams" rows="3" aria-describedby="followed-help" disabled></textarea>
+      <button id="save-highlight-teams" type="submit" disabled>Save teams</button>
+    </form>
+    <div class="backup">
+      <button id="export-settings" type="button">Export settings</button>
+      <label class="import-button">Import settings<input id="import-settings" type="file" accept=".json,application/json"></label>
+    </div>
+    <p class="backup-note">Before uninstalling, export your settings. Import them after reinstalling.</p>
+    <p id="status" role="status" aria-live="polite">Loading settings…</p>
+  </body>
+</html>
