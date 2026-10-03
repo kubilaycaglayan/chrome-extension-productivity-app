@@ -76,7 +76,7 @@ productivityModules.register("newtab", () => {
   if (groupSizer) groupList.classList.add("masonry");
 
   async function refreshTabGroups() {
-    if (!chrome.tabGroups?.query || !chrome.tabs?.query) return;
+    if (!chrome.tabs?.query) return;
     const revision = ++tabGroupRevision;
     try {
       const currentTab = await chrome.tabs.getCurrent?.();
@@ -84,17 +84,25 @@ productivityModules.register("newtab", () => {
         ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.windowId;
       if (windowId == null) return;
 
-      const [browserGroups, tabs] = await Promise.all([
-        chrome.tabGroups.query({ windowId }),
-        chrome.tabs.query({ windowId })
+      const [tabs, browserGroups] = await Promise.all([
+        chrome.tabs.query({ windowId }),
+        chrome.tabGroups?.query
+          ? Promise.resolve().then(() => chrome.tabGroups.query({ windowId })).catch(() => [])
+          : Promise.resolve([])
       ]);
       if (!active || revision !== tabGroupRevision) return;
 
-      const visible = browserGroups.map(group => {
-        const members = tabs.filter(tab => tab.groupId === group.id).sort((a, b) => a.index - b.index);
-        return { group, members };
-      }).filter(({ members }) => members.length)
-        .sort((a, b) => a.members[0].index - b.members[0].index);
+      const metadata = new Map(browserGroups.map(group => [group.id, group]));
+      const groupedTabs = new Map();
+      for (const tab of tabs.sort((a, b) => a.index - b.index)) {
+        if (!Number.isInteger(tab.groupId) || tab.groupId < 0) continue;
+        if (!groupedTabs.has(tab.groupId)) groupedTabs.set(tab.groupId, []);
+        groupedTabs.get(tab.groupId).push(tab);
+      }
+      const visible = [...groupedTabs].map(([id, members], index) => ({
+        group: metadata.get(id) ?? { id, title: `Tab group ${index + 1}`, color: "grey" },
+        members
+      }));
 
       tabGroupList.replaceChildren(...visible.map(({ group, members }) => {
         const chip = document.createElement("button");
@@ -112,7 +120,9 @@ productivityModules.register("newtab", () => {
         chip.append(name, count);
         chip.addEventListener("click", async () => {
           try {
-            if (group.collapsed) await chrome.tabGroups.update(group.id, { collapsed: false });
+            if (group.collapsed && chrome.tabGroups?.update) {
+              await chrome.tabGroups.update(group.id, { collapsed: false });
+            }
             await chrome.tabs.update(members[0].id, { active: true });
           } catch {
             void refreshTabGroups();

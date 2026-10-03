@@ -40,11 +40,29 @@ const { setup, fire, settle } = require("./newtab-dom.cjs");
   assert.equal(strip.children[1].children[1].textContent, "1", "The live tab count updates");
 
   browserGroups.splice(0);
+  browserTabs.splice(0);
   page.tabGroupEvents.onRemoved.fire();
   await settle();
   assert.equal(strip.hidden, true, "The strip disappears when there are no Chrome tab groups");
 
   page.toggleModule(false);
   assert.equal(page.tabGroupEvents.onUpdated.listeners.size, 0, "Listeners leave with the new-tab module");
+
+  const withoutNewPermission = setup({
+    browserTabs: [
+      { id: 301, groupId: 42, index: 0 },
+      { id: 302, groupId: 42, index: 1 },
+      { id: 303, groupId: -1, index: 2 }
+    ]
+  });
+  await settle();
+  const fallback = withoutNewPermission.element("tab-groups");
+  assert.equal(fallback.hidden, false, "Existing tabs permission can still reveal open groups");
+  assert.deepEqual(fallback.children.map(chip => chip.children[0].textContent), ["Tab group 1"]);
+  assert.equal(fallback.children[0].children[1].textContent, "2");
+  fire(fallback.children[0], "click");
+  await settle();
+  assert.deepEqual(withoutNewPermission.tabUpdates, [301]);
+
   console.log("PASS newtab tab groups: position, live groups, switching, empty state, cleanup");
 })().catch(error => { console.error(error); process.exitCode = 1; });
