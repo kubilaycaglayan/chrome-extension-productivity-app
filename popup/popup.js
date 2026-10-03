@@ -1,4 +1,5 @@
 const MODULES = [
+  ["page-outline", "Page outline", "Show a clickable outline of headings on the current page.", "browser", "📑"],
   ["tab-history", "Recent-tab switching", "Switch between your two most recent tabs.", "browser", "🔁"],
   ["tab-marker", "Tab markers", "Mark tabs with colored emoji from the context menu.", "browser", "🏷️"],
   ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers.", "browser", "🗂️"],
@@ -19,6 +20,134 @@ const followedEditor = document.getElementById("followed-teams");
 const saveTeams = document.getElementById("save-highlight-teams");
 const wordEditor = document.getElementById("blocked-words");
 const saveWords = document.getElementById("save-blocked-words");
+
+const outlineView = document.getElementById("outline-view");
+const settingsView = document.getElementById("settings-view");
+const outlineList = document.getElementById("outline-list");
+const outlineMessage = document.getElementById("outline-message");
+let outlineTabId = null;
+
+function showView(view) {
+  outlineView.hidden = view !== "outline";
+  settingsView.hidden = view !== "settings";
+  document.body.scrollTop = 0;
+  if (view === "outline") void loadOutline();
+}
+
+// This function runs inside the active page. Keep it self-contained for executeScript.
+function collectPageHeadings() {
+  const selector = "h1,h2,h3,h4,h5,h6";
+  const all = [...document.querySelectorAll(selector)];
+  const main = document.querySelector("main, [role='main']");
+  const visible = heading => {
+    if (!heading.textContent.trim() || heading.closest("[hidden], [aria-hidden='true'], template")) return false;
+    const style = getComputedStyle(heading);
+    return style.display !== "none" && style.visibility !== "hidden" && heading.getClientRects().length > 0;
+  };
+  const candidates = main && all.some(heading => main.contains(heading) && visible(heading))
+    ? all.filter(heading => main.contains(heading)) : all;
+  return candidates.filter(visible).slice(0, 300).map(heading => ({
+    index: all.indexOf(heading),
+    level: Number(heading.tagName.slice(1)),
+    text: heading.textContent.replace(/\s+/g, " ").trim().slice(0, 240)
+  }));
+}
+
+function jumpToHeading(index, expectedText) {
+  const heading = document.querySelectorAll("h1,h2,h3,h4,h5,h6")[index];
+  if (!heading || heading.textContent.replace(/\s+/g, " ").trim().slice(0, 240) !== expectedText) return false;
+  heading.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+async function loadOutline() {
+  outlineList.replaceChildren();
+  outlineMessage.hidden = false;
+  outlineMessage.textContent = "Finding headings…";
+  document.getElementById("outline-count").textContent = "OUTLINE";
+  document.getElementById("outline-hint").textContent = "Click to jump";
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    outlineTabId = tab?.id ?? null;
+    const { "moduleEnabled:page-outline": enabled } = await chrome.storage.local.get("moduleEnabled:page-outline");
+    if (enabled === false) {
+      outlineMessage.textContent = "Page outline is turned off. Enable it in Settings.";
+      return;
+    }
+    if (outlineTabId === null) throw new Error("No active tab");
+    const [{ result: headings }] = await chrome.scripting.executeScript({ target: { tabId: outlineTabId }, func: collectPageHeadings });
+    document.getElementById("outline-count").textContent = `${headings.length} ${headings.length === 1 ? "HEADING" : "HEADINGS"}`;
+    if (!headings.length) {
+      outlineMessage.textContent = "No headings found on this page.";
+      return;
+    }
+    const parents = [];
+    headings.forEach(heading => {
+      while (parents.length && parents.at(-1).level >= heading.level) parents.pop();
+      const depth = parents.length;
+      const node = document.createElement("div");
+      node.className = "outline-node";
+      node.dataset.depth = String(depth);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "outline-item";
+      button.dataset.depth = String(depth);
+      button.title = heading.text;
+      const label = document.createElement("span");
+      label.className = "outline-text";
+      label.textContent = heading.text;
+      const arrow = document.createElement("span");
+      arrow.className = "outline-arrow";
+      arrow.textContent = "↗";
+      arrow.setAttribute("aria-hidden", "true");
+      button.append(label, arrow);
+      button.addEventListener("click", async () => {
+        try {
+          const [{ result: found }] = await chrome.scripting.executeScript({ target: { tabId: outlineTabId }, func: jumpToHeading, args: [heading.index, heading.text] });
+          if (found) window.close();
+          else outlineMessage.textContent = "This heading moved. Refresh the outline and try again.";
+        } catch { outlineMessage.textContent = "Could not jump to this heading."; }
+        outlineMessage.hidden = false;
+      });
+      const children = document.createElement("div");
+      children.className = "outline-children";
+      node.append(button, children);
+      const parent = parents.at(-1);
+      if (parent) {
+        if (!parent.toggle) {
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "outline-chevron";
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.setAttribute("aria-label", `Collapse ${parent.heading.text}`);
+          parent.children.id = `outline-children-${parent.heading.index}`;
+          toggle.setAttribute("aria-controls", parent.children.id);
+          toggle.addEventListener("click", () => {
+            const expanded = toggle.getAttribute("aria-expanded") === "true";
+            parent.children.hidden = expanded;
+            toggle.setAttribute("aria-expanded", String(!expanded));
+            toggle.setAttribute("aria-label", `${expanded ? "Expand" : "Collapse"} ${parent.heading.text}`);
+          });
+          parent.node.classList.add("has-children");
+          parent.node.prepend(toggle);
+          parent.toggle = toggle;
+        }
+        parent.children.append(node);
+      } else {
+        outlineList.append(node);
+      }
+      parents.push({ level: heading.level, heading, node, children, toggle: null });
+    });
+    outlineMessage.hidden = true;
+  } catch {
+    outlineMessage.textContent = "This page cannot be outlined. Try a regular website tab.";
+  }
+}
+
+document.getElementById("open-settings").addEventListener("click", () => showView("settings"));
+document.getElementById("back-to-outline").addEventListener("click", () => showView("outline"));
+document.getElementById("refresh-outline").addEventListener("click", () => void loadOutline());
+void loadOutline();
 
 async function initialize() {
   try {
