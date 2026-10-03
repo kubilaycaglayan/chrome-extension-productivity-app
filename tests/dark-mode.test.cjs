@@ -77,8 +77,8 @@ test('dark mode is off by default and changes open pages immediately', async () 
   assert.equal(tab.style.parentNode, null);
   tab.toggle(true);
   assert.equal(tab.style.parentNode, tab.root);
-  assert.match(tab.style.textContent, /filter: invert\(1\) hue-rotate\(180deg\)/);
-  assert.match(tab.style.textContent, /img, video, canvas/);
+  assert.match(tab.style.textContent, /html \{\s*filter: invert\(1\) hue-rotate\(180deg\) contrast\(0\.84\)/);
+  assert.match(tab.style.textContent, /img, video, canvas, embed, object \{\s*filter: invert\(1\) hue-rotate\(180deg\) contrast\(1\.190476\)/);
   tab.toggle(false);
   assert.equal(tab.style.parentNode, null);
 });

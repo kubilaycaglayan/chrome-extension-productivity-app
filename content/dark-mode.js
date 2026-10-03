@@ -36,14 +36,15 @@
     // Measure the site's own colors without our white canvas declaration.
     style.remove();
     if (!(globallyEnabled || siteEnabled) || isDarkBackground()) return;
-    // An opaque canvas ensures transparent pages invert to dark as well.
+    // Lower contrast lifts inverted white backgrounds to a soft charcoal.
+    // Counterbalance it on media so photos and video retain their colors.
     style.textContent = `html {
-  filter: invert(1) hue-rotate(180deg) !important;
+  filter: invert(1) hue-rotate(180deg) contrast(0.84) !important;
   background-color: white !important;
   color-scheme: light !important;
 }
 img, video, canvas, embed, object {
-  filter: invert(1) hue-rotate(180deg) !important;
+  filter: invert(1) hue-rotate(180deg) contrast(1.190476) !important;
 }`;
     if (style.parentNode !== root || root.lastElementChild !== style) root.appendChild(style);
   }

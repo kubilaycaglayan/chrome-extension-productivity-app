@@ -16,10 +16,7 @@
 body { width: 344px; height: 580px; overflow-y: auto; scrollbar-gutter: stable; margin: 0; padding: 0; }
 .view { min-height: 100%; padding: 18px 17px 16px; }
 .view[hidden] { display: none; }
-.outline-header { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-.outline-heading { flex: 1; min-width: 0; }
-.eyebrow { display: block; margin-bottom: 3px; color: var(--cyan); font-size: 9px; font-weight: 800; letter-spacing: .18em; }
-.outline-header h1 { font-size: 20px; font-weight: 720; letter-spacing: -.03em; }
+.outline-header { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .icon-button { flex: none; width: 34px; height: 34px; min-height: 34px; padding: 0; border: 1px solid #29445e; border-radius: 10px; background: #10233b; color: #d7eaf5; }
 .icon-button:hover { background: #193752; color: var(--cyan); }
 .outline-meta { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 10px; color: var(--cyan); font-size: 10px; font-weight: 750; letter-spacing: .12em; }
@@ -51,9 +48,8 @@ body { width: 344px; height: 580px; overflow-y: auto; scrollbar-gutter: stable; 
 .outline-arrow { color: #6d9bb1; font-size: 15px; opacity: 0; }
 .outline-item:hover .outline-arrow, .outline-item:focus-visible .outline-arrow { opacity: 1; }
 .outline-message { margin: 12px 2px; padding: 14px; border: 1px solid #29445e; border-radius: 10px; background: #10233b; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.dark-mode-controls { display: flex; align-items: center; gap: 10px; min-height: 40px; margin: -11px 0 12px; padding: 5px 9px; border: 1px solid #29445e; border-radius: 8px; background: #10233b; }
-.dark-mode-title { flex: 1; min-width: 0; white-space: nowrap; font-size: 11px; font-weight: 700; }
-.dark-mode-option { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 10px; cursor: pointer; }
+.dark-mode-controls { display: flex; flex: 1; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.dark-mode-option { display: flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 10px; cursor: pointer; }
 
 .header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .header h2 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: .01em; }

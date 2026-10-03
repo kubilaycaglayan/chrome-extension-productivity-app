@@ -11,21 +11,19 @@
     <script src="popup.js" defer></script>
   </head>
   <body>
-    <section id="outline-view" class="view" aria-labelledby="outline-title">
+    <section id="outline-view" class="view" aria-label="Page outline">
       <header class="outline-header">
         <button id="open-settings" class="icon-button" type="button" aria-label="Settings" title="Settings">
           <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.8 1.8-.06-.06A1.7 1.7 0 0 0 16.06 18a1.7 1.7 0 0 0-1.06 1.57V20h-6v-.43A1.7 1.7 0 0 0 7.94 18a1.7 1.7 0 0 0-1.88.34l-.06.06-1.8-1.8.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.57-1.06H2.6v-3h.43A1.7 1.7 0 0 0 4.6 9.88a1.7 1.7 0 0 0-.34-1.88L4.2 7.94l1.8-1.8.06.06A1.7 1.7 0 0 0 7.94 6.54 1.7 1.7 0 0 0 9 4.97V4.5h6v.47a1.7 1.7 0 0 0 1.06 1.57 1.7 1.7 0 0 0 1.88-.34l.06-.06 1.8 1.8-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.57 1.06h.43v3h-.43A1.7 1.7 0 0 0 19.4 15Z"/></svg>
         </button>
-        <div class="outline-heading"><span class="eyebrow">PRODUCTIVITY</span><h1 id="outline-title">Page outline</h1></div>
+        <div class="dark-mode-controls" role="group" aria-label="Dark mode">
+          <label class="dark-mode-option" for="dark-mode-toggle">All sites <input id="dark-mode-toggle" type="checkbox" role="switch" aria-label="Dark mode on all sites" disabled></label>
+          <label class="dark-mode-option" for="dark-mode-site-toggle">This site <input id="dark-mode-site-toggle" type="checkbox" role="switch" aria-label="Dark mode on this site" disabled></label>
+        </div>
         <button id="refresh-outline" class="icon-button" type="button" aria-label="Refresh outline" title="Refresh outline">
           <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></svg>
         </button>
       </header>
-      <div class="dark-mode-controls" role="group" aria-label="Dark mode">
-        <span class="dark-mode-title">🌙 Dark mode</span>
-        <label class="dark-mode-option" for="dark-mode-toggle">All sites <input id="dark-mode-toggle" type="checkbox" role="switch" aria-label="Dark mode on all sites" disabled></label>
-        <label class="dark-mode-option" for="dark-mode-site-toggle">This site <input id="dark-mode-site-toggle" type="checkbox" role="switch" aria-label="Dark mode on this site" disabled></label>
-      </div>
       <div class="outline-meta"><span id="outline-count">OUTLINE</span><span id="outline-hint">Click to jump</span></div>
       <nav id="outline-list" class="outline-list" aria-label="Page headings"></nav>
       <p id="outline-message" class="outline-message" role="status" aria-live="polite">Finding headings…</p>
