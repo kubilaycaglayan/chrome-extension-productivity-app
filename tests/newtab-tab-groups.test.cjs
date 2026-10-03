@@ -64,5 +64,26 @@ const { setup, fire, settle } = require("./newtab-dom.cjs");
   await settle();
   assert.deepEqual(withoutNewPermission.tabUpdates, [301]);
 
-  console.log("PASS newtab tab groups: position, live groups, switching, empty state, cleanup");
+  const allWindows = setup({
+    browserGroups: [
+      { id: 60, title: "Other window", color: "purple", collapsed: true, windowId: 2 },
+      { id: 50, title: "This window", color: "blue", collapsed: false, windowId: 1 }
+    ],
+    browserTabs: [
+      { id: 601, groupId: 60, index: 0, windowId: 2 },
+      { id: 501, groupId: 50, index: 0, windowId: 1 }
+    ]
+  });
+  await settle();
+  const allChips = allWindows.element("tab-groups").children;
+  assert.deepEqual(allChips.map(chip => chip.children[0].textContent), ["This window", "Other window"]);
+  fire(allChips[1], "click");
+  await settle();
+  assert.deepEqual(allWindows.tabUpdates, [601]);
+  assert.deepEqual(JSON.parse(JSON.stringify(allWindows.tabGroupUpdates)),
+    [{ groupId: 60, changes: { collapsed: false } }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(allWindows.windowUpdates)),
+    [{ windowId: 2, changes: { focused: true } }]);
+
+  console.log("PASS newtab tab groups: position, all windows, collapsed groups, switching, fallback, cleanup");
 })().catch(error => { console.error(error); process.exitCode = 1; });

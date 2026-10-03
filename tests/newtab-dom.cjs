@@ -155,6 +155,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
   const navigations = [];
   const tabUpdates = [];
   const tabOpens = [];
+  const windowUpdates = [];
   const tabGroupUpdates = [];
   const tabGroupEvents = Object.fromEntries(["onCreated", "onUpdated", "onMoved", "onRemoved"].map(name => {
     const listeners = new Set();
@@ -245,6 +246,12 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
         },
         ...tabGroupEvents
       },
+      windows: {
+        update(windowId, changes) {
+          windowUpdates.push({ windowId, changes });
+          return Promise.resolve();
+        }
+      },
       tabs: tabs === null ? undefined : {
         getCurrent: browserTabs === null ? undefined : () => Promise.resolve({ windowId: 1 }),
         query: browserTabs === null ? undefined : () => Promise.resolve(browserTabs),
@@ -293,6 +300,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     navigations,
     tabUpdates,
     tabOpens,
+    windowUpdates,
     tabGroupUpdates,
     tabGroupEvents,
     fetches,

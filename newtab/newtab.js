@@ -80,14 +80,12 @@ productivityModules.register("newtab", () => {
     const revision = ++tabGroupRevision;
     try {
       const currentTab = await chrome.tabs.getCurrent?.();
-      const windowId = currentTab?.windowId
+      const currentWindowId = currentTab?.windowId
         ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.windowId;
-      if (windowId == null) return;
-
       const [tabs, browserGroups] = await Promise.all([
-        chrome.tabs.query({ windowId }),
+        chrome.tabs.query({}),
         chrome.tabGroups?.query
-          ? Promise.resolve().then(() => chrome.tabGroups.query({ windowId })).catch(() => [])
+          ? Promise.resolve().then(() => chrome.tabGroups.query({})).catch(() => [])
           : Promise.resolve([])
       ]);
       if (!active || revision !== tabGroupRevision) return;
@@ -102,7 +100,13 @@ productivityModules.register("newtab", () => {
       const visible = [...groupedTabs].map(([id, members], index) => ({
         group: metadata.get(id) ?? { id, title: `Tab group ${index + 1}`, color: "grey" },
         members
-      }));
+      })).sort((a, b) => {
+        const aWindow = a.group.windowId ?? a.members[0].windowId;
+        const bWindow = b.group.windowId ?? b.members[0].windowId;
+        if (aWindow === currentWindowId && bWindow !== currentWindowId) return -1;
+        if (bWindow === currentWindowId && aWindow !== currentWindowId) return 1;
+        return (aWindow ?? 0) - (bWindow ?? 0) || a.members[0].index - b.members[0].index;
+      });
 
       tabGroupList.replaceChildren(...visible.map(({ group, members }) => {
         const chip = document.createElement("button");
@@ -124,6 +128,10 @@ productivityModules.register("newtab", () => {
               await chrome.tabGroups.update(group.id, { collapsed: false });
             }
             await chrome.tabs.update(members[0].id, { active: true });
+            const targetWindowId = group.windowId ?? members[0].windowId;
+            if (targetWindowId != null && targetWindowId !== currentWindowId) {
+              await chrome.windows?.update?.(targetWindowId, { focused: true });
+            }
           } catch {
             void refreshTabGroups();
           }
