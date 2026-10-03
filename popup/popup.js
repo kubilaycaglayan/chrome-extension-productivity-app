@@ -4,6 +4,7 @@ const MODULES = [
   ["scrollbar-width", "Wider scrollbars", "Make Hugging Face scrollbars easier to grab."],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations."],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home."],
+  ["mackolik-dark-theme", "Mackolik dark theme", "Repaint every arsiv.mackolik.com page dark, keeping the site's own colour coding."],
   ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus."],
   ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers."]
 ];

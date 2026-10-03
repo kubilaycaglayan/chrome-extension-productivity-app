@@ -334,7 +334,7 @@ productivityModules.register("mackolik-featured-video", () => {
       line-height: 0 !important;
       padding: 0 !important;
       border: 0 !important;
-      background: #3866b0 !important;
+      background: transparent !important;
     }
   `;
   (document.head || document.documentElement).appendChild(style);

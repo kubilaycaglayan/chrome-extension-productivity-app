@@ -38,6 +38,16 @@
     },
     {
       "matches": [
+        "https://arsiv.mackolik.com/*"
+      ],
+      "js": [
+        "content/mackolik-dark-theme-rules.js",
+        "content/mackolik-dark-theme.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
         "https://arsiv.mackolik.com/Canli-Sonuclar*"
       ],
       "js": [
