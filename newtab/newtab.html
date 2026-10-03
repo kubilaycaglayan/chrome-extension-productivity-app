@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>New Tab</title>
+    <link rel="stylesheet" href="newtab.css">
+    <script src="../content/module-settings.js" defer></script>
+    <script src="../shared/newtab-settings.js" defer></script>
+    <script src="../shared/newtab-wallpapers.js" defer></script>
+    <script src="newtab.js" defer></script>
+  </head>
+  <body>
+    <div id="scrim" aria-hidden="true"></div>
+
+    <main id="app" hidden>
+      <div id="search-row">
+        <button id="extensions-toggle" type="button" hidden
+                title="Manage extensions" aria-label="Manage extensions">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5a2.5 2.5 0 0 0-5 0V5H4a2 2 0 0 0-2 2v3.8h1.5a2.7 2.7 0 0 1 0 5.4H2V21a2 2 0 0 0 2 2h3.8v-1.5a2.7 2.7 0 0 1 5.4 0V23H17a2 2 0 0 0 2-2v-4h1.5a3 3 0 0 0 0-6Z"/></svg>
+        </button>
+
+        <div id="search-area">
+          <form id="search" role="search" action="https://www.google.com/search" method="get">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4a6 6 0 1 0 3.76 10.68l4.78 4.78 1.42-1.42-4.78-4.78A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+            <input id="query" name="q" type="search" placeholder="Search Google" aria-label="Search Google"
+                   role="combobox" aria-expanded="false" aria-controls="suggestions" aria-autocomplete="list"
+                   autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+            <button type="submit">Search</button>
+          </form>
+          <ul id="suggestions" role="listbox" aria-label="Search suggestions" hidden></ul>
+        </div>
+      </div>
+
+      <section id="groups" aria-label="Bookmark groups"></section>
+
+      <div id="group-actions" hidden>
+        <form id="new-group" class="group" autocomplete="off">
+          <h2 class="group-name" id="new-group-label">New group</h2>
+          <div class="new-group-row">
+            <input id="new-group-name" type="text" maxlength="60" required placeholder="Name"
+                   aria-labelledby="new-group-label" autocomplete="off">
+            <button id="add-group" type="submit" class="primary-button">Add</button>
+          </div>
+        </form>
+        <button id="import-bookmarks" type="button" class="ghost-button" hidden>⬇ Import Chrome bookmarks</button>
+      </div>
+      <p id="drag-hint">Drag a tile to move it, or a group's ⠿ handle to rearrange groups.</p>
+    </main>
+
+    <p id="attribution" hidden></p>
+
+    <button id="edit-toggle" type="button" aria-pressed="false"
+            title="Edit shortcuts" aria-label="Edit shortcuts">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z"/></svg>
+    </button>
+
+    <button id="background-toggle" type="button" aria-expanded="false" aria-controls="background-panel"
+            title="Change background" aria-label="Change background">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c1.66 0 2.5-1.12 2.5-2.25 0-1.2-.9-2.25-2.5-2.25H11a2 2 0 0 1 0-4h5.5A4.5 4.5 0 0 0 21 7.9C20.5 5 16.7 3 12 3Zm-4.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm9 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM6 12.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/></svg>
+    </button>
+
+    <aside id="background-panel" hidden aria-label="Background">
+      <h2>Background</h2>
+      <h3 id="colors-label">Solid colours</h3>
+      <div id="color-swatches" class="swatches" role="radiogroup" aria-labelledby="colors-label"></div>
+      <h3 id="gradients-label">Gradients</h3>
+      <div id="gradient-swatches" class="swatches" role="radiogroup" aria-labelledby="gradients-label"></div>
+
+      <div id="wallpaper-section">
+        <h3 id="wallpapers-label">Google wallpapers</h3>
+        <button id="wallpaper-back" type="button" class="ghost-button back-button" hidden>‹ All collections</button>
+        <div id="wallpaper-collections" class="wallpapers" role="group" aria-labelledby="wallpapers-label"></div>
+        <div id="wallpaper-images" class="wallpapers" role="group" aria-label="Wallpapers in this collection" hidden></div>
+      </div>
+
+      <h3 id="image-label">Custom image</h3>
+      <div class="panel-actions" aria-labelledby="image-label">
+        <label class="ghost-button file-button">Upload image<input id="background-image" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <button id="background-reset" type="button" class="ghost-button">Reset</button>
+      </div>
+      <p id="background-note">Images are dimmed so text stays readable. Uploads never leave this computer; Google wallpapers are fetched from Google when you open this panel.</p>
+      <p id="background-message" role="alert" hidden></p>
+    </aside>
+
+    <dialog id="group-dialog">
+      <form id="group-form" method="dialog">
+        <h2 id="group-dialog-title">New group</h2>
+        <label for="group-name">Group name</label>
+        <input id="group-name" type="text" maxlength="60" required autocomplete="off">
+        <div class="dialog-actions">
+          <button id="group-cancel" type="button" class="ghost-button">Cancel</button>
+          <button value="save" type="submit" class="primary-button">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="bookmark-dialog">
+      <form id="bookmark-form" method="dialog">
+        <h2 id="bookmark-dialog-title">Add bookmark</h2>
+        <label for="bookmark-search">Find one of your bookmarks</label>
+        <input id="bookmark-search" type="search" autocomplete="off" placeholder="Search your Chrome bookmarks"
+               role="combobox" aria-expanded="false" aria-controls="bookmark-suggestions" aria-autocomplete="list">
+        <ul id="bookmark-suggestions" role="listbox" aria-label="Your bookmarks" hidden></ul>
+        <label for="bookmark-label">Label</label>
+        <input id="bookmark-label" type="text" maxlength="40" autocomplete="off" placeholder="Optional — defaults to the site name">
+        <label for="bookmark-url">Address</label>
+        <input id="bookmark-url" type="text" required autocomplete="off" placeholder="example.com">
+        <p id="bookmark-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="bookmark-cancel" type="button" class="ghost-button">Cancel</button>
+          <button value="save" type="submit" class="primary-button">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <p id="notice">The New Tab module is off. Turn it on from the Productivity popup to use this page.</p>
+    <p id="status" role="status" aria-live="polite"></p>
+  </body>
+</html>

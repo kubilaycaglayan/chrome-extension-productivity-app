@@ -2,11 +2,14 @@
   "manifest_version": 3,
   "name": "Productivity",
   "version": "1.1.0",
-  "description": "Toggle between recent tabs and mark tabs with colored emoji markers.",
+  "description": "Toggle between recent tabs, mark tabs with colored emoji markers, and replace the new tab page.",
   "permissions": [
+    "bookmarks",
     "contextMenus",
+    "favicon",
     "storage",
-    "tabs"
+    "tabs",
+    "topSites"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -19,24 +22,44 @@
     "default_title": "Productivity modules",
     "default_popup": "popup/popup.html"
   },
+  "chrome_url_overrides": {
+    "newtab": "newtab/newtab.html"
+  },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/module-settings.js", "content/tab-marker.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/module-settings.js",
+        "content/tab-marker.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://arsiv.mackolik.com/Canli-Sonuclar*"],
-      "js": ["shared/mackolik-settings.js", "content/mackolik-priority-rows.js", "content/mackolik-featured-video.js"],
+      "matches": [
+        "https://arsiv.mackolik.com/Canli-Sonuclar*"
+      ],
+      "js": [
+        "shared/mackolik-settings.js",
+        "content/mackolik-priority-rows.js",
+        "content/mackolik-featured-video.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://huggingface.co/*"],
-      "js": ["content/scrollbar-width.js"],
+      "matches": [
+        "https://huggingface.co/*"
+      ],
+      "js": [
+        "content/scrollbar-width.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://www.youtube.com/*"],
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
       "js": [
         "content/youtube-section-toggle.js",
         "content/youtube-shorts-blocker.js"

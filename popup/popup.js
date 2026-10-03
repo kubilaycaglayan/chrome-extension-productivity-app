@@ -4,7 +4,8 @@ const MODULES = [
   ["scrollbar-width", "Wider scrollbars", "Make Hugging Face scrollbars easier to grab."],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations."],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home."],
-  ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus."]
+  ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus."],
+  ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers."]
 ];
 
 const status = document.getElementById("status");
@@ -92,12 +93,15 @@ document.getElementById("highlight-settings").addEventListener("submit", async e
 document.getElementById("export-settings").addEventListener("click", async () => {
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
-    const settings = await chrome.storage.local.get([...keys, mackolikSettings.key, mackolikSettings.followedKey]);
+    const settings = await chrome.storage.local.get([...keys, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey]);
     const modules = Object.fromEntries(MODULES.map(([id]) => [id, settings[`moduleEnabled:${id}`] !== false]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
     const followedTeams = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []);
-    const url = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, modules, highlightedTeams, followedTeams }, null, 2)], { type: "application/json" }));
+    const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
+    const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
+    const backup = { version: 1, modules, highlightedTeams, followedTeams, newtabGroups, newtabBackground };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = "productivity-settings.json";
@@ -127,6 +131,13 @@ document.getElementById("import-settings").addEventListener("change", async (eve
     if (backup.followedTeams !== undefined) {
       if (!Array.isArray(backup.followedTeams) || backup.followedTeams.some(value => typeof value !== "string")) throw new Error("Invalid followed teams");
       settings[mackolikSettings.followedKey] = mackolikSettings.clean(backup.followedTeams);
+    }
+    if (backup.newtabGroups !== undefined) {
+      if (!Array.isArray(backup.newtabGroups)) throw new Error("Invalid bookmark groups");
+      settings[newtabSettings.groupsKey] = newtabSettings.cleanGroups(backup.newtabGroups);
+    }
+    if (backup.newtabBackground !== undefined) {
+      settings[newtabSettings.backgroundKey] = newtabSettings.cleanBackground(backup.newtabBackground);
     }
     await chrome.storage.local.set(settings);
     if (settings[mackolikSettings.key]) teamEditor.value = settings[mackolikSettings.key].join("\n");
