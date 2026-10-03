@@ -25,7 +25,62 @@ const outlineView = document.getElementById("outline-view");
 const settingsView = document.getElementById("settings-view");
 const outlineList = document.getElementById("outline-list");
 const outlineMessage = document.getElementById("outline-message");
+const darkModeToggle = document.getElementById("dark-mode-toggle");
+const darkModeSiteToggle = document.getElementById("dark-mode-site-toggle");
+const darkModeKey = "moduleEnabled:dark-mode";
+const darkModeSitesKey = "darkModeSites";
+let currentSite = null;
 let outlineTabId = null;
+
+Promise.all([
+  chrome.tabs.query({ active: true, currentWindow: true }),
+  chrome.storage.local.get([darkModeKey, darkModeSitesKey])
+]).then(([tabs, settings]) => {
+  darkModeToggle.checked = settings[darkModeKey] === true;
+  darkModeToggle.disabled = false;
+  try {
+    const url = new URL(tabs[0]?.url);
+    if (url.protocol === "http:" || url.protocol === "https:") currentSite = url.hostname.toLowerCase();
+  } catch { /* Restricted browser pages have no site switch. */ }
+  if (currentSite) {
+    darkModeSiteToggle.checked = Array.isArray(settings[darkModeSitesKey]) && settings[darkModeSitesKey].includes(currentSite);
+    darkModeSiteToggle.title = currentSite;
+    darkModeSiteToggle.disabled = false;
+  } else {
+    darkModeSiteToggle.title = "Available on website tabs";
+  }
+}).catch(() => {
+  darkModeToggle.title = "Could not load dark mode setting. Reopen the popup to retry.";
+});
+darkModeToggle.addEventListener("change", async () => {
+  const enabled = darkModeToggle.checked;
+  darkModeToggle.disabled = true;
+  try {
+    await chrome.storage.local.set({ [darkModeKey]: enabled });
+  } catch {
+    darkModeToggle.checked = !enabled;
+    darkModeToggle.title = "Could not save dark mode setting. Please try again.";
+  } finally {
+    darkModeToggle.disabled = false;
+  }
+});
+darkModeSiteToggle.addEventListener("change", async () => {
+  if (!currentSite) return;
+  const enabled = darkModeSiteToggle.checked;
+  darkModeSiteToggle.disabled = true;
+  try {
+    const settings = await chrome.storage.local.get(darkModeSitesKey);
+    const sites = new Set(Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : []);
+    if (enabled) sites.add(currentSite);
+    else sites.delete(currentSite);
+    await chrome.storage.local.set({ [darkModeSitesKey]: [...sites] });
+  } catch {
+    darkModeSiteToggle.checked = !enabled;
+    darkModeSiteToggle.title = "Could not save this site's setting. Please try again.";
+  } finally {
+    darkModeSiteToggle.disabled = false;
+  }
+});
 
 function showView(view) {
   outlineView.hidden = view !== "outline";
@@ -209,6 +264,11 @@ async function initialize() {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
+  if (changes[darkModeKey]) darkModeToggle.checked = changes[darkModeKey].newValue === true;
+  if (currentSite && changes[darkModeSitesKey]) {
+    const sites = changes[darkModeSitesKey].newValue;
+    darkModeSiteToggle.checked = Array.isArray(sites) && sites.includes(currentSite);
+  }
   for (const [key, change] of Object.entries(changes)) {
     const input = inputs.get(key);
     if (input) input.checked = change.newValue !== false;
@@ -255,7 +315,7 @@ document.getElementById("keyword-settings").addEventListener("submit", async eve
 document.getElementById("export-settings").addEventListener("click", async () => {
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
-    const settings = await chrome.storage.local.get([...keys, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
+    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
     const modules = Object.fromEntries(MODULES.map(([id]) => [id, settings[`moduleEnabled:${id}`] !== false]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
@@ -263,7 +323,8 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const blockedWords = Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : xKeywords.defaults;
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
     const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
-    const backup = { version: 1, modules, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
+    const darkModeSites = Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : [];
+    const backup = { version: 1, modules, darkMode: settings[darkModeKey] === true, darkModeSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -287,6 +348,14 @@ document.getElementById("import-settings").addEventListener("change", async (eve
       if (backup.modules[id] === undefined) continue;
       if (typeof backup.modules[id] !== "boolean") throw new Error("Invalid setting");
       settings[`moduleEnabled:${id}`] = backup.modules[id];
+    }
+    if (backup.darkMode !== undefined) {
+      if (typeof backup.darkMode !== "boolean") throw new Error("Invalid dark mode setting");
+      settings[darkModeKey] = backup.darkMode;
+    }
+    if (backup.darkModeSites !== undefined) {
+      if (!Array.isArray(backup.darkModeSites) || backup.darkModeSites.some(site => typeof site !== "string" || site.length > 253)) throw new Error("Invalid dark mode sites");
+      settings[darkModeSitesKey] = [...new Set(backup.darkModeSites.map(site => site.toLowerCase()))];
     }
     if (backup.highlightedTeams !== undefined) {
       if (!Array.isArray(backup.highlightedTeams) || backup.highlightedTeams.some(value => typeof value !== "string")) throw new Error("Invalid teams");

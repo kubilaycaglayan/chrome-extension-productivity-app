@@ -51,6 +51,9 @@ body { width: 344px; height: 580px; overflow-y: auto; scrollbar-gutter: stable; 
 .outline-arrow { color: #6d9bb1; font-size: 15px; opacity: 0; }
 .outline-item:hover .outline-arrow, .outline-item:focus-visible .outline-arrow { opacity: 1; }
 .outline-message { margin: 12px 2px; padding: 14px; border: 1px solid #29445e; border-radius: 10px; background: #10233b; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.dark-mode-controls { display: flex; align-items: center; gap: 10px; min-height: 40px; margin: -11px 0 12px; padding: 5px 9px; border: 1px solid #29445e; border-radius: 8px; background: #10233b; }
+.dark-mode-title { flex: 1; min-width: 0; white-space: nowrap; font-size: 11px; font-weight: 700; }
+.dark-mode-option { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 10px; cursor: pointer; }
 
 .header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .header h2 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: .01em; }
@@ -72,11 +75,11 @@ h1 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: .01em; }
 .name { font-size: 12px; font-weight: 650; line-height: 1.25; }
 .module .description { overflow: hidden; color: var(--muted); font-size: 10.5px; line-height: 1.3; margin-top: 2px; text-overflow: ellipsis; white-space: nowrap; }
 
-.module input[type="checkbox"] { appearance: none; flex: none; width: 32px; height: 18px; border: 1px solid #61738c; border-radius: 20px; background: #34445d; margin: 0; cursor: pointer; transition: background 120ms, border-color 120ms; }
-.module input[type="checkbox"]::before { content: ""; display: block; width: 12px; height: 12px; margin: 2px; border-radius: 50%; background: #effaff; transition: transform 120ms; }
-.module input[type="checkbox"]:checked { border-color: var(--cyan); background: var(--cyan); }
-.module input[type="checkbox"]:checked::before { background: #071128; transform: translateX(14px); }
-.module input[type="checkbox"]:disabled { opacity: .55; cursor: wait; }
+:is(.module, .dark-mode-option) input[type="checkbox"] { appearance: none; flex: none; width: 32px; height: 18px; border: 1px solid #61738c; border-radius: 20px; background: #34445d; margin: 0; cursor: pointer; transition: background 120ms, border-color 120ms; }
+:is(.module, .dark-mode-option) input[type="checkbox"]::before { content: ""; display: block; width: 12px; height: 12px; margin: 2px; border-radius: 50%; background: #effaff; transition: transform 120ms; }
+:is(.module, .dark-mode-option) input[type="checkbox"]:checked { border-color: var(--cyan); background: var(--cyan); }
+:is(.module, .dark-mode-option) input[type="checkbox"]:checked::before { background: #071128; transform: translateX(14px); }
+:is(.module, .dark-mode-option) input[type="checkbox"]:disabled { opacity: .55; cursor: wait; }
 
 .panel { border-bottom: 1px solid var(--line); }
 .panel summary { display: flex; align-items: center; justify-content: space-between; min-height: 34px; color: #dcecf7; font-size: 11.5px; font-weight: 600; cursor: pointer; list-style: none; }
@@ -108,7 +111,7 @@ button:disabled { opacity: .5; cursor: wait; }
 .backup-note { margin: 7px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.4; }
 
 #status { margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
-:is(.module input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
+:is(.module input, .dark-mode-option input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
 .import-button:focus-within { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

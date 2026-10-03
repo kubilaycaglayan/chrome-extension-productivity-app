@@ -21,6 +21,11 @@
           <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 6.3"/><path d="M20 4v7h-7"/></svg>
         </button>
       </header>
+      <div class="dark-mode-controls" role="group" aria-label="Dark mode">
+        <span class="dark-mode-title">🌙 Dark mode</span>
+        <label class="dark-mode-option" for="dark-mode-toggle">All sites <input id="dark-mode-toggle" type="checkbox" role="switch" aria-label="Dark mode on all sites" disabled></label>
+        <label class="dark-mode-option" for="dark-mode-site-toggle">This site <input id="dark-mode-site-toggle" type="checkbox" role="switch" aria-label="Dark mode on this site" disabled></label>
+      </div>
       <div class="outline-meta"><span id="outline-count">OUTLINE</span><span id="outline-hint">Click to jump</span></div>
       <nav id="outline-list" class="outline-list" aria-label="Page headings"></nav>
       <p id="outline-message" class="outline-message" role="status" aria-live="polite">Finding headings…</p>
