@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const PAGE_IDS = [
-  "app", "search-area", "search", "query", "suggestions", "groups", "new-group", "new-group-name", "add-group", "drag-hint",
+  "app", "search-area", "search", "query", "suggestions", "tab-groups", "groups", "new-group", "new-group-name", "add-group", "drag-hint",
   "import-bookmarks", "group-actions", "attribution", "edit-toggle", "extensions-toggle", "background-panel", "background-toggle", "background-message",
   "color-swatches", "gradient-swatches", "wallpaper-section", "wallpaper-collections",
   "wallpaper-images", "wallpaper-back", "background-image", "background-reset",
@@ -148,13 +148,23 @@ function dataTransfer() {
 }
 
 // Builds a page whose chrome.* and network calls are all observable.
-function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {}, responses = {}, scripts } = {}) {
+function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {}, browserGroups = null, browserTabs = null, responses = {}, scripts } = {}) {
   const store = JSON.parse(JSON.stringify(stored));
   const writes = [];
   const storageListeners = new Set();
   const navigations = [];
   const tabUpdates = [];
   const tabOpens = [];
+  const tabGroupUpdates = [];
+  const tabGroupEvents = Object.fromEntries(["onCreated", "onUpdated", "onMoved", "onRemoved"].map(name => {
+    const listeners = new Set();
+    return [name, {
+      listeners,
+      addListener(handler) { listeners.add(handler); },
+      removeListener(handler) { listeners.delete(handler); },
+      fire() { for (const handler of listeners) handler(); }
+    }];
+  }));
   const fetches = [];
   const timers = new Map();
   let nextTimer = 0;
@@ -227,8 +237,19 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
       // null stands for "this browser has no such API".
       bookmarks: tree === null ? undefined : { search: () => Promise.resolve(bookmarks), getTree: () => Promise.resolve(tree) },
       topSites: topSites === null ? undefined : { get: () => Promise.resolve(topSites) },
+      tabGroups: browserGroups === null ? undefined : {
+        query: () => Promise.resolve(browserGroups),
+        update(groupId, changes) {
+          tabGroupUpdates.push({ groupId, changes });
+          return Promise.resolve();
+        },
+        ...tabGroupEvents
+      },
       tabs: tabs === null ? undefined : {
-        update({ url }) {
+        getCurrent: browserTabs === null ? undefined : () => Promise.resolve({ windowId: 1 }),
+        query: browserTabs === null ? undefined : () => Promise.resolve(browserTabs),
+        update(target) {
+          const url = typeof target === "number" ? target : target.url;
           tabUpdates.push(url);
           // Chrome can refuse a navigation; `refuseUpdate` exercises that path.
           return tabs.refuseUpdate ? Promise.reject(new Error("blocked")) : Promise.resolve({ url });
@@ -272,6 +293,8 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     navigations,
     tabUpdates,
     tabOpens,
+    tabGroupUpdates,
+    tabGroupEvents,
     fetches,
     settings: context.newtabSettings,
     wallpapers: context.newtabWallpapers,

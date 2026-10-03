@@ -1,6 +1,7 @@
 import { isModuleEnabled } from "./settings.js";
 
 const STORAGE_KEY = "windowTabHistory";
+const MAX_RECENT_TABS = 20;
 
 async function getHistory() {
   const result = await chrome.storage.session.get(STORAGE_KEY);
@@ -8,75 +9,73 @@ async function getHistory() {
 }
 
 async function saveHistory(history) {
-  await chrome.storage.session.set({
-    [STORAGE_KEY]: history
-  });
+  await chrome.storage.session.set({ [STORAGE_KEY]: history });
+}
+
+// Older releases stored only a current/previous pair. Keep that pair when
+// upgrading, then record a longer most-recent-first list for each window.
+function recentTabs(value) {
+  const ids = Array.isArray(value) ? value : [value?.current, value?.previous];
+  return [...new Set(ids.filter(id => Number.isInteger(id)))].slice(0, MAX_RECENT_TABS);
+}
+
+function visit(value, tabId) {
+  return [tabId, ...recentTabs(value).filter(id => id !== tabId)].slice(0, MAX_RECENT_TABS);
 }
 
 export function initializeTabHistory() {
-  chrome.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
+  // Storage updates are asynchronous. Process tab events and commands in the
+  // order received so a later activation cannot be overwritten by an older one.
+  let pending = Promise.resolve();
+  function enqueue(work) {
+    const next = pending.then(work);
+    pending = next.catch(() => {});
+    return next;
+  }
+
+  chrome.tabs.onActivated.addListener(({ tabId, windowId }) => enqueue(async () => {
     if (!await isModuleEnabled("tab-history")) return;
     const history = await getHistory();
-    const windowHistory = history[windowId];
-
-    if (windowHistory?.current === tabId) {
-      return;
-    }
-
-    history[windowId] = {
-      current: tabId,
-      previous: windowHistory?.current ?? windowHistory?.previous
-    };
-
+    const recent = recentTabs(history[windowId]);
+    if (recent[0] === tabId) return;
+    history[windowId] = visit(recent, tabId);
     await saveHistory(history);
-  });
+  }));
 
-  chrome.tabs.onRemoved.addListener(async (tabId, { windowId }) => {
+  chrome.tabs.onRemoved.addListener((tabId, { windowId }) => enqueue(async () => {
     const history = await getHistory();
-    const windowHistory = history[windowId];
+    if (!(windowId in history)) return;
+    const recent = recentTabs(history[windowId]).filter(id => id !== tabId);
+    if (recent.length) history[windowId] = recent;
+    else delete history[windowId];
+    await saveHistory(history);
+  }));
 
-    if (!windowHistory) {
-      return;
-    }
-
-    if (
-      windowHistory.current === tabId ||
-      windowHistory.previous === tabId
-    ) {
-      delete history[windowId];
-      await saveHistory(history);
-    }
-  });
-
-  chrome.commands.onCommand.addListener(async (command) => {
-    if (command !== "toggle-last-tab") {
-      return;
-    }
+  chrome.commands.onCommand.addListener(command => enqueue(async () => {
+    if (command !== "toggle-last-tab") return;
     if (!await isModuleEnabled("tab-history")) return;
 
     const [currentTab] = await chrome.tabs.query({
       active: true,
       lastFocusedWindow: true
     });
-
-    if (currentTab?.id == null || currentTab.windowId == null) {
-      return;
-    }
+    if (currentTab?.id == null || currentTab.windowId == null) return;
 
     const history = await getHistory();
-    const windowHistory = history[currentTab.windowId];
-    const targetTabId = windowHistory?.previous;
+    let recent = visit(history[currentTab.windowId], currentTab.id);
 
-    if (targetTabId == null) {
-      return;
+    // Only the immediately previous live tab is selected. Older visits are
+    // candidates only when a tab has closed since it was last seen.
+    for (const targetTabId of recent.slice(1)) {
+      try {
+        await chrome.tabs.update(targetTabId, { active: true });
+        break;
+      } catch {
+        recent = recent.filter(id => id !== targetTabId);
+      }
     }
 
-    try {
-      await chrome.tabs.update(targetTabId, { active: true });
-    } catch {
-      // The previously visited tab may have been closed.
-      delete history[currentTab.windowId];
-      await saveHistory(history);
-    }
-  });
+    history[currentTab.windowId] = recent;
+    await saveHistory(history);
+  }));
 }

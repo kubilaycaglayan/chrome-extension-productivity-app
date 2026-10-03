@@ -13,6 +13,7 @@ productivityModules.register("newtab", () => {
   const form = element("search");
   const query = element("query");
   const suggestionList = element("suggestions");
+  const tabGroupList = element("tab-groups");
   const groupList = element("groups");
   const newGroupForm = element("new-group");
   const newGroupName = element("new-group-name");
@@ -57,6 +58,83 @@ productivityModules.register("newtab", () => {
   let dragged = null;
   let focusAfterRender = null;
   let statusTimer;
+  let tabGroupRevision = 0;
+  const tabGroupWatchers = [];
+  const groupSizer = typeof ResizeObserver === "function"
+    ? new ResizeObserver(entries => {
+      for (const { target } of entries) sizeGroup(target);
+    })
+    : null;
+
+  // The masonry grid uses 4px rows. Reserve 16px after each card to match
+  // the space between columns, including when a card grows after rendering.
+  function sizeGroup(card) {
+    const rows = Math.max(1, Math.ceil((card.getBoundingClientRect().height + 16) / 4));
+    card.style.gridRowEnd = `span ${rows}`;
+  }
+
+  if (groupSizer) groupList.classList.add("masonry");
+
+  async function refreshTabGroups() {
+    if (!chrome.tabGroups?.query || !chrome.tabs?.query) return;
+    const revision = ++tabGroupRevision;
+    try {
+      const currentTab = await chrome.tabs.getCurrent?.();
+      const windowId = currentTab?.windowId
+        ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.windowId;
+      if (windowId == null) return;
+
+      const [browserGroups, tabs] = await Promise.all([
+        chrome.tabGroups.query({ windowId }),
+        chrome.tabs.query({ windowId })
+      ]);
+      if (!active || revision !== tabGroupRevision) return;
+
+      const visible = browserGroups.map(group => {
+        const members = tabs.filter(tab => tab.groupId === group.id).sort((a, b) => a.index - b.index);
+        return { group, members };
+      }).filter(({ members }) => members.length)
+        .sort((a, b) => a.members[0].index - b.members[0].index);
+
+      tabGroupList.replaceChildren(...visible.map(({ group, members }) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "tab-group-chip";
+        chip.dataset.color = group.color;
+        const title = group.title?.trim() || "Untitled group";
+        chip.setAttribute("aria-label", `${title}, ${members.length} tabs. Switch to group.`);
+        const name = document.createElement("span");
+        name.className = "tab-group-title";
+        name.textContent = title;
+        const count = document.createElement("span");
+        count.className = "tab-group-count";
+        count.textContent = String(members.length);
+        chip.append(name, count);
+        chip.addEventListener("click", async () => {
+          try {
+            if (group.collapsed) await chrome.tabGroups.update(group.id, { collapsed: false });
+            await chrome.tabs.update(members[0].id, { active: true });
+          } catch {
+            void refreshTabGroups();
+          }
+        });
+        return chip;
+      }));
+      tabGroupList.hidden = !visible.length;
+    } catch {
+      if (active && revision === tabGroupRevision) {
+        tabGroupList.replaceChildren();
+        tabGroupList.hidden = true;
+      }
+    }
+  }
+
+  function watchTabGroups(event) {
+    if (!event?.addListener) return;
+    const listener = () => { void refreshTabGroups(); };
+    event.addListener(listener);
+    tabGroupWatchers.push(() => event.removeListener?.(listener));
+  }
 
   // Announcements stay in the live region: the page shows no status bar.
   function setStatus(message) {
@@ -850,7 +928,14 @@ productivityModules.register("newtab", () => {
   }
 
   function render() {
+    groupSizer?.disconnect();
     groupList.replaceChildren(...groups.map(renderGroup));
+    if (groupSizer) {
+      for (const card of groupList.children) {
+        sizeGroup(card);
+        groupSizer.observe(card);
+      }
+    }
     element("group-actions").hidden = !editing;
     // The hint explains dragging, which is only on offer while editing.
     element("drag-hint").hidden = !editing || groups.length < 2;
@@ -1083,6 +1168,12 @@ productivityModules.register("newtab", () => {
   newGroupForm.addEventListener("submit", onAddGroup);
   importBookmarks.hidden = !chrome.bookmarks?.getTree;
   importBookmarks.addEventListener("click", onImportBookmarks);
+  for (const name of ["onCreated", "onUpdated", "onMoved", "onRemoved"]) {
+    watchTabGroups(chrome.tabGroups?.[name]);
+  }
+  for (const name of ["onCreated", "onUpdated", "onMoved", "onRemoved", "onAttached", "onDetached"]) {
+    watchTabGroups(chrome.tabs?.[name]);
+  }
   groupList.addEventListener("dragover", onGroupListDragOver);
   groupList.addEventListener("drop", onGroupListDrop);
   editToggle.addEventListener("click", onEditToggle);
@@ -1101,6 +1192,7 @@ productivityModules.register("newtab", () => {
   document.addEventListener("keydown", onKeyDown);
   chrome.storage.onChanged.addListener(onStorageChanged);
   app.hidden = false;
+  void refreshTabGroups();
   // Chrome keeps the omnibox focused when a new tab opens; only take focus
   // when the page already has it, so typing there is never hijacked.
   if (document.hasFocus()) query.focus();
@@ -1108,6 +1200,12 @@ productivityModules.register("newtab", () => {
 
   return () => {
     active = false;
+    tabGroupRevision++;
+    for (const unwatch of tabGroupWatchers) unwatch();
+    tabGroupList.replaceChildren();
+    tabGroupList.hidden = true;
+    groupSizer?.disconnect();
+    groupList.classList.remove("masonry");
     clearTimeout(statusTimer);
     clearTimeout(suggestTimer);
     clearTimeout(bookmarkTimer);
