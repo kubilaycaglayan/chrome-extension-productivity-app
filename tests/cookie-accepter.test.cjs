@@ -127,6 +127,87 @@ function adCompatibilityPage(adEnabled) {
   </body></html>`;
 }
 
+// A banner that is inserted hidden and later revealed by a stylesheet rule, not by a DOM or
+// attribute change: nothing the MutationObserver can see makes it visible.
+function fadeInPage() {
+  return `<!doctype html><html><head><style>
+      #onetrust-banner-sdk { opacity: 0; }
+    </style></head><body>
+    <script>
+      const clicks = {};
+      const store = { 'moduleEnabled:cookie-accepter': true, cookieAccepterPausedSites: [] };
+      window.chrome = {storage:{local:{get:async keys => Object.fromEntries(keys.map(key => [key, store[key]]))},onChanged:{addListener:()=>{}}}};
+    </script><script>${settings}</script><script>${content}</script>
+    <script>
+      setTimeout(() => {
+        const banner = document.createElement('div'); banner.id = 'onetrust-banner-sdk';
+        banner.innerHTML = '<button id="onetrust-accept-btn-handler">Allow all</button>';
+        banner.querySelector('button').onclick = () => { clicks.faded = (clicks.faded || 0) + 1; };
+        document.body.append(banner);
+      }, 150);
+      setTimeout(() => {
+        clicks.beforeReveal = clicks.faded || 0;
+        const sheet = document.querySelector('style').sheet;
+        for (const rule of sheet.cssRules) if (rule.selectorText === '#onetrust-banner-sdk') rule.style.opacity = '1';
+      }, 900);
+      setTimeout(() => { document.body.dataset.results = JSON.stringify(clicks); }, 1900);
+    </script></body></html>`;
+}
+
+// Three layouts the adapters used to walk past: Cookiebot's non-opt-in button, a Usercentrics
+// wrapper that lays out no box of its own, and OneTrust raising its preference centre as the
+// banner, with no simple accept bar to open it from.
+function variantPage() {
+  return `<!doctype html><html><head><style>
+      #uc-banner-modal { display: contents; }
+      #onetrust-pc-sdk { position: fixed; top: 0; left: 0; }
+    </style></head><body>
+    <div id="CybotCookiebotDialog"><button id="CybotCookiebotDialogBodyButtonAccept">Allow all</button></div>
+    <div id="uc-banner-modal"><div><button id="uc-btn-accept-banner">Accept all</button></div></div>
+    <div id="onetrust-pc-sdk"><button id="accept-recommended-btn-handler">Allow All</button></div>
+    <script>
+      const clicks = {};
+      const store = { 'moduleEnabled:cookie-accepter': true, cookieAccepterPausedSites: [] };
+      window.chrome = {storage:{local:{get:async keys => Object.fromEntries(keys.map(key => [key, store[key]]))},onChanged:{addListener:()=>{}}}};
+      document.querySelectorAll('button').forEach(button => button.onclick = () => {
+        clicks[button.id] = (clicks[button.id] || 0) + 1;
+        button.closest('#CybotCookiebotDialog, #uc-banner-modal, #onetrust-pc-sdk').remove();
+      });
+    </script><script>${settings}</script><script>${content}</script>
+    <script>setTimeout(() => { document.body.dataset.results = JSON.stringify(clicks); }, 2100);</script>
+  </body></html>`;
+}
+
+// A site that ships no CMP, modelled on mackolik.com: a pinned block of consent prose with its own
+// accept-all button. The two decoys carry only one half of that shape each.
+function customBannerPage() {
+  return `<!doctype html><html><head><style>
+      .cookie-consent-rectangle { position: fixed; bottom: 0; left: 0; right: 0; }
+      .promo { position: fixed; top: 0; left: 0; }
+    </style></head><body>
+    <div class="cookie-consent-rectangle">
+      <span>Mackolik İnternet Hizmetleri olarak kişisel verilerinize önem veriyoruz. İnternet sitemizin çalışması ve tercihleriniz doğrultusunda çerezler kullanmaktayız.</span>
+      <div class="cookie-consent-buttons-wrapper">
+        <button class="preferences-btn">Çerez Tercihleri</button>
+        <button class="reject-all-btn">Tümünü Reddet</button>
+        <button class="accept-all-btn">Tümünü Kabul Et</button>
+      </div>
+    </div>
+    <div class="promo"><span>Subscribe to our weekly newsletter for match reports and offers.</span><button id="promo-accept">Accept all</button></div>
+    <div id="inline-policy"><span>We use cookies and similar technologies to improve your experience on this website.</span><button id="inline-accept">Accept all</button></div>
+    <script>
+      const clicks = {};
+      const store = { 'moduleEnabled:cookie-accepter': true, cookieAccepterPausedSites: [] };
+      window.chrome = {storage:{local:{get:async keys => Object.fromEntries(keys.map(key => [key, store[key]]))},onChanged:{addListener:()=>{}}}};
+      document.querySelectorAll('button').forEach(button => button.onclick = () => {
+        const name = button.id || button.className;
+        clicks[name] = (clicks[name] || 0) + 1;
+      });
+    </script><script>${settings}</script><script>${content}</script>
+    <script>setTimeout(() => { document.body.dataset.results = JSON.stringify(clicks); }, 1700);</script>
+  </body></html>`;
+}
+
 function popupMock() {
   return `<script>
     const values = {'moduleEnabled:page-outline':false,cookieAccepterPausedSites:[]};
@@ -233,7 +314,7 @@ function page(mode) {
   const server = createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
     if (url.pathname === "/popup" || url.pathname === "/popup/") {
-      res.setHeader("Content-Type", "text/html");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(popupPage());
       return;
     }
@@ -245,8 +326,15 @@ function page(mode) {
       try { res.end(readFileSync(file)); } catch { res.writeHead(404).end(); }
       return;
     }
-    res.setHeader("Content-Type", "text/html");
-    res.end(url.pathname === "/advanced" ? advancedPage() : url.pathname === "/frame-host" ? frameHostPage() : url.pathname === "/blank-frame-host" ? blankFrameHostPage() : url.pathname === "/settings" ? settingsPage() : url.pathname === "/ad-on" ? adCompatibilityPage(true) : url.pathname === "/ad-off" ? adCompatibilityPage(false) : page(url.pathname === "/frame" ? "on" : url.pathname === "/spa" ? "spa" : url.searchParams.get("mode")));
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    const routes = {
+      "/advanced": advancedPage, "/frame-host": frameHostPage, "/blank-frame-host": blankFrameHostPage,
+      "/settings": settingsPage, "/fade-in": fadeInPage, "/variants": variantPage, "/custom": customBannerPage,
+      "/ad-on": () => adCompatibilityPage(true), "/ad-off": () => adCompatibilityPage(false)
+    };
+    res.end(routes[url.pathname]
+      ? routes[url.pathname]()
+      : page(url.pathname === "/frame" ? "on" : url.pathname === "/spa" ? "spa" : url.searchParams.get("mode")));
   });
   await new Promise(resolve => server.listen(0, "localhost", resolve));
   try {
@@ -284,6 +372,8 @@ function page(mode) {
     const blankFrameResults = JSON.parse(blankFrameMatch[1].replaceAll("&quot;", '"'));
     assert.equal(blankFrameResults["onetrust-accept-btn-handler"], 1);
     const { stdout: settingsOutput } = await run(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--virtual-time-budget=1000", "--dump-dom", `http://localhost:${server.address().port}/settings`], { maxBuffer: 1024 * 1024 });
+    // The same preference-centre id, inline on a settings page rather than raised as an overlay,
+    // must still be left alone.
     assert.match(settingsOutput, /data-results="0"/);
     const { stdout: spaOutput } = await run(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--virtual-time-budget=1700", "--dump-dom", `http://localhost:${server.address().port}/spa`], { maxBuffer: 1024 * 1024 });
     const spaMatch = spaOutput.match(/data-results="([^"]+)"/);
@@ -291,6 +381,25 @@ function page(mode) {
     const spaResults = JSON.parse(spaMatch[1].replaceAll("&quot;", '"'));
     assert.equal(spaResults["onetrust-accept-btn-handler"], 1);
     assert.equal(spaResults.delayed, 1);
+    const dumpResults = async (route, budget, what) => {
+      const { stdout: output } = await run(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu", `--virtual-time-budget=${budget}`, "--dump-dom", `http://localhost:${server.address().port}/${route}`], { maxBuffer: 1024 * 1024 });
+      const found = output.match(/data-results="([^"]+)"/);
+      assert.ok(found, `Missing ${what} results`);
+      return JSON.parse(found[1].replaceAll("&quot;", '"'));
+    };
+    const fadeResults = await dumpResults("fade-in", 2100, "fade-in");
+    assert.equal(fadeResults.beforeReveal, 0, "A banner held at opacity 0 is left alone until it is shown");
+    assert.equal(fadeResults.faded, 1, "A banner revealed by a stylesheet rule alone is still accepted");
+    const variantResults = await dumpResults("variants", 2300, "CMP layout variant");
+    assert.equal(variantResults.CybotCookiebotDialogBodyButtonAccept, 1, "Cookiebot's non-opt-in allow-all button is clicked");
+    assert.equal(variantResults["uc-btn-accept-banner"], 1, "A Usercentrics wrapper with no layout box is still looked inside");
+    assert.equal(variantResults["accept-recommended-btn-handler"], 1, "A OneTrust preference centre raised as the banner is accepted");
+    const customResults = await dumpResults("custom", 1900, "bespoke banner");
+    assert.equal(customResults["accept-all-btn"], 1, "A pinned bespoke consent banner is accepted");
+    assert.equal(customResults["reject-all-btn"], undefined);
+    assert.equal(customResults["preferences-btn"], undefined);
+    assert.equal(customResults["promo-accept"], undefined, "A pinned overlay without consent text is left alone");
+    assert.equal(customResults["inline-accept"], undefined, "Consent text that is not a pinned banner is left alone");
     for (const route of ["ad-on", "ad-off"]) {
       const { stdout: adOutput } = await run(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--virtual-time-budget=1200", "--dump-dom", `http://localhost:${server.address().port}/${route}`], { maxBuffer: 1024 * 1024 });
       const adMatch = adOutput.match(/data-results="([^"]+)"/);
@@ -314,6 +423,6 @@ function page(mode) {
     assert.equal(popupResults.legacyOff, true);
     assert.equal(popupResults.restored, true);
     assert.equal(popupResults.invalidRejected, true);
-    console.log("PASS cookie accepter browser fixtures: defaults, CMP adapters, timing, SPA navigation, site pause, preferences, shadow roots, frames, disable, ad blocker on/off, backup/restore, unrelated controls");
+    console.log("PASS cookie accepter browser fixtures: defaults, CMP adapters, timing, SPA navigation, site pause, preferences, shadow roots, frames, disable, ad blocker on/off, backup/restore, unrelated controls, fade-in reveal, Cookiebot/Usercentrics layout variants, bespoke banners and their decoys, preference centre as banner");
   } finally { server.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -56,6 +56,10 @@ const adapterRows = [...adapterBlock[1].matchAll(/\{\s*name: "([^"]+)",\s*dialog
 if (!adapterRows.length) throw new Error('No adapters parsed; content/cookie-accepter.js changed shape.');
 const actionSelectors = [...new Set(adapterRows.flatMap(row => [row.action, row.opener].filter(Boolean)))];
 const openerSelectors = [...new Set(adapterRows.map(row => row.opener).filter(Boolean))];
+const phraseBlock = moduleSource.match(/const phrases = new Set\(\[([\s\S]*?)\n {2}\]\);/);
+if (!phraseBlock) throw new Error('Accept phrases not found; content/cookie-accepter.js changed shape.');
+const acceptPhrases = [...phraseBlock[1].matchAll(/"([^"]+)"/g)].map(([, phrase]) => phrase);
+if (!acceptPhrases.length) throw new Error('No accept phrases parsed; content/cookie-accepter.js changed shape.');
 const enabledKey = settingsSource.match(/key: "([^"]+)"/)?.[1];
 const pausedKey = settingsSource.match(/pausedKey: "([^"]+)"/)?.[1];
 if (!enabledKey || !pausedKey) throw new Error('Settings keys not found; shared/cookie-accepter-settings.js changed shape.');
@@ -81,11 +85,14 @@ const queue = limit > 0 ? selected.slice(0, limit) : selected;
 if (!queue.length) throw new Error('No sites selected; check --set, --cmp and --region');
 
 // Banner detection is deliberately independent of the module's own selectors: an accept-style
-// control inside a nearby block of consent text counts as a banner, whoever built it.
+// control inside a nearby block of consent text counts as a banner, whoever built it. Clicks are
+// attributed to the module when they hit an adapter selector or carry one of its accept phrases,
+// minus whatever the module-off baseline visit clicked by itself.
 const probeSource = enabled => `(() => {
   const ENABLED = ${enabled};
   const ACTIONS = ${JSON.stringify(actionSelectors)};
   const OPENERS = ${JSON.stringify(openerSelectors)};
+  const PHRASES = new Set(${JSON.stringify(acceptPhrases)});
   const DIALOGS = ${JSON.stringify(adapterRows.map(row => ({ name: row.name, dialog: row.dialog })))};
   const ACCEPT = /^(accept|accept all|accept all cookies|accept cookies|accept & close|accept and close|allow|allow all|allow cookies|agree|i agree|i accept|agree and close|agree and proceed|ok|okay|got it|understood|continue|tümünü kabul et|hepsini kabul et|kabul et|alle akzeptieren|alles akzeptieren|akzeptieren|zustimmen|einverstanden|tout accepter|accepter|accepter et fermer|j'accepte|aceptar|aceptar todo|aceptar todas|accetta|accetta tutti|accetta tutto|alles accepteren|accepteren|aceitar|aceitar todos|aceitar tudo|godkänn alla|godkänn|zgadzam się|akceptuję|concordo|rozumiem)$/i;
   const CONSENT_TEXT = /cookie|consent|privacy|gdpr|ccpa|çerez|kvkk|datenschutz|rgpd|tracking|personal data|persoonsgegevens|dados pessoais/i;
@@ -94,10 +101,14 @@ const probeSource = enabled => `(() => {
   const originalClick = HTMLElement.prototype.click;
   HTMLElement.prototype.click = function() {
     const hits = selectors => selectors.some(selector => { try { return this.matches(selector); } catch { return false; } });
+    const text = (this.textContent || this.getAttribute('aria-label') || this.value || '').replace(/\\s+/g, ' ').trim();
     window.__cookieClicks.push({
       id: this.id || '',
-      text: (this.textContent || this.getAttribute('aria-label') || '').replace(/\\s+/g, ' ').trim().slice(0, 80),
+      text: text.slice(0, 80),
       matched: hits(ACTIONS),
+      // A bespoke banner has no adapter selector to match, so its accept control is recognized by
+      // the same phrase list the module itself clicks on.
+      phrase: PHRASES.has(text.toLowerCase()) || PHRASES.has(text.toLocaleLowerCase()),
       opener: hits(OPENERS)
     });
     return originalClick.call(this);
@@ -304,8 +315,13 @@ try {
   }
 
   function score(baseline, treatment) {
-    const accepted = treatment.after.clicks.filter(click => click.matched && !click.opener);
-    const repeated = treatment.returnVisit.clicks.filter(click => click.matched && !click.opener);
+    const isAccept = click => (click.matched || click.phrase) && !click.opener;
+    // The baseline visit runs the same click hook with the module off, so any accept-looking click
+    // it also recorded is the page clicking itself and must not be credited to the module.
+    const selfClicked = new Set(baseline.after.clicks.filter(isAccept).map(click => `${click.id}|${click.text}`));
+    const byModule = click => isAccept(click) && !selfClicked.has(`${click.id}|${click.text}`);
+    const accepted = treatment.after.clicks.filter(byModule);
+    const repeated = treatment.returnVisit.clicks.filter(byModule);
     const fresh = treatment.after.consent.filter(key => !baseline.after.consent.includes(key));
     if (!baseline.after.banner.found) return { status: 'no-banner', detail: 'no consent banner shown from this region' };
     if (!baseline.after.banner.acceptable) {
