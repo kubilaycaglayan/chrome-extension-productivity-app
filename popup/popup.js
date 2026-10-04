@@ -23,6 +23,17 @@ const saveTeams = document.getElementById("save-highlight-teams");
 const wordEditor = document.getElementById("blocked-words");
 const saveWords = document.getElementById("save-blocked-words");
 
+async function loadBlockedWordsPrefill() {
+  try {
+    const response = await fetch(chrome.runtime.getURL("x-keywords.local.json"));
+    if (!response.ok) return [];
+    const words = await response.json();
+    return Array.isArray(words) ? xKeywords.clean(words) : [];
+  } catch {
+    return [];
+  }
+}
+
 const outlineView = document.getElementById("outline-view");
 const settingsView = document.getElementById("settings-view");
 const outlineList = document.getElementById("outline-list");
@@ -245,7 +256,10 @@ async function initialize() {
     followedEditor.value = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []).join("\n");
     followedEditor.disabled = false;
     saveTeams.disabled = false;
-    wordEditor.value = (Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : xKeywords.defaults).join("\n");
+    const blockedWords = Array.isArray(settings[xKeywords.key])
+      ? xKeywords.clean(settings[xKeywords.key])
+      : await loadBlockedWordsPrefill();
+    wordEditor.value = blockedWords.join("\n");
     wordEditor.disabled = false;
     saveWords.disabled = false;
     for (const [id, name, description, group, icon] of MODULES) {
@@ -323,7 +337,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   if (changes[xKeywords.key]) {
     const words = changes[xKeywords.key].newValue;
-    wordEditor.value = (Array.isArray(words) ? xKeywords.clean(words) : xKeywords.defaults).join("\n");
+    wordEditor.value = (Array.isArray(words) ? xKeywords.clean(words) : []).join("\n");
   }
 });
 void initialize();
@@ -368,7 +382,7 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
     const followedTeams = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []);
-    const blockedWords = Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : xKeywords.defaults;
+    const blockedWords = Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : [];
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
     const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
     const darkModeSites = Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : [];

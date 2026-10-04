@@ -1,6 +1,6 @@
 productivityModules.register("x-keyword-filter", () => {
   let active = true;
-  let blockedWords = xKeywords.defaults.map(word => word.toLowerCase());
+  let blockedWords = [];
   const marker = "data-productivity-keyword-hidden";
   const style = document.createElement("style");
   style.textContent = `article[${marker}] { display: none !important; }`;
@@ -26,7 +26,7 @@ productivityModules.register("x-keyword-filter", () => {
   }
 
   function applyWords(value) {
-    const words = Array.isArray(value) ? xKeywords.clean(value) : xKeywords.defaults;
+    const words = Array.isArray(value) ? xKeywords.clean(value) : [];
     blockedWords = words.map(word => word.toLowerCase());
     queueProcess();
   }

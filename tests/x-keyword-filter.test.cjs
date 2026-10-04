@@ -50,11 +50,11 @@ assert.deepEqual(Array.from(context.xKeywords.clean([" Sample ", "sample", "", "
   const cleanup = start();
   await new Promise(resolve => setImmediate(resolve));
   const hidden = article => article.attributes.has("data-productivity-keyword-hidden");
-  assert.equal(hidden(articles[1]), true, "Original blocked words work before customization");
+  assert.equal(hidden(articles[1]), false, "No posts are hidden before words are configured");
   assert.equal(hidden(articles[0]), false);
 
-  for (const listener of listeners) listener({ xBlockedWords: { newValue: ["phrase to block"] } }, "local");
-  assert.equal(hidden(articles[1]), false, "Removing a word restores matching posts");
+  for (const listener of listeners) listener({ xBlockedWords: { newValue: ["sample", "phrase to block"] } }, "local");
+  assert.equal(hidden(articles[1]), true, "Adding a word hides matching posts");
   assert.equal(hidden(articles[2]), true, "Adding a phrase hides matching posts");
 
   for (const listener of listeners) listener({ xBlockedWords: { newValue: [] } }, "local");
