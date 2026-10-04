@@ -57,21 +57,41 @@ annoyance lists. `build-report.json` records source URLs and hashes, rule
 counts, unsupported rules, and conversion errors.
 
 The cosmetic selectors are precomputed into three artifacts rather than one list
-every frame has to filter: `content/ad-blocker-generic.css`, a single grouped
-`display: none !important` rule over the selectors that apply everywhere;
+every frame has to filter: `content/ad-blocker-generic.css`, grouped
+`display: none !important` rules over the selectors that apply everywhere;
 `content/ad-blocker-excepted.js`, the generic selectors at least one host
 cancels, which therefore cannot sit in a static stylesheet; and
 `content/ad-blocker-domain-rules.js`, the domain-scoped index the service worker
 resolves per host. Cookie and consent selectors are excluded at build time
 rather than at runtime, so the cookie-accepter module still finds the banners it
-clicks. Every selector is checked by headless Chrome's CSS parser during the
-build, because one selector Chrome rejects would drop the whole grouped rule
+clicks.
+
+The stylesheet is emitted as rules of at most 1,000 selectors rather than one
+rule over all of them. Blink indexes a rule's selectors with a 13-bit field that
+counts `CSSSelector` entries rather than list positions, so a selector starting
+past entry 8191 of its rule is parsed, kept, reported by `selectorText` — and
+never matched. A single rule over the 12,980 generic selectors silently lost 37%
+of them that way.
+
+Every selector is checked by headless Chrome's CSS parser during the build,
+because one selector Chrome rejects would drop the whole grouped rule it sits in
 instead of only itself, and the generated stylesheet is then parsed back and
-asserted to be one rule over the expected selector count. The build also
-asserts, for every host an exception names and a sample of the domain-scoped
-hosts, that the three artifacts resolve to exactly the selector set the unsplit
-corpus gives that host. `build-report.json` records the resulting file sizes and
-counts along with everything dropped on the way.
+asserted to be the expected rules over the expected selector count. Because a
+selector Chrome parses is not necessarily one Chrome matches, which is how the
+entry limit above went unnoticed, the build also matches: every selector that can
+be handed an element gets one, and the stylesheet has to hide it. The build
+further asserts, for every host an exception names and a sample of the
+domain-scoped hosts, that the three artifacts resolve to exactly the selector set
+the unsplit corpus gives that host. `build-report.json` records the resulting
+file sizes and counts along with everything dropped on the way.
+
+The stylesheet is registered by the service worker rather than declared in
+`manifest.json`, so it can be excluded on paused sites; a declared entry would
+apply it everywhere, and Chrome gives a frame no way to detach CSS it injected.
+The per-host script is registered separately and stays registered while the
+module is off, so a frame already open can restore its own sheet when the setting
+returns. Both run at `document_start` in every frame, so generic ad spaces are
+hidden before the page's first paint.
 
 The core ruleset is under Chrome's guaranteed 30,000 static rule capacity. It
 includes every exception from all four lists and the domain-specific, general
@@ -109,7 +129,12 @@ is no runtime list download.
 5. Optionally re-score coverage with `node tools/score-adblock-test.mjs`.
 
 Limitations: Manifest V3 cannot express every list rule. In-stream ads from a
-content host and ads generated in page scripts may remain. Rules that need
+content host and ads generated in page scripts may remain. Pausing a site does
+not reach every frame on it: the stylesheet's `excludeMatches` patterns are
+matched against each frame's own URL rather than the top frame's, so a cross-site
+frame embedded in a paused page still receives the generic stylesheet. The
+per-host selectors do go quiet everywhere on a paused page, since the service
+worker decides from the top frame's host. Rules that need
 header manipulation, URL rewriting or cookie handling (`$csp`, `$cookie`,
 `$removeparam`, `$redirect`, `$replace` and related) are dropped, as are the
 AdGuard-only modifiers that have no declarativeNetRequest equivalent (`$app`,

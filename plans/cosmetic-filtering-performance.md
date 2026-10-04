@@ -6,7 +6,7 @@ Cut the per-frame cost of the ad blocker's cosmetic layer without reducing cover
 
 ## Current cost
 
-Measured against `content/ad-blocker-selectors.js` as generated at source revision `bde0d888ef7c5cb99e9c682b1862988e358d10d6`.
+Measured against `content/ad-blocker-selectors.js` as generated at source revision `bde0d888ef7c5cb99e9c682b1862988e358d10d6`. That file is the flat corpus the content script used to filter; it was deleted once the last reader went away, so the figures below are history rather than something to re-measure.
 
 | Item | Value |
 | --- | --- |
@@ -51,6 +51,24 @@ Chrome attributes that stage to no trace event and no `Performance` counter, bec
 
 First paint on the top document moves from 32 ms to 68 ms. With the host paused, so the corpus is parsed but nothing is injected, it is 56 ms. Roughly two thirds of the delay is the parse that phase 2 removes and the rest is the injection that phase 5 moves ahead of paint. Style recalculation rises more than tenfold over essentially the same element count, which confirms the cost is matching 13,255 selectors rather than touching more elements.
 
+## Measured result
+
+Recorded the same way as the baseline, with `node tools/bench-cosmetic.mjs` on Chrome 154.0.8037.95 and macOS, on 2026-10-04 after phase 5. The no-extension column moved between the two sittings, so the figure to read is each column's distance from its own floor, not the absolute paint numbers.
+
+| Metric, summed over all six documents | No extension | Cosmetic active | Host paused |
+| --- | --- | --- | --- |
+| Cosmetic script evaluation | 0 ms | 1.0 ms | 0.9 ms |
+| of which V8 compile | 0 ms | 0.3 ms | 0.2 ms |
+| Style recalculation | 2.8 ms | 7.4 ms | 4.8 ms |
+| Elements restyled | 1,965 | 1,929 | 1,919 |
+| Top-document first paint | 36 ms | 48 ms | 36 ms |
+| Style elements per document | 0 | 0 | 0 |
+| Selectors adopted per frame | 0 | 275 | 0 |
+
+Against the baseline: per-frame script evaluation over all six documents falls from 21.5 ms to 1.0 ms and its V8 compile share from 13.3 ms to 0.3 ms, because a frame now parses 19,311 bytes instead of 1,477,754. Style recalculation falls from 17.3 ms to 7.4 ms over the same element count, and first paint from 36 ms above the floor to 12 ms above it. The same 13,255 selectors apply on this host as before: 12,980 registered ahead of first paint and 275 assembled in the frame. The assembly stage, which replaced the 7 ms filter-and-inject stage, costs 0.3 ms per frame: no `CSS.supports()` call, no `<style>` element, one constructed sheet.
+
+The paused column is no longer a floor, for the reason under "Known limits": the fixture's two cross-site frames still carry the generic stylesheet, which is most of the 2 ms it sits above the no-extension column.
+
 ## Repository fit
 
 - `tools/ad-blocker-build/build.mjs` lines 221-248 collect cosmetic rules and write the flat array. Everything precomputed here replaces that single `writeFile`. Cosmetic scope stays EasyList-only; this plan changes the output format, not what is selected.
@@ -77,13 +95,19 @@ First paint on the top document moves from 32 ms to 68 ms. With the host paused,
    A stylesheet constructed in the content script's isolated world does style the page it is adopted into. `tools/check-ad-blocker-live.mjs` asserts that against the loaded extension rather than assuming it, on `#ad-carousel`, a generic selector that one host cancels and `127.0.0.1` does not, across pause, global toggle, and a resume. `tests/ad-blocker.test.cjs` covers the assembly itself in a realm with no `CSS` global, so a reintroduced `CSS.supports()` call would throw, and checks that no consent selector reached any shipped artifact, which is the guarantee the per-frame consent filter used to carry.
 
    Generic hiding is absent between this phase and the next: `#AdBox2` in `tests/fixtures/ad-blocker.html` stays visible until phase 5 registers `content/ad-blocker-generic.css`, and the live check's assertions on it return there. `tools/bench-cosmetic.mjs` is likewise left measuring the old algorithm against the flat corpus, which it is now the only reader of; the after run belongs with phase 5, when the mechanism is whole.
-5. **Register the generic stylesheet dynamically.** Move the cosmetic entry out of the static `content_scripts` block into `chrome.scripting.registerContentScripts`, with `css: ['content/ad-blocker-generic.css']`, `runAt: 'document_start'`, `allFrames: true`, and `excludeMatches` derived from `adBlockerPausedSites`. Extend `reconcile()` to cover registration state the way it already covers ruleset and dynamic-rule state, including the case where a persisted registration survives a restart. This is what moves generic hiding ahead of first paint and removes the current flash and reflow.
-6. **Update the tests.** `tests/ad-blocker.test.cjs` asserts the cosmetic content script entry runs in all frames; that stays true, but the file list changes and the registration now comes from `modules/ad-blocker.js`. Add coverage for the suffix-walk lookup, for exception subtraction on a host that cancels a generic selector, and a parse check that the generic stylesheet is one valid rule. Extend `tools/check-ad-blocker-live.mjs` to confirm a generic hide and an excepted host still behave correctly end to end.
+5. **Register the generic stylesheet dynamically.** Done: the cosmetic entry has left `manifest.json` for `cosmeticScripts()` and `reconcileCosmetic()` in `modules/ad-blocker.js`, which `reconcile()` now covers alongside ruleset and dynamic-rule state. A registration persists across browser sessions and survives an extension update, so one left from an earlier preference is replaced and one already correct is left alone, or every worker wake would unregister and re-register in every tab's way.
+
+   The layer is registered in two parts rather than one, because only one half can be switched off from inside a frame. The per-host script stays registered while the module is off, so a frame already open adopts its own sheet again the moment the setting returns. Content-script CSS has no such handle, as Chrome gives a frame no way to detach what it injected for it, so `content/ad-blocker-generic.css` is registered only while the module is on, with `excludeMatches` derived from `adBlockerPausedSites`. A registered stylesheet applies from the next navigation, so the popup now asks for a reload when the setting or the pause list changes.
+
+   Registering the sheet made a bug visible that phase 2 had shipped: of the 12,980 generic selectors grouped into one rule, only the first 8,137 ever matched. Blink indexes a rule's selectors with a 13-bit field counting `CSSSelector` entries rather than list positions, so a selector starting past entry 8191 of its rule is parsed, kept, reported by `selectorText`, and never matched. Phase 2's validation could not see it, because it only asked the parser, and the sheet did parse as one rule over all 12,980 selectors. The stylesheet is now 13 rules of at most 1,000 selectors, and `tools/ad-blocker-build/cosmetic.mjs` checks the artifact by matching: every selector that can be handed an element gets one, 12,823 of the 12,980, and the sheet has to hide it. The remainder are combinators and attribute values too structural to synthesize an element for, and the rule size covers those.
+6. **Update the tests.** Done: `tests/ad-blocker.test.cjs` asserts the manifest declares no ad-blocker content script, checks the registration `cosmeticScripts()` produces for each of on, off and paused, including the bare match pattern an IP literal gets, and drives `reconcile()` against a `chrome.scripting` stub seeded with a stale persisted registration, so a registration that survived a restart with the wrong shape is replaced rather than counted as correct. The stylesheet gets a parse check: a banner comment and then one `display:none` rule per line, each grouping at most 1,000 selectors, with balanced brackets and quotes in every selector.
+
+   `tools/check-ad-blocker-live.mjs` waits for the registration before opening any page, since a page opened before the worker has run carries no cosmetic filtering at all, and reads `#AdBox2` from an inline script in the fixture while the parser is still inside `<body>` and `performance.getEntriesByType('paint')` is still empty. That is what makes "ahead of first paint" a measurement rather than an inference; `#ad-carousel`, which the frame assembles after its round trip, is still visible at that same reading. Pause, global toggle and a worker restart are each read on the page that was already open and on a page opened afterwards, because a registered stylesheet changes with the next navigation.
 7. **Shard the host map only if measured.** Not needed: the wake cost measured in phase 3 is about 3 ms, paid once per worker wake rather than once per frame, and a lazy per-lookup shard is impossible anyway because a service worker may not `import()`. Sharding would mean a format that can be fetched instead, which is only worth doing if this number grows.
 
 ## Verification and acceptance
 
-- Per-frame JavaScript drops from 1,477,754 bytes to roughly 20 KB, `CSS.supports` calls per frame from 20,186 to zero, and injected style elements from up to 81 to one pre-paint sheet plus at most one small sheet.
+- Per-frame JavaScript drops from 1,477,754 bytes to roughly 20 KB, `CSS.supports` calls per frame from 20,186 to zero, and injected style elements from up to 81 to none: one registered pre-paint stylesheet and one constructed sheet, neither of which is a `<style>` element. Confirmed at 19,311 bytes and zero of each.
 - The benchmark from phase 1 shows the improvement, run on the same fixture before and after.
 - Generic hiding is in effect at first paint, confirmed in the live check rather than inferred.
 - The selector set applied on a given host is identical to the set the current code computes, checked on a generic-only host, a domain-scoped host, and a host that cancels a generic selector.
@@ -91,5 +115,7 @@ First paint on the top document moves from 32 ms to 68 ms. With the host paused,
 - No cookie-banner or consent selector enters the generic stylesheet, so the build-time exclusion matches today's runtime exclusion.
 
 ## Known limits
+
+Pausing a site no longer covers every frame on it. `excludeMatches` is matched against each frame's own URL rather than the top frame's, so a cross-site frame embedded in a paused page still receives the generic stylesheet; the per-host half does go quiet everywhere, because the service worker decides from the top frame's host. The alternative is to inject the sheet per tab after a navigation commits, which gives back the pre-paint guarantee this phase exists to provide. Before phase 4 the per-frame filter read the top host and so covered embedded frames, which makes this a narrowing: a visitor who pauses a site because filtering broke an embedded payment or video frame will not get that frame back.
 
 Around 13,000 generic selectors still live in the style engine and participate in every style recalculation. That is inherent to the filter list, and the browser's indexing on the rightmost compound keeps it tractable; trimming it would mean cutting coverage, which is a separate decision from this plan. Grouping all generic selectors into a single CSS rule also means the build-time validation must be exact, because one invalid selector would silently drop the whole rule rather than just itself; phases 2 and 6 cover that with in-browser validation and a parse check.
