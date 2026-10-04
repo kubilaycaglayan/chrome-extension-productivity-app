@@ -4,6 +4,7 @@ const MODULES = [
   ["tab-history", "Recent-tab switching", "Switch between your two most recent tabs.", "browser", "🔁"],
   ["tab-marker", "Tab markers", "Mark tabs with colored emoji from the context menu.", "browser", "🏷️"],
   ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers.", "browser", "🗂️"],
+  ["cookie-accepter", "Cookie accepter", "Automatically accept all cookie categories, including optional analytics and marketing, on recognized banners. Off until enabled.", "browser", "🍪"],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations.", "youtube", "🎛️"],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home.", "youtube", "🚫"],
   ["mackolik-dark-theme", "Mackolik dark theme", "Repaint every arsiv.mackolik.com page dark, keeping the site's own colour coding.", "mackolik", "🌙"],
@@ -30,6 +31,7 @@ const darkModeToggle = document.getElementById("dark-mode-toggle");
 const darkModeSiteToggle = document.getElementById("dark-mode-site-toggle");
 const darkModeKey = "moduleEnabled:dark-mode";
 const darkModeSitesKey = "darkModeSites";
+const cookiePauseToggle = document.getElementById("cookie-pause-toggle");
 const adSitesKey = "adBlockerPausedSites";
 const adSiteToggle = document.getElementById("ad-blocker-site-toggle");
 const adSitesEditor = document.getElementById("ad-blocker-sites");
@@ -41,7 +43,7 @@ let outlineTabId = null;
 
 Promise.all([
   chrome.tabs.query({ active: true, currentWindow: true }),
-  chrome.storage.local.get([darkModeKey, darkModeSitesKey])
+  chrome.storage.local.get([darkModeKey, darkModeSitesKey, cookieAccepterSettings.pausedKey])
 ]).then(([tabs, settings]) => {
   darkModeToggle.checked = settings[darkModeKey] === true;
   darkModeToggle.disabled = false;
@@ -53,12 +55,33 @@ Promise.all([
     darkModeSiteToggle.checked = Array.isArray(settings[darkModeSitesKey]) && settings[darkModeSitesKey].includes(currentSite);
     darkModeSiteToggle.title = currentSite;
     darkModeSiteToggle.disabled = false;
+    cookiePauseToggle.checked = cookieAccepterSettings.cleanSites(settings[cookieAccepterSettings.pausedKey]).includes(currentSite);
+    cookiePauseToggle.disabled = false;
+    cookiePauseToggle.title = currentSite;
     refreshAdSiteToggle();
   } else {
     darkModeSiteToggle.title = "Available on website tabs";
+    cookiePauseToggle.title = "Available on website tabs";
   }
 }).catch(() => {
   darkModeToggle.title = "Could not load dark mode setting. Reopen the popup to retry.";
+});
+cookiePauseToggle.addEventListener("change", async () => {
+  if (!currentSite) return;
+  const paused = cookiePauseToggle.checked;
+  cookiePauseToggle.disabled = true;
+  try {
+    const key = cookieAccepterSettings.pausedKey;
+    const stored = await chrome.storage.local.get(key);
+    const sites = new Set(cookieAccepterSettings.cleanSites(stored[key]));
+    if (paused) sites.add(currentSite);
+    else sites.delete(currentSite);
+    await chrome.storage.local.set({ [key]: [...sites] });
+    status.textContent = `Cookie accepter ${paused ? "paused" : "resumed"} on ${currentSite}.`;
+  } catch {
+    cookiePauseToggle.checked = !paused;
+    status.textContent = "Could not save this site's cookie setting.";
+  } finally { cookiePauseToggle.disabled = false; }
 });
 darkModeToggle.addEventListener("change", async () => {
   const enabled = darkModeToggle.checked;
@@ -246,7 +269,7 @@ async function initialize() {
       input.type = "checkbox";
       input.setAttribute("role", "switch");
       input.setAttribute("aria-label", name);
-      input.checked = settings[key] !== false;
+      input.checked = id === "cookie-accepter" ? settings[key] === true : settings[key] !== false;
       if (id === "ad-blocker") input.disabled = true;
       inputs.set(key, input);
       input.addEventListener("change", async () => {
@@ -282,13 +305,16 @@ chrome.storage.onChanged.addListener((changes, area) => {
     const sites = changes[darkModeSitesKey].newValue;
     darkModeSiteToggle.checked = Array.isArray(sites) && sites.includes(currentSite);
   }
+  if (currentSite && changes[cookieAccepterSettings.pausedKey]) {
+    cookiePauseToggle.checked = cookieAccepterSettings.cleanSites(changes[cookieAccepterSettings.pausedKey].newValue).includes(currentSite);
+  }
   for (const [key, change] of Object.entries(changes)) {
     const input = inputs.get(key);
     if (input && key === "moduleEnabled:ad-blocker") {
       void chrome.runtime.sendMessage({ type: "ad-blocker:get" }).then(result => {
         if (result?.ok) input.checked = result.enabled;
       }).catch(() => {});
-    } else if (input) input.checked = change.newValue !== false;
+    } else if (input) input.checked = key === cookieAccepterSettings.key ? change.newValue === true : change.newValue !== false;
   }
   if (changes[adSitesKey]) {
     pausedAdSites = Array.isArray(changes[adSitesKey].newValue) ? changes[adSitesKey].newValue : [];
@@ -337,8 +363,8 @@ document.getElementById("keyword-settings").addEventListener("submit", async eve
 document.getElementById("export-settings").addEventListener("click", async () => {
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
-    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
-    const modules = Object.fromEntries(MODULES.map(([id]) => [id, settings[`moduleEnabled:${id}`] !== false]));
+    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, cookieAccepterSettings.pausedKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
+    const modules = Object.fromEntries(MODULES.map(([id]) => [id, id === "cookie-accepter" ? settings[`moduleEnabled:${id}`] === true : settings[`moduleEnabled:${id}`] !== false]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
     const followedTeams = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []);
@@ -346,7 +372,8 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
     const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
     const darkModeSites = Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : [];
-    const backup = { version: 1, modules, adBlockerPausedSites: settings[adSitesKey] || [], darkMode: settings[darkModeKey] === true, darkModeSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
+    const cookieAccepterPausedSites = cookieAccepterSettings.cleanSites(settings[cookieAccepterSettings.pausedKey]);
+    const backup = { version: 1, modules, adBlockerPausedSites: settings[adSitesKey] || [], darkMode: settings[darkModeKey] === true, darkModeSites, cookieAccepterPausedSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -371,6 +398,11 @@ document.getElementById("import-settings").addEventListener("change", async (eve
       if (typeof backup.modules[id] !== "boolean") throw new Error("Invalid setting");
       settings[`moduleEnabled:${id}`] = backup.modules[id];
     }
+    if (backup.modules["cookie-accepter"] === undefined) settings[cookieAccepterSettings.key] = false;
+    if (backup.cookieAccepterPausedSites !== undefined) {
+      if (!Array.isArray(backup.cookieAccepterPausedSites) || backup.cookieAccepterPausedSites.some(site => cookieAccepterSettings.normalizeHost(site) === null)) throw new Error("Invalid cookie pause sites");
+      settings[cookieAccepterSettings.pausedKey] = cookieAccepterSettings.cleanSites(backup.cookieAccepterPausedSites);
+    } else settings[cookieAccepterSettings.pausedKey] = [];
     if (backup.adBlockerPausedSites !== undefined) {
       const checked = await chrome.runtime.sendMessage({ type: "ad-blocker:validate-sites", sites: backup.adBlockerPausedSites });
       if (!checked?.ok) throw new Error(checked?.error || "Invalid paused sites");

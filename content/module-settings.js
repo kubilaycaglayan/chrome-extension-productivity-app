@@ -1,4 +1,4 @@
-// Each setting defaults to enabled. Changes apply to open pages immediately.
+// Most settings default to enabled. Consent automation requires explicit opt-in.
 globalThis.productivityModules = {
   register(id, start) {
     const key = `moduleEnabled:${id}`;
@@ -6,7 +6,7 @@ globalThis.productivityModules = {
     let cleanup;
     let revision = 0;
     const apply = (value) => {
-      const next = value !== false;
+      const next = id === "cookie-accepter" ? value === true : value !== false;
       if (next === enabled) return;
       enabled = next;
       if (enabled) cleanup = start();

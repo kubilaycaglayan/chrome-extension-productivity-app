@@ -105,9 +105,11 @@ button:disabled { opacity: .5; cursor: wait; }
 .import-button { position: relative; overflow: hidden; }
 .import-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .backup-note { margin: 7px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.cookie-pause { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px; color: var(--muted); font-size: 11px; }
+.cookie-pause input { flex: none; }
 
 #status { margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
-:is(.module input, .dark-mode-option input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
+:is(.module input, .dark-mode-option input, .cookie-pause input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
 .import-button:focus-within { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

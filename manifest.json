@@ -41,6 +41,16 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "js": [
+        "shared/cookie-accepter-settings.js",
+        "content/cookie-accepter.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": ["<all_urls>"],
       "js": ["content/ad-blocker-selectors.js", "content/ad-blocker.js"],
       "run_at": "document_start",
       "all_frames": true
