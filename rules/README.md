@@ -49,12 +49,29 @@ because EasyPrivacy is already bundled in full.
 
 The files were converted and split for Manifest V3. Network rules use
 `@adguard/dnr-converter@2.0.0`; cosmetic rules use the conservative plain-CSS
-subset in `tools/ad-blocker-build/build.mjs` and come from EasyList only, since
-EasyPrivacy ships no cosmetic list and the AdGuard cosmetic sections are not
-selected. EasyPrivacy's CNAME-tracker and email-tracker lists are separate
+subset in `tools/ad-blocker-build/cosmetic.mjs` and come from EasyList only,
+since EasyPrivacy ships no cosmetic list and the AdGuard cosmetic sections are
+not selected. EasyPrivacy's CNAME-tracker and email-tracker lists are separate
 upstream add-ons and are not included; neither are the cookie, social or
 annoyance lists. `build-report.json` records source URLs and hashes, rule
 counts, unsupported rules, and conversion errors.
+
+The cosmetic selectors are precomputed into three artifacts rather than one list
+every frame has to filter: `content/ad-blocker-generic.css`, a single grouped
+`display: none !important` rule over the selectors that apply everywhere;
+`content/ad-blocker-excepted.js`, the generic selectors at least one host
+cancels, which therefore cannot sit in a static stylesheet; and
+`content/ad-blocker-domain-rules.js`, the domain-scoped index the service worker
+resolves per host. Cookie and consent selectors are excluded at build time
+rather than at runtime, so the cookie-accepter module still finds the banners it
+clicks. Every selector is checked by headless Chrome's CSS parser during the
+build, because one selector Chrome rejects would drop the whole grouped rule
+instead of only itself, and the generated stylesheet is then parsed back and
+asserted to be one rule over the expected selector count. The build also
+asserts, for every host an exception names and a sample of the domain-scoped
+hosts, that the three artifacts resolve to exactly the selector set the unsplit
+corpus gives that host. `build-report.json` records the resulting file sizes and
+counts along with everything dropped on the way.
 
 The core ruleset is under Chrome's guaranteed 30,000 static rule capacity. It
 includes every exception from all four lists and the domain-specific, general
@@ -77,7 +94,11 @@ is no runtime list download.
    commit in `tools/ad-blocker-build/build.mjs`. The AdGuard filters are fetched
    at their current published version; compare the recorded version and hash in
    `build-report.json` against the previous build to see what moved.
-2. Run `cd tools/ad-blocker-build && npm ci && npm run build` with Node 22+.
+2. Run `cd tools/ad-blocker-build && npm ci && npm run build` with Node 22+ and
+   Chrome installed, since the cosmetic step validates selectors in headless
+   Chrome; set `CHROME_PATH` for a nonstandard Chrome location. To regenerate
+   only the cosmetic artifacts, for the revision `build-report.json` already
+   records, run `node cosmetic.mjs` from that directory instead.
 3. Run `node tools/check-ad-blocker-live.mjs` from the repository root with
    Node 22+ and Chrome installed. Set `CHROME_PATH` for a nonstandard Chrome
    location.

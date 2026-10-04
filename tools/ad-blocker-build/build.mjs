@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { Filter, FilterConverter } from '@adguard/dnr-converter';
+import { buildCosmetic, cosmeticFiles } from './cosmetic.mjs';
 
 // EasyList supplies the ad rules and EasyPrivacy the tracker rules. Both ship from
 // the same upstream repository, so one pinned commit covers the pair.
@@ -17,7 +18,7 @@ const lists = [
       'easylist_adservers.txt', 'easylist_allowlist.txt', 'easylist_general_block.txt',
       'easylist_specific_block.txt', 'easylist_thirdparty.txt'
     ],
-    cosmetic: ['easylist_general_hide.txt', 'easylist_specific_hide.txt', 'easylist_allowlist_general_hide.txt'],
+    cosmetic: cosmeticFiles,
     // A flat host pool far larger than the guaranteed capacity: split across sets.
     pooled: ['easylist_adservers.txt']
   },
@@ -218,34 +219,10 @@ const core = await convert(coreInput, 'easylist-ads.json', 30000);
 const supplemental = [];
 for (const [index, file] of supplementalFiles.entries()) supplemental.push({ file, ...await convert(supplementalInput[index], file, supplementalRuleBudget) });
 
-const selectors = [];
-const skippedCosmetic = {};
-const skippedCosmeticSamples = {};
-const skipCosmetic = (reason, line) => {
-  skippedCosmetic[reason] = (skippedCosmetic[reason] || 0) + 1;
-  (skippedCosmeticSamples[reason] ||= []).length < 20 && skippedCosmeticSamples[reason].push(line);
-};
-for (const { body } of sources.filter(source => source.cosmetic)) {
-  for (const line of body.split(/\r?\n/)) {
-    if (!line || line.startsWith('!')) continue;
-    const match = line.match(/^([^#]*)#(#|@#)(.+)$/);
-    if (!match) { skipCosmetic('syntax', line); continue; }
-    const [, domainText, marker, selector] = match;
-    // Keep plain CSS only. Extended selectors, procedural filters and injected styles need a different engine.
-    if (!selector || /[{}]|:|\+|~|\^|\$|\*\*|,|\n/.test(selector) || selector.length > 250) {
-      skipCosmetic('unsupported', line); continue;
-    }
-    if (!/^[\w\s.#>\[\]="'|*()-]+$/.test(selector)) {
-      skipCosmetic('unsupported', line); continue;
-    }
-    const domains = domainText ? domainText.split(',').filter(Boolean) : [];
-    if (domains.some(domain => !/^~?[a-z0-9.-]+$/i.test(domain))) {
-      skipCosmetic('domain', line); continue;
-    }
-    selectors.push({ selector, domains, exception: marker === '@#' });
-  }
-}
-await writeFile(resolve(root, 'content/ad-blocker-selectors.js'), `// Generated from EasyList; attribution and license: rules/README.md\n// Source revision: ${revision}\nglobalThis.adBlockerSelectors = ${JSON.stringify(selectors)};\n`);
+// The cosmetic layer is precomputed in cosmetic.mjs: valid CSS only, generic selectors
+// grouped into one stylesheet, and the per-host work reduced to an index.
+const cosmetic = await buildCosmetic({ root, revision, bodies: sources.filter(source => source.cosmetic).map(source => source.body) });
+
 const report = {
   sources: [
     ...lists.map(({ name, directory, homepage, license }) => ({ name, directory, homepage, license })),
@@ -268,7 +245,7 @@ const report = {
     excludedModifierSamples: Object.values(network).flat().filter(line => excludedModifiers.test(line)).slice(0, 20),
     core, supplemental
   },
-  cosmetic: { output: selectors.length, skipped: skippedCosmetic, skippedSamples: skippedCosmeticSamples }
+  cosmetic
 };
 await writeFile(resolve(root, 'rules/build-report.json'), JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify({ adguard: adguardMeta.map(({ list, Version, selected, skipped }) => ({ list, Version, selected, skipped })), network: report.network, cosmetic: report.cosmetic }, null, 2));

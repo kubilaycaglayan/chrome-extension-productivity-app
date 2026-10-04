@@ -452,6 +452,39 @@
         "getyarn.io#?#.pt3p > div > div:has-text(Advertisement)",
         "theregister.com#?#article.large-12:has-text(SPONSORED FEATURE)"
       ]
+    },
+    "validated": 20163,
+    "generic": {
+      "file": "content/ad-blocker-generic.css",
+      "bytes": 189506,
+      "selectors": 12980
+    },
+    "excepted": {
+      "file": "content/ad-blocker-excepted.js",
+      "entries": 275,
+      "selectors": 274
+    },
+    "domainRules": {
+      "file": "content/ad-blocker-domain-rules.js",
+      "hosts": 6343,
+      "hides": 11418,
+      "exceptions": 513,
+      "globalExceptions": 0
+    },
+    "dropped": {
+      "consent": 6,
+      "invalid": 0,
+      "cancelledEverywhere": 0,
+      "deadExceptions": 17,
+      "consentSamples": [
+        ".cmp-advertisement",
+        ".cmp-mobile-advertisement",
+        "#cookieConsentUR99472",
+        ".cmp-advertisement__wrapper",
+        "[data-cmp=\"alphaShowcase\"]",
+        "[data-tb-non-consent]"
+      ],
+      "invalidSamples": []
     }
   }
 }
