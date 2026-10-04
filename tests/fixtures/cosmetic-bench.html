@@ -9,20 +9,21 @@
     Served by tools/bench-cosmetic.mjs for both the top document and every frame. The
     harness replaces the "bench:frames" placeholder comment below with same- and
     cross-origin iframes when it serves the top document, and with nothing when it
-    serves a frame. The fixture carries no style element of its own, so every style
-    element the benchmark counts was injected by content/ad-blocker.js.
+    serves a frame. The fixture carries no style element of its own, so a style element
+    the benchmark counts would be one the extension injected -- which it no longer does.
   -->
   <nav id="navigation"><a href="#article">Article</a></nav>
   <!--
-    Real EasyList selectors, verified against content/ad-blocker-selectors.js: three
-    generic hides, one hide scoped to screenrant.com, and one generic hide that
-    screenrant.com excepts, so the benchmark exercises every branch of the current
-    runtime filter.
+    Real EasyList selectors, one for each path a selector can reach a frame by: three
+    generic hides from the registered stylesheet, one hide scoped to screenrant.com that
+    the service worker resolves, one generic hide another host excepts so the frame has to
+    assemble it, and one generic hide screenrant.com itself excepts.
   -->
   <aside id="AD_300">Generic id placement</aside>
   <div data-ad-module="leader">Generic attribute placement</div>
   <figure class="banner-img"><span class="pbl">Generic combinator placement</span></figure>
   <aside class="ad-zone-sidebar-default">Placement scoped to screenrant.com</aside>
+  <aside id="ad-carousel">Excepted on dez.ro, so the frame hides it here</aside>
   <aside class="ad-current">Excepted on screenrant.com, stays visible</aside>
   <article id="article">Article content</article>
   <div id="filler"></div>

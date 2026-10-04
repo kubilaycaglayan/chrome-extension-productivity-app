@@ -1,20 +1,25 @@
-// Baseline benchmark for the cosmetic ad-blocking layer, phase 1 of
-// plans/cosmetic-filtering-performance.md. Loads tests/fixtures/cosmetic-bench.html with
-// two same-origin and three cross-origin frames in headless Chrome over CDP, and records
-// the three numbers the plan is judged on: script evaluation time attributed to the
-// cosmetic content scripts, time to first paint, and total style recalculation.
+// Benchmark for the cosmetic ad-blocking layer of plans/cosmetic-filtering-performance.md.
+// Loads tests/fixtures/cosmetic-bench.html with two same-origin and three cross-origin
+// frames in headless Chrome over CDP, and records the three numbers the plan is judged on:
+// script evaluation time attributed to the cosmetic content script, time to first paint,
+// and total style recalculation. The same command produced the plan's before and after
+// columns; the before run is the commit in which phase 1 added this file.
 //
-// Three scenarios run against the same fixture so the baseline is interpretable: no
-// extension at all (the floor), the cosmetic layer active (the number to improve), and the
-// benchmark host paused (the corpus is still parsed in every frame but nothing is computed
-// or injected, which separates parse cost from filter-and-inject cost).
+// Three scenarios run against the same fixture so the result is interpretable: no extension
+// at all (the floor), the cosmetic layer active (the number the plan moves), and the
+// benchmark host paused. Pausing is no longer a clean floor: the service worker hands no
+// frame any selectors, and the registration excludes the paused host's own documents, but an
+// excludeMatches pattern is matched against each frame's own URL rather than the top frame's,
+// so the two cross-site frames in the fixture still get the generic stylesheet and still pay
+// for it in style recalculation. The assertions below pin that down rather than hide it.
 //
 // One cost cannot be read out of the page: update() runs in the promise callback of the
 // ad-blocker:get response, and Chrome attributes that work to neither a trace event nor
 // Performance.ScriptDuration, so the scenarios above see only its effect on style
-// recalculation. The benchmark therefore times the same three stages directly, running the
-// current algorithm over the shipped corpus in a page's main world, and checks the selector
-// count it produces against the count the browser actually injected.
+// recalculation. The benchmark therefore times that stage directly, running a replica of it
+// over the shipped artifacts in a page's main world, and checks the selector count the
+// replica produces against the sheet the content script actually adopted, read from the
+// content script's own isolated world.
 //
 //   node tools/bench-cosmetic.mjs [--runs=3] [--out=path.json]
 //
@@ -26,8 +31,11 @@ import { createServer } from 'node:https';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const root = resolve(import.meta.dirname, '..');
+// Names the isolated world the content script runs in, so the sheet it adopts can be found.
+const extensionName = JSON.parse(await readFile(resolve(root, 'manifest.json'), 'utf8')).name;
 const options = new Map(process.argv.slice(2).map(argument => {
   const [name, value = ''] = argument.replace(/^--/, '').split('=');
   return [name, value];
@@ -40,21 +48,26 @@ const outPath = options.get('out');
 const SETTLE = 1500;
 
 // The host the fixture is written against: screenrant.com carries five domain-scoped
-// EasyList selectors and excepts four generic ones, so one fixture exercises the generic,
-// domain-scoped and exception branches of the current runtime filter.
+// EasyList selectors and excepts four generic ones, so one fixture exercises every path a
+// selector can now reach a frame by.
 const TOP_HOST = 'screenrant.com';
 const FRAME_HOSTS = [TOP_HOST, TOP_HOST, `static.${TOP_HOST}`, 'bench-frame-one.test', 'bench-frame-two.test'];
 const PROBES = {
+  // Carried by the registered stylesheet, so hidden before the page's first paint.
   genericId: '#AD_300',
   genericAttribute: '[data-ad-module]',
   genericCombinator: '.banner-img > .pbl',
+  // Resolved for this host by the service worker and sent on the ad-blocker:get response.
   hostScoped: '.ad-zone-sidebar-default',
+  // A generic selector some other host cancels, so it cannot sit in the static stylesheet
+  // and the frame has to assemble it: the one cosmetic decision still made per frame.
+  exceptedElsewhere: '#ad-carousel',
+  // Cancelled on this host, so it stays visible however it arrived.
   exceptedOnHost: '.ad-current',
   content: '#article'
 };
-// Kept in step with content/ad-blocker.js, so the measured injection can be checked
-// against the selector set the current runtime computes for TOP_HOST.
-const CONSENT = /(?:cookie|consent|privacy|onetrust|didomi|usercentrics|quantcast|\bcmp\b)/i;
+// Kept in step with content/ad-blocker.js, so the timed replica of its assembly stage can
+// be checked against the sheet the content script really adopted.
 const matches = (site, domain) => site === domain || site.endsWith(`.${domain}`);
 const applies = (domains, site) => {
   const positives = domains.filter(domain => !domain.startsWith('~'));
@@ -62,23 +75,38 @@ const applies = (domains, site) => {
     !domains.some(domain => domain.startsWith('~') && matches(site, domain.slice(1)));
 };
 
-const selectorSource = await readFile(resolve(root, 'content/ad-blocker-selectors.js'), 'utf8');
-const entries = JSON.parse(selectorSource.match(/globalThis\.adBlockerSelectors = (\[[\s\S]*\]);/)[1]);
-const hostExceptions = new Set(entries.filter(entry => entry.exception && applies(entry.domains, TOP_HOST)).map(entry => entry.selector));
-const hostSelectors = [...new Set(entries
-  .filter(entry => !entry.exception && applies(entry.domains, TOP_HOST) && !hostExceptions.has(entry.selector))
-  .map(entry => entry.selector))].filter(selector => !CONSENT.test(selector));
-const corpus = {
-  file: 'content/ad-blocker-selectors.js',
-  bytes: Buffer.byteLength(selectorSource),
-  entries: entries.length,
-  generic: entries.filter(entry => !entry.domains.length).length,
-  domainScoped: entries.filter(entry => entry.domains.length).length,
-  exceptions: entries.filter(entry => entry.exception).length,
-  uniqueSelectors: new Set(entries.map(entry => entry.selector)).size,
+// What a frame loads, and what it no longer loads. The host map is read here the way the
+// service worker reads it, through the same resolver, so the selector set the replica below
+// is checked against is the one the extension would really send.
+const exceptedSource = await readFile(resolve(root, 'content/ad-blocker-excepted.js'), 'utf8');
+const excepted = JSON.parse(exceptedSource.match(/^globalThis\.adBlockerExcepted = (.*);$/m)[1]);
+const contentScriptSource = await readFile(resolve(root, 'content/ad-blocker.js'), 'utf8');
+const genericCss = await readFile(resolve(root, 'content/ad-blocker-generic.css'), 'utf8');
+// One display:none rule per line, each grouping a bounded number of selectors; see the
+// CSSSelector entry limit in tools/ad-blocker-build/cosmetic.mjs.
+const genericRules = [...genericCss.matchAll(/^([^{}]+)\{display:none!important\}$/gm)].map(match => match[1].split(','));
+const genericSelectors = genericRules.flat();
+const domainRulesPath = resolve(root, 'content/ad-blocker-domain-rules.js');
+const domainRules = await import(pathToFileURL(domainRulesPath));
+const { resolveCosmetic } = await import(pathToFileURL(resolve(root, 'modules/ad-blocker.js')));
+const hostScoped = resolveCosmetic(domainRules, TOP_HOST);
+// The frame's whole computation, replicated from content/ad-blocker.js.
+const hostCancelled = new Set(excepted.filter(entry => applies(entry.d, TOP_HOST)).map(entry => entry.s));
+const frameSelectors = [...new Set([...excepted.map(entry => entry.s), ...hostScoped])].filter(selector => !hostCancelled.has(selector));
+const artifacts = {
   host: TOP_HOST,
-  supportsCallsPerFrame: hostSelectors.length,
-  styleElementsPerFrame: Math.ceil(hostSelectors.length / 250)
+  perFrameBytes: Buffer.byteLength(exceptedSource) + Buffer.byteLength(contentScriptSource),
+  perFrameFiles: {
+    'content/ad-blocker-excepted.js': { bytes: Buffer.byteLength(exceptedSource), entries: excepted.length },
+    'content/ad-blocker.js': { bytes: Buffer.byteLength(contentScriptSource) }
+  },
+  generic: { file: 'content/ad-blocker-generic.css', bytes: Buffer.byteLength(genericCss), rules: genericRules.length, selectors: genericSelectors.length },
+  // Pulled in by the service worker once per wake, never by a frame.
+  serviceWorker: { file: 'content/ad-blocker-domain-rules.js', bytes: (await readFile(domainRulesPath)).byteLength },
+  hostScoped: hostScoped.length,
+  frameAssembled: frameSelectors.length,
+  supportsCallsPerFrame: 0,
+  styleElementsPerFrame: 0
 };
 
 const fixture = await readFile(resolve(root, 'tests/fixtures/cosmetic-bench.html'), 'utf8');
@@ -210,6 +238,18 @@ try {
     return totals;
   }
 
+  // The sheet the content script adopts lives in the extension's isolated world, so it is
+  // read there rather than from the page: the page sees its effect on computed style, which
+  // the probes above cover, but not the sheet object itself.
+  const collectSheet = `(() => {
+    const sheets = document.adoptedStyleSheets || [];
+    return {
+      url: location.href,
+      adopted: sheets.length,
+      selectors: sheets.reduce((total, sheet) => total + (sheet.cssRules[0]?.selectorText.split(',').length ?? 0), 0)
+    };
+  })()`;
+
   // Evaluated once per document, in that document's own main-world execution context, so
   // the reading does not depend on how Chrome happened to distribute frames over processes.
   const collect = `(() => {
@@ -227,7 +267,6 @@ try {
       firstPaint: paint['first-paint'] ?? null,
       firstContentfulPaint: paint['first-contentful-paint'] ?? null,
       styleElements: sheets.length,
-      injectedSelectors: sheets.reduce((total, sheet) => total + (sheet.textContent.match(/,/g)?.length ?? 0) + 1, 0),
       elements: document.querySelectorAll('*').length,
       hidden
     };
@@ -241,10 +280,17 @@ try {
     // context. Both are collected, so the frame count does not depend on process allocation.
     const frameSessions = [];
     const contexts = [];
+    // A content script runs in an isolated world, which is reported as a non-default
+    // execution context named after the extension.
+    const isolated = [];
     const off = on(message => {
       if (message.method === 'Target.attachedToTarget' && message.params.targetInfo.type === 'iframe') frameSessions.push(message.params.sessionId);
-      if (message.method === 'Runtime.executionContextCreated' && message.sessionId === session
-        && message.params.context.auxData?.isDefault && message.params.context.origin.startsWith('https://')) contexts.push(message.params.context.id);
+      if (message.method !== 'Runtime.executionContextCreated' || message.sessionId !== session) return;
+      const { context } = message.params;
+      // A page's own context carries the page origin; a content script's isolated world
+      // carries the extension origin and is named after the extension.
+      if (context.auxData?.isDefault) { if (context.origin.startsWith('https://')) contexts.push(context.id); }
+      else if (context.auxData?.type === 'isolated' && context.name === extensionName) isolated.push(context.id);
     });
     try {
       await call('Page.enable', {}, session);
@@ -260,7 +306,9 @@ try {
       const documents = [];
       for (const contextId of contexts) documents.push(await evaluate(collect, session, contextId));
       for (const frameSession of frameSessions) documents.push(await evaluate(collect, frameSession));
-      return { documents, trace: summarize(events) };
+      const sheets = [];
+      for (const contextId of isolated) sheets.push(await evaluate(collectSheet, session, contextId));
+      return { documents, sheets, trace: summarize(events) };
     } finally {
       off();
       await call('Target.closeTarget', { targetId });
@@ -284,7 +332,8 @@ try {
       'top first contentful paint ms': top.firstContentfulPaint,
       'slowest first contentful paint ms': paints.length ? Math.max(...paints) : null,
       'style elements per document': Math.max(...sample.documents.map(document => document.styleElements)),
-      'injected selectors per document': Math.max(...sample.documents.map(document => document.styleElements ? document.injectedSelectors : 0))
+      'adopted sheets per document': Math.max(0, ...sample.sheets.map(sheet => sheet.adopted)),
+      'frame sheet selectors': Math.max(0, ...sample.sheets.map(sheet => sheet.selectors))
     };
   };
   const median = values => {
@@ -299,7 +348,8 @@ try {
     const rows = samples.map(metrics);
     return {
       name,
-      documents: samples.at(-1).documents.map(({ url, hidden, styleElements, injectedSelectors, elements }) => ({ url, hidden, styleElements, injectedSelectors, elements })),
+      documents: samples.at(-1).documents.map(({ url, hidden, styleElements, elements }) => ({ url, hidden, styleElements, elements })),
+      sheets: samples.at(-1).sheets,
       median: Object.fromEntries(Object.keys(rows[0]).map(key => [key, median(rows.map(row => row[key]))])),
       runs: rows
     };
@@ -326,44 +376,39 @@ try {
   await wait(300);
   results.push(await scenario('cosmetic paused'));
 
-  // The filter-and-inject stage, timed one stage at a time. This is a replica of update() in
+  // The assembly stage, timed on its own. This is a replica of update() in
   // content/ad-blocker.js rather than the content script itself, so it is only trustworthy
-  // as long as it produces the selector set the browser was seen to inject; that is asserted
-  // below. The host stays paused, so the page is quiet while it runs.
+  // as long as it produces the sheet the content script really adopted; that is asserted
+  // below against the reading from the extension's isolated world. The host stays paused, so
+  // the page is quiet while it runs, and the replica is handed the same inputs the frame
+  // gets: the excepted list it loads and the selectors the service worker resolved for it.
   const stageTarget = (await call('Target.createTarget', { url: topUrl })).result.targetId;
   const stageSession = (await call('Target.attachToTarget', { targetId: stageTarget, flatten: true })).result.sessionId;
   await wait(SETTLE);
-  await evaluate(`${selectorSource}\nundefined;`, stageSession);
   const stageSamples = await evaluate(`(() => {
     const topSite = ${JSON.stringify(TOP_HOST)};
-    const entries = globalThis.adBlockerSelectors;
+    const excepted = ${JSON.stringify(excepted)};
+    const scoped = ${JSON.stringify(hostScoped)};
     const matches = (site, domain) => site === domain || site.endsWith('.' + domain);
     const applies = domains => {
-      const positives = domains.filter(domain => !domain.startsWith('~'));
-      return (!positives.length || positives.some(domain => matches(topSite, domain))) &&
+      const placed = domains.filter(domain => !domain.startsWith('~'));
+      return (!placed.length || placed.some(domain => matches(topSite, domain))) &&
         !domains.some(domain => domain.startsWith('~') && matches(topSite, domain.slice(1)));
     };
     const samples = [];
     for (let iteration = 0; iteration < ${runs}; iteration++) {
       const start = performance.now();
-      const exceptions = new Set(entries.filter(entry => entry.exception && applies(entry.domains)).map(entry => entry.selector));
-      const kept = [...new Set(entries.filter(entry => !entry.exception && applies(entry.domains) && !exceptions.has(entry.selector)).map(entry => entry.selector))]
-        .filter(selector => !${CONSENT}.test(selector));
-      const filtered = performance.now();
-      const supported = kept.filter(selector => CSS.supports('selector(' + selector + ')'));
-      const checked = performance.now();
-      const styles = [];
-      for (let index = 0; index < supported.length; index += 250) {
-        const style = document.createElement('style');
-        style.textContent = supported.slice(index, index + 250).join(',') + ' { display: none !important; }';
-        (document.head || document.documentElement).append(style);
-        styles.push(style);
-      }
-      const injected = performance.now();
-      for (const style of styles) style.remove();
+      const cancelled = new Set(excepted.filter(entry => applies(entry.d)).map(entry => entry.s));
+      const selectors = [...new Set([...excepted.map(entry => entry.s), ...scoped])].filter(selector => !cancelled.has(selector));
+      const assembled = performance.now();
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(selectors.join(',') + '{display:none!important}');
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+      const adopted = performance.now();
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(adoptedSheet => adoptedSheet !== sheet);
       samples.push({
-        'selectors': supported.length, 'style elements': styles.length,
-        'filter ms': filtered - start, 'CSS.supports ms': checked - filtered, 'inject ms': injected - checked
+        'selectors': selectors.length, 'style elements': 0,
+        'assemble ms': assembled - start, 'adopt ms': adopted - assembled
       });
     }
     return samples;
@@ -377,54 +422,80 @@ try {
   // so the structural facts behind the numbers are asserted rather than assumed.
   const byName = Object.fromEntries(results.map(result => [result.name, result]));
   for (const result of results) assert.equal(result.median.documents, 1 + FRAME_HOSTS.length, `${result.name}: expected one top document and ${FRAME_HOSTS.length} frames`);
-  for (const document of byName['cosmetic active'].documents) {
-    for (const probe of ['genericId', 'genericAttribute', 'genericCombinator', 'hostScoped']) {
+  const active = byName['cosmetic active'];
+  for (const document of active.documents) {
+    // Three from the registered stylesheet, one from the service worker's resolution, one
+    // the frame assembled: every path a selector can reach a frame by is exercised.
+    for (const probe of ['genericId', 'genericAttribute', 'genericCombinator', 'hostScoped', 'exceptedElsewhere']) {
       assert.equal(document.hidden[probe], true, `cosmetic active: ${PROBES[probe]} should be hidden in ${document.url}`);
     }
     assert.equal(document.hidden.exceptedOnHost, false, `cosmetic active: ${PROBES.exceptedOnHost} is excepted on ${TOP_HOST} and should stay visible in ${document.url}`);
     assert.equal(document.hidden.content, false, `cosmetic active: page content should stay visible in ${document.url}`);
+    // The whole layer is now a registered stylesheet and one constructed sheet, so a style
+    // element anywhere would mean the old injection path came back.
+    assert.equal(document.styleElements, 0, `cosmetic active: ${document.url} should carry no style element`);
+  }
+  for (const document of byName['no extension'].documents) {
+    for (const probe of ['genericId', 'genericAttribute', 'genericCombinator', 'exceptedElsewhere', 'hostScoped']) {
+      assert.equal(document.hidden[probe], false, `no extension: ${PROBES[probe]} should stay visible in ${document.url}`);
+    }
+    assert.equal(document.styleElements, 0, `no extension: nothing should be injected into ${document.url}`);
+  }
+  const onPausedHost = url => {
+    const { hostname } = new URL(url);
+    return hostname === TOP_HOST || hostname.endsWith(`.${TOP_HOST}`);
+  };
+  for (const document of byName['cosmetic paused'].documents) {
+    // Both per-host halves go quiet everywhere, because the service worker decides from the
+    // top frame's host and hands a paused page nothing.
+    for (const probe of ['exceptedElsewhere', 'hostScoped']) {
+      assert.equal(document.hidden[probe], false, `cosmetic paused: ${PROBES[probe]} should stay visible in ${document.url}`);
+    }
+    // The registered stylesheet is excluded per document, so a cross-site frame inside the
+    // paused page keeps it. That is the cost of applying it before the frame can ask who the
+    // top frame is, and it is a narrowing of what pausing used to cover.
+    assert.equal(document.hidden.genericId, !onPausedHost(document.url),
+      `cosmetic paused: ${PROBES.genericId} should be ${onPausedHost(document.url) ? 'visible' : 'hidden'} in ${document.url}`);
+    assert.equal(document.styleElements, 0, `cosmetic paused: nothing should be injected into ${document.url}`);
   }
   for (const name of ['no extension', 'cosmetic paused']) {
-    for (const document of byName[name].documents) {
-      assert.equal(document.hidden.genericId, false, `${name}: ${PROBES.genericId} should stay visible in ${document.url}`);
-      assert.equal(document.styleElements, 0, `${name}: nothing should be injected into ${document.url}`);
-    }
+    assert.equal(byName[name].median['frame sheet selectors'], 0, `${name}: the frame should adopt no sheet`);
   }
-  const injected = byName['cosmetic active'].median['injected selectors per document'];
-  assert.equal(stages.selectors, injected, 'the timed replica of update() must produce the selector set the browser was seen to inject');
-  if (byName['cosmetic active'].median['cosmetic script evaluations'] === 0) {
+  const adopted = active.median['frame sheet selectors'];
+  assert.equal(active.median['adopted sheets per document'], 1, 'the frame should adopt exactly one sheet');
+  assert.equal(stages.selectors, adopted, 'the timed replica of update() must produce the sheet the content script really adopted');
+  assert.equal(adopted, artifacts.frameAssembled, 'the adopted sheet must match what the shipped artifacts resolve for this host');
+  if (active.median['cosmetic script evaluations'] === 0) {
     console.warn('WARNING: the trace carried no EvaluateScript event for content/ad-blocker*, so the cosmetic script time reads as zero.');
   }
 
   const columns = results.map(result => result.name);
   const width = Math.max(...Object.keys(results[0].median).map(key => key.length));
   const format = value => value === null ? '-' : (Number.isInteger(value) ? String(value) : value.toFixed(1));
-  console.log(`\nCosmetic filtering baseline, median of ${runs} run${runs === 1 ? '' : 's'} on ${topUrl} with ${FRAME_HOSTS.length} frames`);
+  console.log(`\nCosmetic filtering measurement, median of ${runs} run${runs === 1 ? '' : 's'} on ${topUrl} with ${FRAME_HOSTS.length} frames`);
   console.log(`${'metric'.padEnd(width)}  ${columns.map(name => name.padStart(16)).join('  ')}`);
   for (const key of Object.keys(results[0].median)) {
     console.log(`${key.padEnd(width)}  ${results.map(result => format(result.median[key]).padStart(16)).join('  ')}`);
   }
-  const active = byName['cosmetic active'];
-  console.log(`\nFilter and inject per frame on ${TOP_HOST}, median of ${runs} iteration${runs === 1 ? '' : 's'}:`
-    + ` ${stages['filter ms'].toFixed(1)} ms filtering the corpus,`
-    + ` ${stages['CSS.supports ms'].toFixed(1)} ms in CSS.supports(),`
-    + ` ${stages['inject ms'].toFixed(1)} ms inserting ${stages['style elements']} style elements.`);
+  console.log(`\nAssembly per frame on ${TOP_HOST}, median of ${runs} iteration${runs === 1 ? '' : 's'}:`
+    + ` ${stages['assemble ms'].toFixed(1)} ms evaluating ${excepted.length} exception rules and unioning in`
+    + ` ${hostScoped.length} resolved selector${hostScoped.length === 1 ? '' : 's'},`
+    + ` ${stages['adopt ms'].toFixed(1)} ms building and adopting one sheet of ${stages.selectors} selectors.`
+    + ` No CSS.supports() call and no style element.`);
   console.log(`V8's code cache makes the first navigation after an extension load the expensive one:`
     + ` ${active.runs[0]['cosmetic script ms (all frames)'].toFixed(1)} ms of cosmetic script across ${active.median.documents} documents on the first,`
     + ` ${active.runs.at(-1)['cosmetic script ms (all frames)'].toFixed(1)} ms on the last.`);
-  console.log(`\nCorpus: ${corpus.bytes.toLocaleString('en-US')} bytes parsed per frame, ${corpus.entries.toLocaleString('en-US')} entries`
-    + ` (${corpus.generic.toLocaleString('en-US')} generic, ${corpus.domainScoped.toLocaleString('en-US')} domain-scoped, ${corpus.exceptions} exceptions),`
-    + ` ${corpus.uniqueSelectors.toLocaleString('en-US')} unique selectors.`);
-  console.log(`On ${TOP_HOST} the current runtime filter keeps ${corpus.supportsCallsPerFrame.toLocaleString('en-US')} selectors,`
-    + ` so it makes that many CSS.supports() calls and injects ${corpus.styleElementsPerFrame} style elements per frame;`
-    + ` the browser injected ${injected === null ? 'none' : injected.toLocaleString('en-US')},`
-    + ` meaning CSS.supports() rejected ${injected === null ? 'n/a' : corpus.supportsCallsPerFrame - injected}.`);
+  console.log(`\nPer frame: ${artifacts.perFrameBytes.toLocaleString('en-US')} bytes parsed`
+    + ` (${Object.entries(artifacts.perFrameFiles).map(([file, data]) => `${file} ${data.bytes.toLocaleString('en-US')}`).join(', ')}).`);
+  console.log(`Ahead of the frame: ${artifacts.generic.selectors.toLocaleString('en-US')} generic selectors in`
+    + ` ${artifacts.generic.file} as ${artifacts.generic.rules} registered rules over ${artifacts.generic.bytes.toLocaleString('en-US')} bytes, applied before first paint;`
+    + ` ${artifacts.serviceWorker.bytes.toLocaleString('en-US')} bytes of host map in ${artifacts.serviceWorker.file}, parsed once per service worker wake.`);
 
   if (outPath) {
     await writeFile(resolve(root, outPath), `${JSON.stringify({
       generatedAt: new Date().toISOString(), chrome: version.Browser, runs, settleMs: SETTLE,
       fixture: { top: topUrl, frames: FRAME_HOSTS.map(host => `https://${host}/frame`) },
-      probes: PROBES, corpus, filterAndInject: { median: stages, iterations: stageSamples }, scenarios: results
+      probes: PROBES, artifacts, assembly: { median: stages, iterations: stageSamples }, scenarios: results
     }, null, 2)}\n`);
     console.log(`\nWrote ${outPath}`);
   }
