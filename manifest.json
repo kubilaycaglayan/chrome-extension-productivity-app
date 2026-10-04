@@ -40,7 +40,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "shared/cookie-accepter-settings.js",
         "content/cookie-accepter.js"
@@ -50,8 +52,13 @@
       "match_about_blank": true
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/ad-blocker-selectors.js", "content/ad-blocker.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/ad-blocker-selectors.js",
+        "content/ad-blocker.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     },
@@ -107,18 +114,32 @@
       "run_at": "document_start"
     },
     {
-      "matches": ["https://github.com/*/*"],
-      "js": ["content/github-creation-date.js"],
+      "matches": [
+        "https://github.com/*/*"
+      ],
+      "js": [
+        "content/github-creation-date.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://calendar.google.com/calendar/*"],
-      "js": ["content/calendar-highlight-today.js"],
+      "matches": [
+        "https://calendar.google.com/calendar/*"
+      ],
+      "js": [
+        "content/calendar-highlight-today.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["shared/x-keywords.js", "content/x-keyword-filter.js"],
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": [
+        "shared/x-keywords.js",
+        "content/x-keyword-filter.js"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -133,8 +154,16 @@
   },
   "declarative_net_request": {
     "rule_resources": [
-      { "id": "easylist_ads", "enabled": true, "path": "rules/easylist-ads.json" },
-      { "id": "easylist_ads_extra", "enabled": false, "path": "rules/easylist-ads-extra.json" }
+      {
+        "id": "easylist_ads",
+        "enabled": true,
+        "path": "rules/easylist-ads.json"
+      },
+      {
+        "id": "easylist_ads_extra",
+        "enabled": false,
+        "path": "rules/easylist-ads-extra.json"
+      }
     ]
   }
 }

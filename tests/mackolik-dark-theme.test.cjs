@@ -36,7 +36,10 @@ function run() {
 
   const css = context.mackolikDarkThemeRules;
   const cleanup = moduleStart();
-  assert.equal(style.textContent, css, "The module injects the generated rules");
+  assert.ok(style.textContent.startsWith(css), "The module injects the generated rules");
+  const datepickerCss = style.textContent.slice(css.length);
+  assert.match(datepickerCss, /#ui-datepicker-div \.ui-datepicker-calendar td \.ui-state-default/, "Date tiles have a dark override");
+  assert.match(datepickerCss, /#ui-datepicker-div \.ui-datepicker-calendar td \.ui-state-active/, "The selected day stays distinct");
   // Canli-Sonuclar loads LiveScore.css a second time from inside <body>, so a
   // sheet parked in <head> loses every !important tie. Past </body> it wins.
   assert.equal(html.lastElementChild, style, "Our sheet is the last child of <html>");
