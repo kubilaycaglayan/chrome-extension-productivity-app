@@ -3,7 +3,11 @@
 <head><meta charset="utf-8"><title>Ad blocker regression fixture</title></head>
 <body>
   <nav id="navigation"><a href="#article">Article</a></nav>
+  <!-- #AdBox2 is a generic EasyList hide, which content/ad-blocker-generic.css carries;
+       #ad-carousel is one of the generic selectors a host cancels, so the content script
+       assembles it per frame. The two cover both halves of the cosmetic layer. -->
   <aside id="AdBox2">Ad placement</aside>
+  <aside id="ad-carousel">Ad carousel</aside>
   <article id="article">Article content</article>
   <form id="login"><input aria-label="Username" name="username"><button type="submit">Sign in</button></form>
   <button id="checkout" type="button">Continue to checkout</button>

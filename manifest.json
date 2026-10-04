@@ -56,7 +56,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/ad-blocker-selectors.js",
+        "content/ad-blocker-excepted.js",
         "content/ad-blocker.js"
       ],
       "run_at": "document_start",

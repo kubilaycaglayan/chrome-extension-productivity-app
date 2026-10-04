@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, "..");
 const settings = readFileSync(path.join(root, "shared/cookie-accepter-settings.js"), "utf8");
 const content = readFileSync(path.join(root, "content/cookie-accepter.js"), "utf8");
 const adBlocker = readFileSync(path.join(root, "content/ad-blocker.js"), "utf8");
+const excepted = readFileSync(path.join(root, "content/ad-blocker-excepted.js"), "utf8");
 const manifest = JSON.parse(readFileSync(path.join(root, "manifest.json"), "utf8"));
 const popup = readFileSync(path.join(root, "popup/popup.js"), "utf8");
 const popupHtml = readFileSync(path.join(root, "popup/popup.html"), "utf8");
@@ -100,25 +101,29 @@ function settingsPage() {
 }
 
 function adCompatibilityPage(adEnabled) {
+  // The ad blocker's shipped excepted list is loaded as it ships, so this also asserts that
+  // no consent selector reached it: the build drops them, and the content script no longer
+  // filters per frame. `.ad-banner` stands in for what the service worker resolves.
   return `<!doctype html><html><head></head><body>
     <div id="cookieConsentUR99472">Consent container <button>Accept all</button></div>
     <div id="onetrust-banner-sdk"><button id="onetrust-accept-btn-handler">Allow all</button></div>
     <div class="ad-banner">Advertisement</div>
+    <div id="ad-carousel">Ad carousel</div>
     <script>
       let clicks = 0;
       const changed = [];
       window.chrome = {
         storage:{local:{get:async keys => Object.fromEntries(keys.map(key => [key, key === 'moduleEnabled:cookie-accepter' ? true : key === 'moduleEnabled:ad-blocker' ? ${adEnabled} : []]))},onChanged:{addListener:fn => changed.push(fn)}},
-        runtime:{sendMessage:async () => ({ok:true,topSite:'localhost',enabled:${adEnabled},sites:[]})}
+        runtime:{sendMessage:async () => ({ok:true,topSite:'localhost',enabled:${adEnabled},sites:[],cosmetic:${adEnabled ? "['.ad-banner']" : '[]'}})}
       };
       document.querySelector('#onetrust-accept-btn-handler').onclick = () => { clicks++; };
-      globalThis.adBlockerSelectors = [
-        {selector:'#cookieConsentUR99472',domains:[],exception:false},
-        {selector:'#onetrust-banner-sdk',domains:[],exception:false},
-        {selector:'.ad-banner',domains:[],exception:false}
-      ];
-    </script><script>${adBlocker}</script><script>${settings}</script><script>${content}</script>
-    <script>setTimeout(() => document.body.dataset.results = JSON.stringify({clicks,styles:[...document.querySelectorAll('style')].map(style=>style.textContent)}),800);</script>
+    </script><script>${excepted}</script><script>${adBlocker}</script><script>${settings}</script><script>${content}</script>
+    <script>setTimeout(() => document.body.dataset.results = JSON.stringify({
+      clicks,
+      sheets: document.adoptedStyleSheets.length,
+      hidden: Object.fromEntries(['.ad-banner', '#ad-carousel', '#cookieConsentUR99472', '#onetrust-banner-sdk']
+        .map(selector => [selector, getComputedStyle(document.querySelector(selector)).display === 'none']))
+    }), 800);</script>
   </body></html>`;
 }
 
@@ -292,10 +297,11 @@ function page(mode) {
       assert.ok(adMatch, `Missing ad compatibility results for ${route}`);
       const result = JSON.parse(adMatch[1].replaceAll("&quot;", '"'));
       assert.equal(result.clicks, 1, `Consent remains actionable with the ad blocker ${route === "ad-on" ? "on" : "off"}`);
-      if (route === "ad-on") {
-        assert.ok(result.styles.some(style => style.includes(".ad-banner")), "Ad blocker keeps its regular cosmetic rules");
-        assert.ok(result.styles.every(style => !/cookieConsentUR99472|onetrust-banner-sdk/i.test(style)), "Ad blocker leaves consent selectors visible");
-      }
+      assert.equal(result.sheets, route === "ad-on" ? 1 : 0, "The cosmetic layer is one adopted stylesheet, or none at all");
+      assert.equal(result.hidden[".ad-banner"], route === "ad-on", "Ad blocker keeps hiding what the service worker resolved");
+      assert.equal(result.hidden["#ad-carousel"], route === "ad-on", "Ad blocker keeps hiding a generic selector this host does not cancel");
+      assert.equal(result.hidden["#cookieConsentUR99472"], false, "Ad blocker leaves consent selectors visible");
+      assert.equal(result.hidden["#onetrust-banner-sdk"], false, "Ad blocker leaves consent selectors visible");
     }
     const { stdout: popupOutput } = await run(chrome, ["--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-gpu", "--virtual-time-budget=1600", "--dump-dom", `http://localhost:${server.address().port}/popup/`], { maxBuffer: 1024 * 1024 });
     assert.doesNotMatch(popupOutput, /data-popup-error=/);

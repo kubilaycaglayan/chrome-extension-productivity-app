@@ -32,6 +32,12 @@ test('packaged rules are within guaranteed core and supplemental quotas, with ex
   assert.equal(supplemental.some(rules => rules.some(rule => rule.action.type !== 'block')), false);
   const cosmetic = manifest.content_scripts.find(entry => entry.js.includes('content/ad-blocker.js'));
   assert.equal(cosmetic.all_frames, true);
+  assert.equal(cosmetic.run_at, 'document_start');
+  // A frame is handed the 275 generic rules some host cancels and nothing else; the
+  // 1.4 MB corpus it used to parse per frame is now resolved at build time and in the
+  // service worker.
+  assert.deepEqual(cosmetic.js, ['content/ad-blocker-excepted.js', 'content/ad-blocker.js']);
+  assert.ok(fs.statSync(path.join(root, 'content/ad-blocker-excepted.js')).size < 50000);
 });
 
 // The host map is precomputed, so the service worker's whole job is the suffix walk:
@@ -105,6 +111,106 @@ test('the shipped host map is a lookup table of plain selectors', () => {
     const resolved = resolve(host);
     for (const value of cancels) assert.equal(resolved.includes(selectorOf(value)), false, `${host} must not resolve ${selectorOf(value)}`);
   }
+});
+
+// The content script's whole job: keep an excepted generic selector unless one of its
+// exception rules names this host, add the selectors the service worker resolved, and
+// adopt one stylesheet. Run against a stub realm with no `CSS`, so a script that reached
+// for `CSS.supports()` again would throw rather than quietly cost a frame 4 ms.
+const runContentScript = async ({ host, enabled = true, sites = [], cosmetic = [], excepted = [] }) => {
+  const source = fs.readFileSync(path.join(root, 'content/ad-blocker.js'), 'utf8');
+  const changed = [];
+  const context = {
+    console,
+    location: { hostname: host },
+    document: { adoptedStyleSheets: [] },
+    CSSStyleSheet: class { replaceSync(text) { this.text = text; } },
+    adBlockerExcepted: excepted,
+    chrome: {
+      runtime: { sendMessage: async () => ({ ok: true, topSite: host, enabled, sites, cosmetic }) },
+      storage: { onChanged: { addListener(fn) { changed.push(fn); } } }
+    }
+  };
+  vm.runInNewContext(source, context);
+  const settle = () => new Promise(resolve => setImmediate(resolve));
+  await settle();
+  const selectors = () => {
+    const sheets = context.document.adoptedStyleSheets;
+    if (!sheets.length) return [];
+    assert.equal(sheets.length, 1, 'the frame adopts one stylesheet');
+    const [, text, rest] = sheets[0].text.match(/^(.*)\{display:none!important\}$/) || [];
+    assert.ok(text && !rest, `unexpected sheet text: ${sheets[0].text}`);
+    return text.split(',');
+  };
+  return {
+    selectors,
+    async change(values) {
+      changed.forEach(fn => fn(Object.fromEntries(Object.entries(values).map(([key, newValue]) => [key, { newValue }])), 'local'));
+      await settle();
+      return selectors();
+    }
+  };
+};
+
+test('the frame assembles one sheet from the excepted list and the resolved selectors', async () => {
+  // `.generic-b` is both an excepted generic selector and a selector this host scopes, so
+  // it arrives twice and an exception on it has to cancel both copies.
+  const excepted = [
+    { s: '.generic-a', d: ['cancels.example'] },
+    { s: '.generic-b', d: ['other.example'] },
+    { s: '.generic-c', d: ['~keep.example'] }
+  ];
+  const cosmetic = ['.host-ad', '.generic-b'];
+  const run = options => runContentScript({ excepted, cosmetic, ...options });
+
+  // `.generic-c` is cancelled by a `~keep.example` exception, which applies to every host
+  // but that one, so it is absent everywhere below except on keep.example itself.
+  const plain = await run({ host: 'nothing-matches-this.invalid' });
+  assert.deepEqual(plain.selectors(), ['.generic-a', '.generic-b', '.host-ad']);
+  // An exception reaches a subdomain of the host it names, and cancels the scoped copy too.
+  assert.deepEqual((await run({ host: 'www.other.example' })).selectors(), ['.generic-a', '.host-ad']);
+  assert.deepEqual((await run({ host: 'cancels.example' })).selectors(), ['.generic-b', '.host-ad']);
+  assert.deepEqual((await run({ host: 'keep.example' })).selectors(), ['.generic-a', '.generic-b', '.generic-c', '.host-ad']);
+  // Paused and disabled, the service worker resolves nothing and the frame adopts nothing.
+  assert.deepEqual((await run({ host: 'paused.example', sites: ['paused.example'], cosmetic: [] })).selectors(), []);
+  assert.deepEqual((await run({ host: 'off.example', enabled: false, cosmetic: [] })).selectors(), []);
+
+  // A setting change swaps the sheet rather than recomputing anything: pausing drops it
+  // at once, and resuming asks the service worker for the host's selectors again.
+  const live = await run({ host: 'live.example' });
+  assert.deepEqual(live.selectors(), ['.generic-a', '.generic-b', '.host-ad']);
+  assert.deepEqual(await live.change({ adBlockerPausedSites: ['live.example'] }), []);
+  assert.deepEqual(await live.change({ adBlockerPausedSites: [] }), ['.generic-a', '.generic-b', '.host-ad']);
+  assert.deepEqual(await live.change({ 'moduleEnabled:ad-blocker': false }), []);
+  assert.deepEqual(await live.change({ 'moduleEnabled:ad-blocker': true }), ['.generic-a', '.generic-b', '.host-ad']);
+});
+
+test('the shipped excepted list is generic selectors with the hosts that cancel them', () => {
+  const excepted = JSON.parse(fs.readFileSync(path.join(root, 'content/ad-blocker-excepted.js'), 'utf8')
+    .match(/^globalThis\.adBlockerExcepted = (.*);$/m)[1]);
+  assert.ok(excepted.length > 200 && excepted.length < 500);
+  assert.ok(excepted.every(entry => typeof entry.s === 'string' && entry.s
+    && Array.isArray(entry.d) && entry.d.length && entry.d.every(domain => typeof domain === 'string' && domain === domain.toLowerCase())));
+  const generic = fs.readFileSync(path.join(root, 'content/ad-blocker-generic.css'), 'utf8');
+  const genericSelectors = generic.match(/^(.*)\{display:none!important\}$/m)[1].split(',');
+  assert.ok(genericSelectors.length > 12000);
+  // The generic stylesheet is static and injected whole, so no selector any host cancels
+  // may be in it; those are exactly the ones the frame assembles instead.
+  const cancelled = new Set(excepted.map(entry => entry.s));
+  assert.deepEqual(genericSelectors.filter(selector => cancelled.has(selector)), []);
+
+  // Cookie and consent banners are left to the cookie-accepter module, which clicks
+  // through them; a hidden banner is one the visitor can never dismiss. The exclusion
+  // used to run in every frame and now runs once, at build time, over every artifact.
+  const consent = /(?:cookie|consent|privacy|onetrust|didomi|usercentrics|quantcast|\bcmp\b)/i;
+  const hides = JSON.parse(fs.readFileSync(path.join(root, 'content/ad-blocker-domain-rules.js'), 'utf8')
+    .match(/^export const hides = (.*);$/m)[1]);
+  const shipped = [
+    ...genericSelectors,
+    ...excepted.map(entry => entry.s),
+    ...Object.values(hides).flat().map(value => Array.isArray(value) ? value[0] : value)
+  ];
+  assert.deepEqual(shipped.filter(selector => consent.test(selector)), []);
 });
 
 test('background serializes global and site changes and keeps DNR state aligned', async () => {
