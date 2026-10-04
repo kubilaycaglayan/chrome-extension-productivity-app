@@ -1,0 +1,6993 @@
+{
+  "source": "https://github.com/duckduckgo/autoconsent (data/coverage.json and tests/*.spec.ts, MPL-2.0)",
+  "retrieved": "2026-10-04",
+  "note": "Site lists and CMP labels only. Refresh with tools/refresh-cookie-cmp-sites.mjs; score with tools/score-cookie-test.mjs.",
+  "fixturePages": [
+    {
+      "url": "https://privacy-test-pages.site/features/autoconsent/",
+      "label": "normal popup"
+    },
+    {
+      "url": "https://privacy-test-pages.site/features/autoconsent/banner.html",
+      "label": "cookie banner element"
+    },
+    {
+      "url": "https://privacy-test-pages.site/features/autoconsent/heuristic.html",
+      "label": "heuristic-only popup"
+    },
+    {
+      "url": "https://privacy-test-pages.site/features/autoconsent/filterlist.html",
+      "label": "filterlist popup"
+    },
+    {
+      "url": "https://privacy-test-pages.site/features/autoconsent/reload-loop.html",
+      "label": "reload loop guard"
+    }
+  ],
+  "adapters": {
+    "OneTrust": [
+      {
+        "url": "http://www.abus.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.dovoba.de/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://people.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.stage-entertainment.de/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.nationalgeographic.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.nespresso.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://research-information.bris.ac.uk/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://overwatch.blizzard.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.ethicalsuperstore.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.nowtv.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.tillamook.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://h30434.www3.hp.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://oralb.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.dell.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.milwaukeetool.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://stackoverflow.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.lovescout24.de/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.okcupid.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://doodle.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.coca-cola.com/us/en",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.seur.com/es/index.html",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://satsuite.collegeboard.org/sat/dates-deadlines",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://mailchimp.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.accenture.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.zoom.us",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://arstechnica.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB"
+        ]
+      },
+      {
+        "url": "https://www.nvidia.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB"
+        ]
+      },
+      {
+        "url": "https://bitbucket.org/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB"
+        ]
+      },
+      {
+        "url": "https://www.atlassian.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB"
+        ]
+      },
+      {
+        "url": "https://www.newyorker.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.adobe.com/de/",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://about.gitlab.com",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://eu.icebreaker.com/de-de?country=DE",
+        "cmp": "Onetrust",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.jdsports.co.uk/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.columbia.com/c/mens-insulated-puffer-jackets/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.mountainhardwear.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.prana.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.sorel.com/",
+        "cmp": "Onetrust",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      }
+    ],
+    "Cookiebot": [
+      {
+        "url": "http://www.poessl-group.de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.lueneburg.info/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.berlinerbaeder.de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://languagetool.org/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.chamaeleon-reisen.de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.oxfordbus.co.uk/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.blood.co.uk/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.timeshighereducation.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.aber.ac.uk/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.cwgc.org/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.l3harris.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.amainhobbies.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.wordonfire.org/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.earthcam.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://emojiterra.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.wohnen.de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.zwilling.com/de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://forums.cpanel.net/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://tfl.gov.uk",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.vatera.hu/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.bax-shop.nl/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.drukwerkdeal.nl/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.freelance.de/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://www.printdeal.be/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US"
+        ]
+      },
+      {
+        "url": "https://dl.acm.org/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.ifm.org/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.thule.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.dezeen.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.l3harris.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.gog.com/",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://thebelgian.com/en/products/squares/squares-milk-salted-brownie-176g",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://moneycorner.com/en/banknotes/phillippines-100-piso-2025-pick-new-b",
+        "cmp": "Cybotcookiebot",
+        "onlyRegions": [],
+        "skipRegions": []
+      }
+    ],
+    "Didomi": [
+      {
+        "url": "http://www.societe.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.planity.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://mein-mmo.de/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.europcar.de/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.film.at/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.carwow.co.uk/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://getemoji.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.the-shops.co.uk/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://pricespy.co.uk/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.boredpanda.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.marketscreener.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.qobuz.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.netmums.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://giphy.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.msccruisesusa.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://nothing.tech/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US",
+          "FR"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.allocine.fr/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US",
+          "FR"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.boursorama.com/",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US",
+          "FR"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.theoriginalshotels.com/en/hotels/la-villa-vicha",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US",
+          "FR"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://support.didomi.io/set-up-the-absence-of-interaction-as-a-cookie-denial",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US",
+          "FR"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://newrepublic.com/article/162247/andreas-malm-blow-up-pipeline-climate-direct-action",
+        "cmp": "didomi",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      }
+    ],
+    "Usercentrics": [
+      {
+        "url": "http://www.frankfurt-airport.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.chbeck.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.mey.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.idealo.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.aufbau-verlage.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.cottages.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.wslfootball.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.apcoa.co.uk/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.fedex.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "GB",
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://thepuregoldcompany.co.uk/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.office.fedex.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://hyrox.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.sixt.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.tauck.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://bos-fahrzeuge.info/",
+        "cmp": "usercentrics-button",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://docs.typo3.org/",
+        "cmp": "usercentrics-button",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.bsb.de/",
+        "cmp": "usercentrics-button",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.landtag.sachsen.de/",
+        "cmp": "usercentrics-button",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.staerkergegenkrebs.de/",
+        "cmp": "usercentrics-button",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://hornbach.de",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://dm.de",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://usercentrics.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://shopbetreiber-blog.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.kia.com/us/en",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.sportscheck.com/filialen/dortmund/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.idealo.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.condor.com/de/flug-vorbereiten/check-in/vorabend-check-in.jsp",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.cewe.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.commerzbank.de/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.nkd.com/",
+        "cmp": "usercentrics-api",
+        "onlyRegions": [],
+        "skipRegions": []
+      }
+    ],
+    "Quantcast": [
+      {
+        "url": "http://www.miniplay.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.geogebra.org/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://routenplaner24.net/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://podtail.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://ffxiv.consolegameswiki.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "DE"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.manchestereveningnews.co.uk/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.sefton.gov.uk/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.quotev.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.autoevolution.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.hmfckickback.co.uk/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "GB"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.drivemad.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.iphonelife.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "http://www.trustedreviews.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [
+          "US"
+        ],
+        "skipRegions": []
+      },
+      {
+        "url": "https://www.cyclingnews.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.techradar.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.anandtech.com/",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.livescience.com",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://www.gamesradar.com",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      },
+      {
+        "url": "https://time.is/",
+        "cmp": "quantcast",
+        "onlyRegions": [],
+        "skipRegions": [
+          "US",
+          "GB",
+          "FR"
+        ]
+      }
+    ]
+  },
+  "other": [
+    {
+      "url": "http://www.notebookcheck.net/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ultimatespecs.com/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.lexusownersclub.co.uk/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.yourtango.com/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.realitytea.com/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.lgbtqnation.com/",
+      "cmp": "Admiral",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.folger.edu/",
+      "cmp": "Adroll",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://footballgroundguide.com/",
+      "cmp": "AppConsent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bestwordlist.com/",
+      "cmp": "AppConsent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en.akinator.com/",
+      "cmp": "AppConsent",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bestwordlist.com/",
+      "cmp": "AppConsent",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sg-akustik.de/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://tipps-tricks-kniffe.de/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://oakworld.co.uk/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://sailboatdata.com/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.courthousenews.com/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tvseasonspoilers.com/",
+      "cmp": "Complianz banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.taxi.de/",
+      "cmp": "Complianz categories",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.czech-tourist.de/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://vespaforum.de/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wealden.gov.uk/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.callchecker.co.uk/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.techgearlab.com/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ou.edu/",
+      "cmp": "Complianz notice",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://biogena.com/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.jacob.de/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hotwifecaps.com/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.abbywinters.com/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wellcarenow.com/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.everbank.com/",
+      "cmp": "Complianz opt-out",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://aktienfinder.net/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.united.com/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.uclh.nhs.uk/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://esat-tmua.ac.uk/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.3m.com/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dollargeneral.com/",
+      "cmp": "Complianz optin",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://consumer.huawei.com/",
+      "cmp": "Cookie Information Banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://skylum.com/",
+      "cmp": "Cookie Information Banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.puregym.com/",
+      "cmp": "Cookie Information Banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://skylum.com/",
+      "cmp": "Cookie Information Banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.oldiepornos.net/",
+      "cmp": "EU Cookie Law",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.umrechnung-zoll-cm.de/",
+      "cmp": "EU Cookie Law",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://pytutorial.com/",
+      "cmp": "EZoic",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://notopening.com/",
+      "cmp": "EZoic",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://airfryfoods.com/",
+      "cmp": "EZoic",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.diydoctor.org.uk/",
+      "cmp": "EZoic",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.avira.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wyndhamhotels.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://uk.rs-online.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.avg.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://lifelock.norton.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://us.norton.com/",
+      "cmp": "Ensighten",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.canon.de/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.scansnapit.com/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.calor.co.uk/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.canon.co.uk/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://globalnews.ca/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://lenovo.com/",
+      "cmp": "Evidon",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fachinfo.de/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.stmi.bayern.de/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thebigphonestore.co.uk/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.smile.co.uk/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.klm.com/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.transamerica.com/",
+      "cmp": "HEURISTIC-REJECT",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.opensuse-forum.de/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bilibili.tv/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://snobe.co.uk/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ionos.com/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://reelmind.ai/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.2ndswing.com/",
+      "cmp": "HEURISTIC-TIER1",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bauprofessor.de/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://interamt.de/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.vaticannews.va/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sortcodes.co.uk/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://forums.yesterdaystractors.com/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.maxpreps.com/",
+      "cmp": "HEURISTIC-TIER2",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.frag-einen-anwalt.de/",
+      "cmp": "Klaro",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pflegesuche.de/",
+      "cmp": "Klaro",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.instituteforgovernment.org.uk/",
+      "cmp": "Klaro",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://poets.org/",
+      "cmp": "Klaro",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ucanr.edu/",
+      "cmp": "Klaro",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://meinwahlkreis.org/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://spiegel-der-gesundheit.de/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://skygarden.london/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://basc.org.uk/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://applemagazine.com/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.globalcitizensolutions.com/",
+      "cmp": "Moove",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en.luxuretv.com/",
+      "cmp": "PrimeBox CookieBar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.weimar.de/",
+      "cmp": "PrimeBox CookieBar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.courtserve.net/",
+      "cmp": "PrimeBox CookieBar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://radioreferenceuk.co.uk/",
+      "cmp": "PrimeBox CookieBar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.lockheedmartin.com/",
+      "cmp": "PrimeBox CookieBar",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://upway.de/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.kalenderkostenlos.de/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kotaku.com/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fsolver.com/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kotaku.com/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ibtimes.co.uk/",
+      "cmp": "Sirdata",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.economist.com/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://tagesgeld.focus.de/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://id.sky.com/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://eldenring.wiki.fextralife.com/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.todays-golfer.com/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bikeradar.com/",
+      "cmp": "Sourcepoint-frame",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.carhartt.com/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.winsim.de/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.visiondirect.co.uk/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bank.marksandspencer.com/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.penguinrandomhouse.com/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.americangreetings.com/",
+      "cmp": "Tealium",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.alamy.com/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.alamy.de/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.catholic.com/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://brooktaverner.co.uk/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://awardwallet.com/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.alamy.com/",
+      "cmp": "Termly",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://screwfix.com/",
+      "cmp": "TrustArc-newcm",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.avantiwestcoast.co.uk/",
+      "cmp": "TrustArc-newcm",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://arubanetworking.hpe.com/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://learning.sap.com/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://arubanetworking.hpe.com/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fishersci.co.uk/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bambulab.com/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.adiglobaldistribution.us/",
+      "cmp": "TrustArc-top",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://uk.humaxdigital.com/",
+      "cmp": "UK Cookie Consent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.markpack.org.uk/",
+      "cmp": "UK Cookie Consent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.offen.net/",
+      "cmp": "Uniconsent",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ptk-hessen.de/",
+      "cmp": "WP DSGVO Tools",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.motorcycles.news/",
+      "cmp": "WPConsent",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://discountlaptops.co.uk/",
+      "cmp": "WPConsent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bassdirect.co.uk/",
+      "cmp": "WPConsent",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://catholicexchange.com/",
+      "cmp": "WPConsent",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ncaa.org/",
+      "cmp": "WPConsent",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.nachrichten.yahoo.com/",
+      "cmp": "Yahoo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.yahoo.com/",
+      "cmp": "Yahoo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://finance.yahoo.com/",
+      "cmp": "Yahoo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://uk.style.yahoo.com/",
+      "cmp": "Yahoo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://abetterrouteplanner.com/",
+      "cmp": "abetterrouteplanner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.doccheckshop.de/",
+      "cmp": "acris",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://sallys-blog.de/",
+      "cmp": "acris",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.phonely.co.uk/",
+      "cmp": "adopt",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://adultfriendfinder.com/",
+      "cmp": "adultfriendfinder",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www3.adultfriendfinder.com/",
+      "cmp": "adultfriendfinder",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://aliexpress.com/",
+      "cmp": "aliexpress",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.aliexpress.com/",
+      "cmp": "aliexpress",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.aliexpress.com/",
+      "cmp": "aliexpress",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.cdn.amazon.de/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.amazon.ca/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.amazon.ca/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.amazon.es/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.amazon.ca/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.amazon.fr/",
+      "cmp": "amazon.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.americanexpress.com/",
+      "cmp": "amex",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.americanexpress.com/",
+      "cmp": "amex",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://resy.com/",
+      "cmp": "amex",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://claude.ai/",
+      "cmp": "anthropic",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://claude.com/",
+      "cmp": "anthropic",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://claude.ai/",
+      "cmp": "anthropic",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://claude.com/",
+      "cmp": "anthropic",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.martinguitar.com/",
+      "cmp": "aquasana.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://web.arbeitsagentur.de/",
+      "cmp": "arbeitsagentur",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.arbeitsagentur.de/",
+      "cmp": "arbeitsagentur",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.cotswoldoutdoor.com/",
+      "cmp": "as-adventure",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.snowandrock.com/",
+      "cmp": "as-adventure",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://rog.asus.com/",
+      "cmp": "asus",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.asus.com/",
+      "cmp": "asus",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.asus.com/",
+      "cmp": "asus",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.asus.com/",
+      "cmp": "asus",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://wordpress.com/",
+      "cmp": "automattic-cmp-optout",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://wordpress.com/",
+      "cmp": "automattic-cmp-optout",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://aws.amazon.com/",
+      "cmp": "aws.amazon.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://docs.aws.amazon.com/",
+      "cmp": "aws.amazon.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://aws.amazon.com/",
+      "cmp": "aws.amazon.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://docs.aws.amazon.com/",
+      "cmp": "aws.amazon.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://docs.mistral.ai/",
+      "cmp": "axeptio",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mistral.ai/",
+      "cmp": "axeptio",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mistral.ai/",
+      "cmp": "axeptio",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://can-am.brp.com/",
+      "cmp": "axeptio",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.redtube.com/",
+      "cmp": "aylo-cookie-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thumbzilla.com/",
+      "cmp": "aylo-cookie-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.redtube.com/",
+      "cmp": "aylo-cookie-banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thumbzilla.com/",
+      "cmp": "aylo-cookie-banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.good-gay.tv/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.boy18tube.com/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.icegay.tv/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gayporno.fm/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.boy18tube.com/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gaymenring.com/",
+      "cmp": "b-cookie",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://zsl-bw.de/",
+      "cmp": "baden-wuerttemberg.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ibbw-bw.de/",
+      "cmp": "baden-wuerttemberg.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bahn.de/",
+      "cmp": "bahn-de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bahn.de/",
+      "cmp": "bahn-de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bandcamp.com/",
+      "cmp": "bandcamp.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bandcamp.com/",
+      "cmp": "bandcamp.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bandcamp.com/",
+      "cmp": "bandcamp.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bbb.org/",
+      "cmp": "bbb.org",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bbc.co.uk/",
+      "cmp": "bbc.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bbc.com/",
+      "cmp": "bbc.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://news.bbc.co.uk/",
+      "cmp": "bbc.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bbc.co.uk/",
+      "cmp": "bbc.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bbva.de/",
+      "cmp": "bbva",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://germany.muji.eu/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://system76.com/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://guardianbookshop.com/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://heinnie.com/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://simplicity.com/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://smkw.com/",
+      "cmp": "bigcommerce-consent-manager",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.bing.com/",
+      "cmp": "bing.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://global.bing.com/",
+      "cmp": "bing.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://global.bing.com/",
+      "cmp": "bing.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bing.com/",
+      "cmp": "bing.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.online-physiotherapie.de/",
+      "cmp": "borlabs",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.delamar.de/",
+      "cmp": "borlabs",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gearnews.com/",
+      "cmp": "borlabs",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bundeskanzler.de/",
+      "cmp": "bundesregierung.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bundesregierung.de/",
+      "cmp": "bundesregierung.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://21run.com/",
+      "cmp": "burpee.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.hobbies.co.uk/",
+      "cmp": "burpee.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.oxfordproducts.com/",
+      "cmp": "burpee.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hvacdirect.com/",
+      "cmp": "burpee.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mossberg.com/",
+      "cmp": "burpee.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://new.abb.com/",
+      "cmp": "cassie",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.rnib.org.uk/",
+      "cmp": "cassie",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.open.ac.uk/",
+      "cmp": "cassie",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mskcc.org/",
+      "cmp": "cassie",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://link.springer.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nature.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://link.springer.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nature.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://link.springer.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nature.com/",
+      "cmp": "cc-banner-springer",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.motoruf.de/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gamcore.ch/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gamcore.com/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.apolloduck.co.uk/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gamcore.com/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fantasynamegenerators.com/",
+      "cmp": "cc_banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ccm.net/",
+      "cmp": "ccm-net",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.channel4.com/",
+      "cmp": "channel4.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://chatgpt.com/",
+      "cmp": "chatgpt",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://check24.de/",
+      "cmp": "check24",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mietwagen.check24.de/",
+      "cmp": "check24",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.check24.net/",
+      "cmp": "check24-partnerprogramm-de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tarifcheck.de/",
+      "cmp": "check24-partnerprogramm-de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gigaset.com/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.vwfs.de/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gold.ac.uk/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.cps.gov.uk/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://us.msi.com/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.msi.com/",
+      "cmp": "civic-cookie-control",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.din-5008-richtlinien.de/",
+      "cmp": "ckies",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.happy-mahlzeit.com/",
+      "cmp": "ckies",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://politpro.eu/",
+      "cmp": "click.io",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dizy.com/",
+      "cmp": "click.io",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://manofmany.com/",
+      "cmp": "click.io",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://whocalledme.org.uk/",
+      "cmp": "click.io",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://manofmany.com/",
+      "cmp": "click.io",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dptv.de/",
+      "cmp": "clinch",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.klett.de/",
+      "cmp": "cloudflare-zaraz",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gardenuk.co.uk/",
+      "cmp": "cloudflare-zaraz",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.myhsn.co.uk/",
+      "cmp": "cloudflare-zaraz",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://swappa.com/",
+      "cmp": "cloudflare-zaraz",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://officiallondontheatre.com/",
+      "cmp": "consent-flo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hellhades.com/",
+      "cmp": "consentmanager-ncmp",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://dnd2024.wikidot.com/",
+      "cmp": "consentmanager-ncmp",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gamebrew.org/",
+      "cmp": "consentmanager-ncmp",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://dnd2024.wikidot.com/",
+      "cmp": "consentmanager-ncmp",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.abendblatt.de/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.burdastyle.de/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.addictivetips.com/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.worldhistory.org/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.easeus.com/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://positivepsychology.com/",
+      "cmp": "consentmanager.net",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://prepmymeal.com/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://rebike.com/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sewessential.co.uk/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://filofax.com/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gouletpens.com/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.keenfootwear.com/",
+      "cmp": "consentmo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thomann.de/",
+      "cmp": "cookie-consent-spice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thomannmusic.com/",
+      "cmp": "cookie-consent-spice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thomann.co.uk/",
+      "cmp": "cookie-consent-spice",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.thomannmusic.com/",
+      "cmp": "cookie-consent-spice",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.e-mobileo.de/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.deutscherpflegebeistand.de/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.themaltmiller.co.uk/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://appliancehunter.co.uk/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://teachmeanatomy.info/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mysextoyguide.com/",
+      "cmp": "cookie-law-info",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://allereifen365.de/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.aktionspreis.de/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.visitnorthnorfolk.com/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.emodels.co.uk/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dietdoctor.com/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fluentu.com/",
+      "cmp": "cookie-script",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.streamlight.com/",
+      "cmp": "cookieacceptbar",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://euautomation.com/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.elektrikerwissen.de/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.proxmox.com/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.librarieswest.org.uk/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://maclookup.app/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://medicine.yale.edu/",
+      "cmp": "cookieconsent2",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.studentenwerk-leipzig.de/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://wordwall.net/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pitchero.com/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://railsmaps.com/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://corewellhealth.org/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sleepapnea.org/",
+      "cmp": "cookieconsent3",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bachheimer.com/",
+      "cmp": "cookiecuttr",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.esa.int/",
+      "cmp": "cookiecuttr",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.esa.int/",
+      "cmp": "cookiecuttr",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://app.wunschgutschein.de/",
+      "cmp": "cookiefirst.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.berlin-recycling.de/",
+      "cmp": "cookiefirst.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://carmats.co.uk/",
+      "cmp": "cookiefirst.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://elementgames.co.uk/",
+      "cmp": "cookiefirst.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://printify.com/",
+      "cmp": "cookiefirst.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kotlinlang.org/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://warthunder.com/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.auctionhouse.co.uk/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.jetbrains.com/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.binghamton.edu/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.jetbrains.com/",
+      "cmp": "cookiehub",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.construction.co.uk/",
+      "cmp": "cookieinfo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.private-eye.co.uk/",
+      "cmp": "cookieinfo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://forum.audiogon.com/",
+      "cmp": "cookieinfo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.audiogon.com/",
+      "cmp": "cookieinfo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://macpaw.com/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://finwiss.de/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://lucyandyak.com/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.allaboutdogfood.co.uk/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.glennbeck.com/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gigabyte.com/",
+      "cmp": "cookieyes",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://coolblue.de/",
+      "cmp": "coolblue",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.coolblue.de/",
+      "cmp": "coolblue",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://radio-horen.de/",
+      "cmp": "corona-in-zahlen.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://camslib.com/",
+      "cmp": "corona-in-zahlen.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ldwa.org.uk/",
+      "cmp": "corona-in-zahlen.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hubite.com/",
+      "cmp": "corona-in-zahlen.de",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.lsu.edu/",
+      "cmp": "corona-in-zahlen.de",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.curseforge.com/",
+      "cmp": "curseforge",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.curseforge.com/",
+      "cmp": "curseforge",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.curseforge.com/",
+      "cmp": "curseforge",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dailymotion.com/",
+      "cmp": "dailymotion-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.uaudio.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fairphone.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://developer.hashicorp.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fairphone.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.classicindustries.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.aura.com/",
+      "cmp": "datagrail",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://deliveroo.co.uk/",
+      "cmp": "deliveroo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dji.com/",
+      "cmp": "dji",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dji.com/",
+      "cmp": "dji",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dji.com/",
+      "cmp": "dji",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://newspaper.dailymail.com/",
+      "cmp": "dmgmedia",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mailplus.co.uk/",
+      "cmp": "dmgmedia",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://metro.co.uk/",
+      "cmp": "dmgmedia-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dailymail.co.uk/",
+      "cmp": "dmgmedia-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.onet.pl/",
+      "cmp": "dreamlab-cmp",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ebay.at/",
+      "cmp": "ebay",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ebay.ca/",
+      "cmp": "ebay",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://pages.ebay.co.uk/",
+      "cmp": "ebay",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://signin.ebay.co.uk/",
+      "cmp": "ebay",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ebay.co.uk/",
+      "cmp": "ebay",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ecosia.org/",
+      "cmp": "ecosia",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://profiles.sussex.ac.uk/",
+      "cmp": "elsevier-pure",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://profiles.ucl.ac.uk/",
+      "cmp": "elsevier-pure",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bmw-motorrad.de/",
+      "cmp": "epaas",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bmw.de/",
+      "cmp": "epaas",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://shop.bmw.co.uk/",
+      "cmp": "epaas",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://usedcars.bmw.co.uk/",
+      "cmp": "epaas",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bfn.de/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.standardsicherung.schulministerium.nrw.de/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.aston.ac.uk/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.freedompass.org/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mcgill.ca/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://healthcare.utah.edu/",
+      "cmp": "eu-cookie-compliance-banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.facebook.com/",
+      "cmp": "facebook",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://apps.facebook.com/",
+      "cmp": "facebook",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.facebook.com/",
+      "cmp": "facebook",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kathisgenusskueche.de/",
+      "cmp": "fastcmp",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.astroportal.com/",
+      "cmp": "fastcmp",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://britishbakingrecipes.co.uk/",
+      "cmp": "fastcmp",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://jamieolivereats.uk/",
+      "cmp": "fastcmp",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://feverup.com/",
+      "cmp": "fever-cookie-advice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://feverup.com/",
+      "cmp": "fever-cookie-advice",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.vogue.de/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://nextjs.org/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.codecademy.com/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://cooking.nytimes.com/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ironman.com/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.onepeloton.com/",
+      "cmp": "fides",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hypestat.com/",
+      "cmp": "funding-choices",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gartengurus.de/",
+      "cmp": "funding-choices",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://zestate.co.uk/",
+      "cmp": "funding-choices",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://duckmath.org/",
+      "cmp": "funding-choices",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.meteoblue.com/",
+      "cmp": "funding-choices",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gemini.google.com/",
+      "cmp": "gemini.google.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gemini.google.com/",
+      "cmp": "gemini.google.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gemini.google/",
+      "cmp": "gemini.google.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.geni.com/",
+      "cmp": "geni.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.geni.com/",
+      "cmp": "geni.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.geni.com/",
+      "cmp": "geni.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.glastonburyfestivals.co.uk/",
+      "cmp": "glastonburyfestivals",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mlogin.gmx.com/",
+      "cmp": "gmx-permission",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://chromewebstore.google.com/",
+      "cmp": "google-consent-standalone",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://music.youtube.com/",
+      "cmp": "google-consent-standalone",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://translate.google.com/",
+      "cmp": "google-consent-standalone",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://translate.google.co.uk/",
+      "cmp": "google-consent-standalone",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ai.google.dev/",
+      "cmp": "google-cookiebar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://meet.google.com/",
+      "cmp": "google-cookiebar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://workspace.google.com/",
+      "cmp": "google-cookiebar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://firebase.google.com/",
+      "cmp": "google-cookiebar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://images.google.com/",
+      "cmp": "google.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://images.google.de/",
+      "cmp": "google.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.theclassicvaluer.com/",
+      "cmp": "google.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://images.google.com/",
+      "cmp": "google.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://find-and-update.company-information.service.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.camden.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.eastsussex.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://find-and-update.company-information.service.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gov.uk/",
+      "cmp": "gov.uk",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.healthline.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.medicalnewstoday.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://greatist.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://psychcentral.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://greatist.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://psychcentral.com/",
+      "cmp": "healthline-media",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bestproducts.com/",
+      "cmp": "hearst-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.harpersbazaar.com/",
+      "cmp": "hearst-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ihk-muenchen.de/",
+      "cmp": "hl.co.uk",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sanitaetshaus-24.de/",
+      "cmp": "hl.co.uk",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.casamundo.de/",
+      "cmp": "hometogo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.hometogo.de/",
+      "cmp": "hometogo",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://holidayhomes.co.uk/",
+      "cmp": "hometogo",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.vanderbilt.edu/",
+      "cmp": "hu-manity",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://blog.hubspot.de/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://element.io/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://secure.hushmail.com/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.epubor.com/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://blog.hubspot.com/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://forestriverinc.com/",
+      "cmp": "hubspot",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.imdb.com/",
+      "cmp": "imdb",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.imdb.com/",
+      "cmp": "imdb",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.infomaniak.com/",
+      "cmp": "infomaniak-rgpd",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.swisstransfer.com/",
+      "cmp": "infomaniak-rgpd",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.swisstransfer.com/",
+      "cmp": "infomaniak-rgpd",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.instagram.com/",
+      "cmp": "instagram",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.instagram.com/",
+      "cmp": "instagram",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://id.ionos.de/",
+      "cmp": "ionos.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://login.ionos.de/",
+      "cmp": "ionos.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://id.ionos.co.uk/",
+      "cmp": "ionos.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://login.ionos.co.uk/",
+      "cmp": "ionos.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.giallozafferano.de/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.barbour.com/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.barbour.com/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.marinesuperstore.com/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://metricool.com/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://auburntigers.com/",
+      "cmp": "iubenda",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://terraherz.wordpress.com/",
+      "cmp": "jetpack-eu-cookie-law",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hip2save.com/",
+      "cmp": "jetpack-eu-cookie-law",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://johnlewis.com/",
+      "cmp": "johnlewis.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.johnlewis.com/",
+      "cmp": "johnlewis.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://onlybokep.org/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pp39.cn/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://femdomu.com/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pp39.cn/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://onlybokep.org/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pp39.cn/",
+      "cmp": "jquery.cookieBar",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.justgiving.com/",
+      "cmp": "justgiving.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://guides.justwatch.com/",
+      "cmp": "justwatch.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://sports.justwatch.com/",
+      "cmp": "justwatch.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://sports.justwatch.com/",
+      "cmp": "justwatch.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://sports.justwatch.com/",
+      "cmp": "justwatch.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.justwatch.com/",
+      "cmp": "justwatch.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bitwarden.com/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.newsweek.com/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pbs.org/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://creations.bethesda.net/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.lmcu.org/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sonicdrivein.com/",
+      "cmp": "ketch",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.kickstarter.com/",
+      "cmp": "kickstarter.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.linkedin.com/",
+      "cmp": "linkedin.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://it.linkedin.com/",
+      "cmp": "linkedin.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.linkedin.com/",
+      "cmp": "linkedin.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://pt.linkedin.com/",
+      "cmp": "linkedin.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://microsoftedge.microsoft.com/",
+      "cmp": "microsoft.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://apps.microsoft.com/",
+      "cmp": "microsoft.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://community.fabric.microsoft.com/",
+      "cmp": "microsoft.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.typescriptlang.org/",
+      "cmp": "microsoft.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://petertyson.co.uk/",
+      "cmp": "mirasvit-gdpr",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.moneysavingexpert.com/",
+      "cmp": "moneysavingexpert.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nba.com/",
+      "cmp": "nba.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nhs.uk/",
+      "cmp": "nhs.uk",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://settings.login.nhs.uk/",
+      "cmp": "nhs.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nhs.uk/",
+      "cmp": "nhs.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.nhs.uk/",
+      "cmp": "nhs.uk",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://nos.nl/",
+      "cmp": "nos.nl",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.obi.at/",
+      "cmp": "obi.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://m.ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://m.ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://m.ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ok.ru/",
+      "cmp": "ok",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tedi.com/",
+      "cmp": "om",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.uni-saarland.de/",
+      "cmp": "om",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://onlyfans.com/",
+      "cmp": "onlyFans.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://onlyfans.com/",
+      "cmp": "onlyFans.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://onlyfans.com/",
+      "cmp": "onlyFans.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://openai.com/",
+      "cmp": "openai",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.opera.com/",
+      "cmp": "opera.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.opera.com/",
+      "cmp": "opera.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.semanticscholar.org/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.leagueoflegends.com/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.alltrails.com/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://clubspark.lta.org.uk/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.boston25news.com/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.brookings.edu/",
+      "cmp": "osano",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ourworldindata.org/",
+      "cmp": "ourworldindata",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ourworldindata.org/",
+      "cmp": "ourworldindata",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.overleaf.com/",
+      "cmp": "overleaf",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.overleaf.com/",
+      "cmp": "overleaf",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.overleaf.com/",
+      "cmp": "overleaf",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.overleaf.com/",
+      "cmp": "overleaf",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://alteserien.de/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.anycubic.com/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ai.ugreen.com/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://startfitness.co.uk/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://shokz.com/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.fleetfeet.com/",
+      "cmp": "pandectes",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.paychex.com/",
+      "cmp": "paychex",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://venmo.com/",
+      "cmp": "paypal-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.paypal.com/",
+      "cmp": "paypal-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.paypal.com/",
+      "cmp": "paypal.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.paypal.com/",
+      "cmp": "paypal.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.com/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.net/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.com/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.net/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.com/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mypikpak.net/",
+      "cmp": "pikpak",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://journals.plos.org/",
+      "cmp": "plos",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://journals.plos.org/",
+      "cmp": "plos",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://journals.plos.org/",
+      "cmp": "plos",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sheknows.com/",
+      "cmp": "pmc",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.goldderby.com/",
+      "cmp": "pmc",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.met.police.uk/",
+      "cmp": "police-uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.police.uk/",
+      "cmp": "police-uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.freepornvideos.xxx/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://homo.xxx/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hello.porn/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://homo.xxx/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.perfectgirls.xxx/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://homo.xxx/",
+      "cmp": "pornhat",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ww.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ww.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ww.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornhub.com/",
+      "cmp": "pornhub.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornpics.com/",
+      "cmp": "pornpics.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornpics.de/",
+      "cmp": "pornpics.de",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pornpics.de/",
+      "cmp": "pornpics.de",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://povr.com/",
+      "cmp": "povr",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://povr.com/",
+      "cmp": "povr",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://povr.com/",
+      "cmp": "povr",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.advocate.com/",
+      "cmp": "pride.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.out.com/",
+      "cmp": "pride.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.advocate.com/",
+      "cmp": "pride.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.out.com/",
+      "cmp": "pride.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://housesforsaletorent.co.uk/",
+      "cmp": "pubtech",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.compact-online.de/",
+      "cmp": "real-cookie-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://meilenoptimieren.com/",
+      "cmp": "real-cookie-banner",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ring.com/",
+      "cmp": "ring",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en-uk.ring.com/",
+      "cmp": "ring",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ring.com/",
+      "cmp": "ring",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ring.com/",
+      "cmp": "ring",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.roblox.com/",
+      "cmp": "roblox",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.roblox.com/",
+      "cmp": "roblox",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://group.rspb.org.uk/",
+      "cmp": "rspb.org.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.rspb.org.uk/",
+      "cmp": "rspb.org.uk",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.rt.com/",
+      "cmp": "rt",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.rt.com/",
+      "cmp": "rt",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ryanair.com/",
+      "cmp": "ryanair",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ryanair.com/",
+      "cmp": "ryanair",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://samsung.com/",
+      "cmp": "samsung.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.samsung.com/",
+      "cmp": "samsung.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.scmp.com/",
+      "cmp": "scmp",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.scmp.com/",
+      "cmp": "scmp",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.rocketgames.io/",
+      "cmp": "setupad",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kreuzwortraetsel.net/",
+      "cmp": "setupad",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ezgif.com/",
+      "cmp": "setupad",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://maryberryrecipes.co.uk/",
+      "cmp": "setupad",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sex.com/",
+      "cmp": "sex.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sex.com/",
+      "cmp": "sex.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.sex.com/",
+      "cmp": "sex.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.shein.com/",
+      "cmp": "shein.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://shein.com/",
+      "cmp": "shein.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://us.shein.com/",
+      "cmp": "shein.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://arwenn.com/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.armedangels.com/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ornamental-trees.co.uk/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://shop.pimoroni.com/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://naturehills.com/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.bubsnaturals.com/",
+      "cmp": "shopify",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.manualslib.tech/",
+      "cmp": "snigel",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.manualslib.com/",
+      "cmp": "snigel",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://civitai.com/",
+      "cmp": "snigel",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.engineeringtoolbox.com/",
+      "cmp": "snigel",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://hamburg.t-online.de/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mehr-tanken.de/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.oxfordmail.co.uk/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.viki.com/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://walterfootball.com/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.myfitnesspal.com/",
+      "cmp": "sourcepoint-top",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.electriccarscheme.com/",
+      "cmp": "squarespace-cookie-banner",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.treelinereview.com/",
+      "cmp": "squarespace-cookie-banner",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://steamcommunity.com/",
+      "cmp": "steampowered.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://store.steampowered.com/",
+      "cmp": "steampowered.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://steamcommunity.com/",
+      "cmp": "steampowered.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://store.steampowered.com/",
+      "cmp": "steampowered.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.strato.de/",
+      "cmp": "strato.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.natesilver.net/",
+      "cmp": "substack",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.dxengineering.com/",
+      "cmp": "summitracing",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kb.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kb.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://kb.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.synology.com/",
+      "cmp": "synology",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.classicstoday.com/",
+      "cmp": "tagconcierge",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://theonion.com/",
+      "cmp": "tagconcierge",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.geneanet.org/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ibantest.com/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en.geneanet.org/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gw.geneanet.org/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en.geneanet.org/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://gw.geneanet.org/",
+      "cmp": "tarteaucitron deny",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.stellenangebote.info/",
+      "cmp": "tarteaucitron.js",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.institut-francais.org.uk/",
+      "cmp": "tarteaucitron.js",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.finehomebuilding.com/",
+      "cmp": "taunton",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.finewoodworking.com/",
+      "cmp": "taunton",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.alle-noten.de/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.campingplatz-suche.com/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.leedsunited.com/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.londontheatres.com/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://concretecaptain.com/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.automationdirect.com/",
+      "cmp": "termsfeed",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.flugplan-flughafen.de/",
+      "cmp": "termsfeed3",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.songtexte.de/",
+      "cmp": "termsfeed3",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tesco.com/",
+      "cmp": "tesco",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.theinfatuation.com/",
+      "cmp": "theinfatuation",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://m.tiktok.com/",
+      "cmp": "tiktok.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tiktok.com/",
+      "cmp": "tiktok.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tiktok.com/",
+      "cmp": "tiktok.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://tlc-direct.co.uk/",
+      "cmp": "tlc-direct",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tlc-direct.co.uk/",
+      "cmp": "tlc-direct",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tp-link.com/",
+      "cmp": "tplink",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.traderjoes.com/",
+      "cmp": "trader-joes-com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://1password.com/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.gofundme.com/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.mozilla.org/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.pizzahut.co.uk/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://support.1password.com/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://tires.costco.com/",
+      "cmp": "transcend",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://locations.oreillyauto.com/",
+      "cmp": "truyo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://shopgoodwill.com/",
+      "cmp": "truyo",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tumblr.com/",
+      "cmp": "tumblr-com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tumblr.com/",
+      "cmp": "tumblr-com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://wise.com/",
+      "cmp": "twcc",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://wise.com/",
+      "cmp": "twcc",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.twitch.tv/",
+      "cmp": "twitch.tv",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.twitch.tv/",
+      "cmp": "twitch.tv",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://en-gb.twitch.tv/",
+      "cmp": "twitch.tv",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.twitch.tv/",
+      "cmp": "twitch.tv",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.twitch.tv/",
+      "cmp": "twitch.tv",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://help.x.com/",
+      "cmp": "u12-data-protection-notice",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://help.x.com/",
+      "cmp": "u12-data-protection-notice",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://snapcraft.io/",
+      "cmp": "ubuntu.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ubuntu.com/",
+      "cmp": "ubuntu.com",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://snapcraft.io/",
+      "cmp": "ubuntu.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ubuntu.com/",
+      "cmp": "ubuntu.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ubuntu.com/",
+      "cmp": "ubuntu.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://uswitch.com/",
+      "cmp": "uswitch.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.uswitch.com/",
+      "cmp": "uswitch.com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://vodafone.de/",
+      "cmp": "vodafone.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.vodafone.de/",
+      "cmp": "vodafone.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://anmelden.gmx.net/",
+      "cmp": "web.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://anmelden.web.de/",
+      "cmp": "web.de",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.emobility.energy/",
+      "cmp": "webflow",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.tuebinger-erbe-lauf.de/",
+      "cmp": "webflow",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.disabilityid.co.uk/",
+      "cmp": "webflow",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.ljmu.ac.uk/",
+      "cmp": "webflow",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://bindingofisaacrebirth.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://palia.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://helldivers.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://limbuscompany.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://abioticfactor.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://calamitymod.wiki.gg/",
+      "cmp": "wiki.gg",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wix.com/",
+      "cmp": "wix",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://support.wix.com/",
+      "cmp": "wix",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wix.com/",
+      "cmp": "wix",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://support.wix.com/",
+      "cmp": "wix",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.wix.com/",
+      "cmp": "wix",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://thisvid.com/",
+      "cmp": "wpcc",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://thisvid.com/",
+      "cmp": "wpcc",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.askmid.com/",
+      "cmp": "wpcc",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://fr.thisvid.com/",
+      "cmp": "wpcc",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://it.thisvid.com/",
+      "cmp": "wpcc",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.xe.com/",
+      "cmp": "xe.com",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://anysex.com/",
+      "cmp": "xgroovy",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.mylust.com/",
+      "cmp": "xgroovy",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://anysex.com/",
+      "cmp": "xgroovy",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://mylust.com/",
+      "cmp": "xgroovy",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://fra.xhamster.com/",
+      "cmp": "xhamster-eu",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ge.xhamster.com/",
+      "cmp": "xhamster-eu",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://fra.xhamster.com/",
+      "cmp": "xhamster-eu",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://ru.xhamster.com/",
+      "cmp": "xhamster-eu",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://es.xhamster.com/",
+      "cmp": "xhamster-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://fra.xhamster.com/",
+      "cmp": "xhamster-us",
+      "onlyRegions": [
+        "US"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.xnxx.com/",
+      "cmp": "xnxx-com",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.xvideos.com/",
+      "cmp": "xvideos",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://de.youtube.com/",
+      "cmp": "youtube-desktop",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://uk.youtube.com/",
+      "cmp": "youtube-desktop",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.youtube.com/",
+      "cmp": "youtube-desktop",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://presseportal.zdf.de/",
+      "cmp": "zdf",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://schule.zdf.de/",
+      "cmp": "zdf",
+      "onlyRegions": [
+        "DE"
+      ],
+      "skipRegions": []
+    },
+    {
+      "url": "http://www.zinio.com/",
+      "cmp": "zinio",
+      "onlyRegions": [
+        "GB"
+      ],
+      "skipRegions": []
+    }
+  ]
+}
