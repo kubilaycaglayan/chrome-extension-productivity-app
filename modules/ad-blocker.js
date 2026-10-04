@@ -1,3 +1,9 @@
+// The domain-scoped cosmetic corpus, precomputed by tools/ad-blocker-build/cosmetic.mjs.
+// A service worker may not `import()` at runtime, so the map is pulled in with the module
+// and parsed once per wake; a frame never sees it.
+import { hides, exceptions, globalExceptions } from '../content/ad-blocker-domain-rules.js';
+const domainRules = { hides, exceptions, globalExceptions };
+
 const RULESET = 'easylist_ads';
 const EXTRA_RULESETS = [
   'easylist_ads_extra', 'easylist_ads_extra_2', 'easylist_ads_extra_3',
@@ -22,6 +28,30 @@ export function cleanPausedSites(value) {
     if (!hostname || hostname.length > 253 || !hostname.split('.').every(label => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))) throw new Error(`Invalid site: ${site}`);
     return hostname;
   }))].sort();
+}
+
+const matchesSite = (site, domain) => site === domain || site.endsWith(`.${domain}`);
+// A value in the index is a selector, or [selector, ...hosts the rule excludes]. A `~`
+// host narrows a rule rather than placing it, so it drops that one value on that one
+// host; the shipped list has none, but the build format still permits them.
+const selectorOf = value => Array.isArray(value) ? value[0] : value;
+const inScope = (value, site) => !Array.isArray(value) || !value.slice(1).some(domain => matchesSite(site, domain));
+
+// The selectors a host hides beyond the generic stylesheet, found by walking the host's
+// label suffixes: a.b.example.com costs four lookups rather than a pass over the corpus.
+// Exceptions are resolved the same way and subtracted, so a host that cancels a rule its
+// parent domain carries ends up without it.
+export function resolveCosmetic(rules, site) {
+  if (!site) return [];
+  const keys = site.split('.').map((_, position, labels) => labels.slice(position).join('.'));
+  const scoped = index => keys.flatMap(key => index[key] || []).filter(value => inScope(value, site)).map(selectorOf);
+  const cancelled = new Set([
+    ...scoped(rules.exceptions),
+    // An exception scoped only by `~` hosts applies everywhere but there, which no host
+    // key can express, so it is carried as a list and evaluated against the host.
+    ...rules.globalExceptions.filter(value => inScope(value, site)).map(selectorOf)
+  ]);
+  return [...new Set(scoped(rules.hides))].filter(selector => !cancelled.has(selector));
 }
 
 function enqueue(task) {
@@ -102,7 +132,12 @@ export function initializeAdBlocker() {
           throw error;
         }
       }
-      return { ...(message.type === 'ad-blocker:get' ? await readState() : await reconcile()), topSite: (() => { try { return new URL(_sender.tab?.url || '').hostname.toLowerCase(); } catch { return ''; } })() };
+      const state = message.type === 'ad-blocker:get' ? await readState() : await reconcile();
+      // The frame asking may be a subframe, so the host that decides which rules apply is
+      // the tab's, which only the sender knows.
+      const topSite = (() => { try { return new URL(_sender.tab?.url || '').hostname.toLowerCase(); } catch { return ''; } })();
+      const inactive = !state.enabled || state.sites.some(site => matchesSite(topSite, site));
+      return { ...state, topSite, cosmetic: inactive ? [] : resolveCosmetic(domainRules, topSite) };
     }).then(result => sendResponse({ ok: true, ...result }), error => sendResponse({ ok: false, error: error.message }));
     return true;
   });

@@ -68,6 +68,9 @@ try {
   await wait(800);
   const state = await message({ type: 'ad-blocker:get' });
   assert.equal(state.enabled, true);
+  // The domain-scoped host map is a static import, so a worker that cannot parse it
+  // never answers at all; the popup names no tab, so its own host resolves to nothing.
+  assert.deepEqual(state.cosmetic, []);
   assert.ok((await outcome(ad, localUrl)).matchedRules.some(rule => rule.rulesetId === 'easylist_ads'));
   assert.ok((await outcome('https://2mdn.net/instream/html5/ima3.js', 'https://zdnet.com')).matchedRules.some(rule => rule.ruleId === exceptionId));
   assert.ok((await outcome('https://files.example/x', 'https://mega4upload.net', 'xmlhttprequest')).matchedRules.some(rule => rule.ruleId === siteRuleId));
@@ -104,7 +107,9 @@ try {
   await call('ServiceWorker.enable', {}, popup);
   await call('ServiceWorker.stopAllWorkers', {}, popup);
   await wait(300);
-  assert.equal((await message({ type: 'ad-blocker:get' })).enabled, false);
+  const woken = await message({ type: 'ad-blocker:get' });
+  assert.equal(woken.enabled, false);
+  assert.deepEqual(woken.cosmetic, []);
   assert.deepEqual(await evaluate('chrome.declarativeNetRequest.getEnabledRulesets()'), []);
   assert.equal((await message({ type: 'ad-blocker:set-enabled', enabled: true })).enabled, true);
   await wait(250);

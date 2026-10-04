@@ -34,6 +34,79 @@ test('packaged rules are within guaranteed core and supplemental quotas, with ex
   assert.equal(cosmetic.all_frames, true);
 });
 
+// The host map is precomputed, so the service worker's whole job is the suffix walk:
+// a host's rules are the union of every suffix of its name, minus what it cancels.
+const domainRules = {
+  hides: {
+    'news.example': ['.news-ad'],
+    'example.com': ['.parent-ad', ['.narrowed', 'skip.example.com']],
+    'news.example.com': ['.child-ad']
+  },
+  exceptions: { 'news.example.com': ['.parent-ad'] },
+  // Cancels .narrowed everywhere but one host, which no host key can express.
+  globalExceptions: [['.narrowed', 'keep.example.com']]
+};
+
+const loadModule = () => {
+  const source = fs.readFileSync(path.join(root, 'modules/ad-blocker.js'), 'utf8')
+    .replace(/^import .*$/m, 'const { hides, exceptions, globalExceptions } = this.domainRules;')
+    .replaceAll('export function ', 'function ') + '\nthis.api = { cleanPausedSites, resolveCosmetic, initializeAdBlocker };';
+  return source;
+};
+
+test('cosmetic rules resolve by host suffix with exceptions subtracted', () => {
+  const context = { domainRules, chrome: {}, console, URL };
+  vm.runInNewContext(loadModule(), context);
+  // The arrays come back from inside the VM context, so they are compared by value.
+  const resolve = site => Array.from(context.api.resolveCosmetic(domainRules, site));
+  assert.deepEqual(resolve('example.com'), ['.parent-ad']);
+  // A subdomain inherits the parent's rules, however deep, and adds its own.
+  assert.deepEqual(resolve('news.example.com'), ['.child-ad']);
+  assert.deepEqual(resolve('a.b.news.example.com'), ['.child-ad']);
+  // The walk is by label, so a host that merely ends in the same characters is not a match.
+  assert.deepEqual(resolve('notexample.com'), []);
+  assert.deepEqual(resolve('nothing-matches-this.invalid'), []);
+  assert.deepEqual(resolve(''), []);
+  // An exception on a subdomain cancels a selector the parent domain carries.
+  assert.equal(resolve('news.example.com').includes('.parent-ad'), false);
+  assert.equal(resolve('other.example.com').includes('.parent-ad'), true);
+  // A `~` host drops that one value on that one host, and nothing else.
+  assert.deepEqual(resolve('keep.example.com'), ['.parent-ad', '.narrowed']);
+  assert.deepEqual(resolve('skip.example.com'), ['.parent-ad']);
+  assert.deepEqual(resolve('other.example.com'), ['.parent-ad']);
+});
+
+test('the shipped host map is a lookup table of plain selectors', () => {
+  const module = fs.readFileSync(path.join(root, 'content/ad-blocker-domain-rules.js'), 'utf8');
+  const exported = name => JSON.parse(module.match(new RegExp(`^export const ${name} = (.*);$`, 'm'))[1]);
+  const rules = Object.fromEntries(['hides', 'exceptions', 'globalExceptions'].map(name => [name, exported(name)]));
+  const keys = [...Object.keys(rules.hides), ...Object.keys(rules.exceptions)];
+  assert.ok(keys.length > 5000);
+  // A lowercased hostname is looked up directly, so an uppercase key could never match.
+  assert.deepEqual(keys.filter(key => key !== key.toLowerCase()), []);
+  const values = [...Object.values(rules.hides), ...Object.values(rules.exceptions)].flat();
+  assert.ok(values.length > 10000);
+  assert.ok(values.every(value => typeof value === 'string'
+    || (Array.isArray(value) && value.length > 1 && value.every(part => typeof part === 'string'))));
+  assert.ok(Array.isArray(rules.globalExceptions));
+
+  const context = { domainRules: rules, chrome: {}, console, URL };
+  vm.runInNewContext(loadModule(), context);
+  const resolve = site => Array.from(context.api.resolveCosmetic(rules, site));
+  // The walk has to find the real data, not merely fail to crash on it.
+  for (const host of Object.keys(rules.hides).filter((_, index) => index % 500 === 0)) {
+    assert.ok(resolve(host).length > 0, `${host} resolves to nothing`);
+  }
+  // No host may resolve a selector it cancels. Only two of the shipped exceptions cancel
+  // a domain-scoped hide; the rest cancel a generic selector, which the content script
+  // subtracts from content/ad-blocker-excepted.js instead.
+  const selectorOf = value => Array.isArray(value) ? value[0] : value;
+  for (const [host, cancels] of Object.entries(rules.exceptions)) {
+    const resolved = resolve(host);
+    for (const value of cancels) assert.equal(resolved.includes(selectorOf(value)), false, `${host} must not resolve ${selectorOf(value)}`);
+  }
+});
+
 test('background serializes global and site changes and keeps DNR state aligned', async () => {
   let enabled = new Set(['easylist_ads']);
   let dynamic = [];
@@ -49,9 +122,8 @@ test('background serializes global and site changes and keeps DNR state aligned'
       async updateDynamicRules({ removeRuleIds, addRules }) { dynamic = dynamic.filter(rule => !removeRuleIds.includes(rule.id)).concat(addRules); }
     }
   };
-  const source = fs.readFileSync(path.join(root, 'modules/ad-blocker.js'), 'utf8').replace('export function ', 'function ').replace('export function ', 'function ') + '\nthis.api = { cleanPausedSites, initializeAdBlocker };';
-  const context = { chrome, console: { error() {}, warn() {} }, URL };
-  vm.runInNewContext(source, context);
+  const context = { domainRules, chrome, console: { error() {}, warn() {} }, URL };
+  vm.runInNewContext(loadModule(), context);
   context.api.initializeAdBlocker();
   const message = request => new Promise(resolve => listeners.message(request, { tab: { url: 'https://news.example/story' } }, resolve));
   const pause = await message({ type: 'ad-blocker:set-sites', sites: ['https://news.example/story', 'NEWS.EXAMPLE', ''] });
@@ -67,6 +139,8 @@ test('background serializes global and site changes and keeps DNR state aligned'
   assert.equal(on.enabled, true);
   assert.equal(on.extraEnabled, true);
   assert.equal((await message({ type: 'ad-blocker:get' })).topSite, 'news.example');
+  // Paused, so the host map is not consulted at all and the frame is handed nothing.
+  assert.deepEqual(Array.from((await message({ type: 'ad-blocker:get' })).cosmetic), []);
   storage['moduleEnabled:ad-blocker'] = false;
   listeners.installed();
   assert.equal((await message({ type: 'ad-blocker:get' })).enabled, false);
@@ -95,6 +169,12 @@ test('background serializes global and site changes and keeps DNR state aligned'
   // One supplemental set over quota must not keep the other out.
   assert.equal(enabled.has('easylist_ads_extra_2'), true);
   chrome.declarativeNetRequest.updateEnabledRulesets = originalUpdate;
+  assert.equal((await message({ type: 'ad-blocker:set-sites', sites: [] })).ok, true);
+  // Resumed, the response carries the selectors the sender's own host scopes.
+  assert.deepEqual(Array.from((await message({ type: 'ad-blocker:get' })).cosmetic), ['.news-ad']);
+  storage['moduleEnabled:ad-blocker'] = false;
+  await message({ type: 'ad-blocker:set-enabled', enabled: false });
+  assert.deepEqual(Array.from((await message({ type: 'ad-blocker:get' })).cosmetic), []);
   assert.throws(() => context.api.cleanPausedSites(['bad host']), /Invalid site/);
   assert.throws(() => context.api.cleanPausedSites(['foo.-bad.example']), /Invalid site/);
 });
