@@ -1,63 +1,166 @@
 {
-  "source": "EasyList authors",
+  "sources": [
+    {
+      "name": "EasyList",
+      "directory": "easylist",
+      "homepage": "https://easylist.to/",
+      "license": "GPL-3.0-or-later and CC BY-SA 3.0 Unported"
+    },
+    {
+      "name": "EasyPrivacy",
+      "directory": "easyprivacy",
+      "homepage": "https://easylist.to/",
+      "license": "GPL-3.0-or-later and CC BY-SA 3.0 Unported"
+    }
+  ],
   "revision": "bde0d888ef7c5cb99e9c682b1862988e358d10d6",
   "converter": "@adguard/dnr-converter@2.0.0",
-  "generatedAt": "2026-10-04T09:50:41.514Z",
+  "generatedAt": "2026-10-04T11:09:47.666Z",
   "files": [
     {
+      "list": "easylist",
       "name": "easylist_adservers.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_adservers.txt",
       "sha256": "3254f65736ca2e8db7ca896d944c9e206abb1660e0fb2dfb926e8c0a3ae55201",
       "lines": 45262
     },
     {
+      "list": "easylist",
       "name": "easylist_allowlist.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_allowlist.txt",
       "sha256": "89186dfaad8e732bff48a77d5520c53b2f2019f919423ff7656fe39b5a3bf5f1",
       "lines": 693
     },
     {
+      "list": "easylist",
       "name": "easylist_general_block.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_general_block.txt",
       "sha256": "6cd8404ae121ef9f81a1d8df25e55a394758df9d2c2d14fc4955b1fd0d448bf4",
       "lines": 1006
     },
     {
+      "list": "easylist",
       "name": "easylist_specific_block.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_specific_block.txt",
       "sha256": "66991c16cbc8d3ab722bcbe25be5e43802cebf574155c9dd4efcc5da7222e94f",
       "lines": 909
     },
     {
+      "list": "easylist",
       "name": "easylist_thirdparty.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_thirdparty.txt",
       "sha256": "9d1bd9aab12d6db344d3fa63d4d2b7da8dd5abe9a347afdd02c86df567d920d6",
       "lines": 1867
     },
     {
+      "list": "easylist",
       "name": "easylist_general_hide.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_general_hide.txt",
       "sha256": "8090b3df8749e8d5e333a2065b91829975e5daec1c92aaf322140cdfc56897d8",
       "lines": 13685
     },
     {
+      "list": "easylist",
       "name": "easylist_specific_hide.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_specific_hide.txt",
       "sha256": "1ce8a7dba0851c4265c392b4dcc702b7d6d24ff53601a9e91906f9ddc371781b",
       "lines": 8924
     },
     {
+      "list": "easylist",
       "name": "easylist_allowlist_general_hide.txt",
       "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easylist/easylist_allowlist_general_hide.txt",
       "sha256": "2e8fc9e13a0777c4c8b88602c1223583ec434002f5be7dd826f34160fb6a7a90",
       "lines": 344
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_general.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_general.txt",
+      "sha256": "a3fba8b47048ec4b682414cff0796dabf75d1449783fe2a6b1e0d6c3b2b89c73",
+      "lines": 3127
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_specific.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_specific.txt",
+      "sha256": "8b2974c6b7ce257dbfa59654dc766eae226867a27454c1526fa6f12a5b2ec394",
+      "lines": 2522
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_specific_international.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_specific_international.txt",
+      "sha256": "0da87a38c87e8fb318449a58a2eebe8c793d4889b81080ec2deeb0945f8193b0",
+      "lines": 2130
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_thirdparty.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_thirdparty.txt",
+      "sha256": "62fa5c00e93173e97e454fad8c8e9b5132b95894f4f6c71f6b04d3f0a3d35f47",
+      "lines": 3468
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_thirdparty_international.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_thirdparty_international.txt",
+      "sha256": "7cabbc77e3d7ee1342464298e18a48c365b8bdd256e3a6b2a42ed81dfe016596",
+      "lines": 1267
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_allowlist.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_allowlist.txt",
+      "sha256": "33f2b0bea0630c44b858bdf5ba2c835a4a86d8d1e60637899023adf1c16dfc68",
+      "lines": 585
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_allowlist_international.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_allowlist_international.txt",
+      "sha256": "8fec385bf83c55b857ad208342c4dd060069885fe482f7ef97664607d0cf7acf",
+      "lines": 413
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_trackingservers.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_trackingservers.txt",
+      "sha256": "df240b596ceb5833287704cfe455d047ffd2a09804ac82782e077e17c1b55fec",
+      "lines": 45
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_trackingservers_general.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_trackingservers_general.txt",
+      "sha256": "bfd7fd106045b25c381fe322318179512073d0b9c8b8ec5090291ea3dd08ca0a",
+      "lines": 544
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_trackingservers_thirdparty.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_trackingservers_thirdparty.txt",
+      "sha256": "16398886091d825ce82b33392f661d851074f4faf5fad11fdc718893d59d1674",
+      "lines": 2544
+    },
+    {
+      "list": "easyprivacy",
+      "name": "easyprivacy_trackingservers_international.txt",
+      "url": "https://raw.githubusercontent.com/easylist/easylist/bde0d888ef7c5cb99e9c682b1862988e358d10d6/easyprivacy/easyprivacy_trackingservers_international.txt",
+      "sha256": "9c67cc2d4ae438526b2fdfa1a07b21d286273684647cc381f2d0441eb19c5d42",
+      "lines": 969
     }
   ],
   "network": {
-    "input": 49621,
-    "selected": 49612,
+    "input": 66850,
+    "selected": 66835,
     "coreSelection": {
-      "adserverCount": 24500,
+      "guaranteedCount": 21595,
+      "pooledFiles": [
+        "easylist_adservers.txt"
+      ],
+      "pooledCount": 45240,
+      "corePooledCount": 7805,
       "priorityHosts": [
         "doubleclick.net",
         "googlesyndication.com",
@@ -85,40 +188,61 @@
       "||html-load.com^$document,popup",
       "||img-load.com^$document,popup",
       "@@||google.com/recaptcha/$csp,subdocument",
-      "/earn.php?z=$popup,subdocument"
+      "/earn.php?z=$popup,subdocument",
+      "||2mdn.net/videoplayback/$rewrite=abp-resource:blank-mp4,domain=laurelberninteriors.com|safeframe.googlesyndication.com",
+      "||googlevideo.com/videoplayback?$rewrite=abp-resource:blank-mp4,domain=laurelberninteriors.com|safeframe.googlesyndication.com",
+      "||innovid.com/media/encoded/*.mp4$rewrite=abp-resource:blank-mp4,domain=ktla.com",
+      "$csp=child-src 'none'; frame-src 'self' *; worker-src 'none',domain=fileone.tv|theappguruz.com",
+      "$csp=child-src 'none'; frame-src *; worker-src 'none',domain=thepiratebay.org|vidoza.net",
+      "||d1z2jf7jlzjs58.cloudfront.net^$rewrite=abp-resource:blank-js,domain=voici.fr"
     ],
     "core": {
-      "input": 28872,
-      "output": 28690,
-      "errors": 14,
+      "input": 29400,
+      "output": 29214,
+      "errors": 16,
       "sampleErrors": [
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)\\w{30,}\\.me\\/\\w{30,}\\./$script,third-party\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)216\\.21\\..{100,}/\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.154\\..{100,}/\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.197\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)130\\.211\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)216\\.21\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)217\\.182\\.11\\..{100,}/\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/.*\\.(club|bid|biz|xyz|site|pro|info|online|icu|monster|buzz|website|biz|re|casa|top|one|space|network|live|systems|ml|world|life|co)\\/.*/$~image,~media,~subdocument,third-party,domain=1cloudfile.com|adblockstreamtape.art|adblockstreamtape.site|bowfile.com|clipconverter.cc|desiupload.co|dood.la|dood.pm|dood.so|dood.to|dood.watch|dood.ws|dopebox.to|downloadpirate.com|drivebuzz.icu|embedstream.me|eplayvid.net|fmovies.ps|gospeljingle.com|kissanimes.net|movies2watch.tv|myflixer.today|myflixertv.to|powvideo.net|scloud.online|skidrowcodex.net|streamtape.com|theproxy.ws|vidembed.cc|vidembed.io|vidlii.com|vidoo.org|vipbox.lc\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/[0-9a-f]{32}\\/invoke\\.js/$script,third-party\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.[0-9a-z]{8,}\\.com\\/[0-9a-z]{1,4}\\.js$/$script,third-party,domain=dood.la|dood.pm|dood.sh|dood.so|dood.to|dood.watch|dood.ws\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\.gsmarena\\.com\\/[0-9]+\\.[a-z]+\\?s?Search=/$xmlhttprequest,domain=gsmarena.com\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/s3\\.*\\.amazonaws\\.com\\/[a-f0-9]{45,}\\/[a-f,0-9]{8,10}$/$script,third-party,xmlhttprequest,domain=~amazon.com\"",
-        "Error: Non-categorized error during a conversion rule (index - 617235, id - 1467245966)",
-        "Error: Non-categorized error during a conversion rule (index - 628289, id - 166090413)",
-        "Error: Non-categorized error during a conversion rule (index - 648266, id - 302900036)"
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/fdts\\.ebay-kleinanzeigen\\.de\\/[a-z0-9]{13,18}\\.js\\?/$script,domain=kleinanzeigen.de\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/pov\\.spectrum\\.net\\/[a-zA-Z0-9]{14,}\\.js/$script,domain=spectrum.net\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/tjmaxx\\.tjx\\.com\\/libraries\\/[a-z0-9]{20,}/$script,xmlhttprequest,domain=tjx.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/tmx\\.(td|tdbank)\\.com\\/[a-z0-9]{14,18}\\.js.*/$script,domain=mbna.ca|td.com|tdbank.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.ebay-kleinanzeigen\\.de\\/[a-z0-9]{8}\\-[0-9a-f]{4}\\-/$script,domain=kleinanzeigen.de\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.kroger\\.com\\/content\\/{20,}/$script,xmlhttprequest,domain=kroger.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/cdn\\.jsdelivr\\.net\\/npm\\/[-a-z_]{4,22}@latest\\/dist\\/script\\.min\\.js$/$script,third-party\""
       ]
     },
-    "extra": {
-      "input": 20740,
-      "output": 20736,
-      "errors": 4,
-      "sampleErrors": [
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.198\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)142\\.91\\.159\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)213\\.32\\.115\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)51\\.195\\.31\\..{100,}/\""
-      ]
-    }
+    "supplemental": [
+      {
+        "file": "easylist-ads-extra.json",
+        "input": 18718,
+        "output": 18716,
+        "errors": 2,
+        "sampleErrors": [
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)130\\.211\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)217\\.182\\.11\\..{100,}/\""
+        ]
+      },
+      {
+        "file": "easylist-ads-extra-2.json",
+        "input": 18717,
+        "output": 18713,
+        "errors": 4,
+        "sampleErrors": [
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)142\\.91\\.159\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)213\\.32\\.115\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.198\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)51\\.195\\.31\\..{100,}/\""
+        ]
+      }
+    ]
   },
   "cosmetic": {
     "output": 20660,

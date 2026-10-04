@@ -7,14 +7,14 @@ const vm = require('node:vm');
 const root = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
 const core = JSON.parse(fs.readFileSync(path.join(root, 'rules/easylist-ads.json')));
-const extra = JSON.parse(fs.readFileSync(path.join(root, 'rules/easylist-ads-extra.json')));
+const supplemental = ['rules/easylist-ads-extra.json', 'rules/easylist-ads-extra-2.json'].map(file => JSON.parse(fs.readFileSync(path.join(root, file))));
 
 test('packaged rules are within guaranteed core and supplemental quotas, with exceptions and site conditions', () => {
   assert.equal(manifest.permissions.includes('declarativeNetRequestWithHostAccess'), true);
-  assert.equal(manifest.declarative_net_request.rule_resources.length, 2);
+  assert.equal(manifest.declarative_net_request.rule_resources.length, 3);
   assert.ok(core.length > 25000 && core.length < 30000);
-  assert.ok(extra.length > 15000 && extra.length < 30000);
-  for (const rules of [core, extra]) {
+  for (const rules of supplemental) assert.ok(rules.length > 15000 && rules.length < 30000);
+  for (const rules of [core, ...supplemental]) {
     assert.equal(new Set(rules.map(rule => rule.id)).size, rules.length);
     assert.ok(rules.every(rule => ['block', 'allow', 'allowAllRequests'].includes(rule.action.type)));
     assert.ok(rules.every(rule => !rule.condition.regexFilter));
@@ -24,6 +24,8 @@ test('packaged rules are within guaranteed core and supplemental quotas, with ex
   }
   assert.ok(core.some(rule => rule.action.type === 'allow' && rule.condition.initiatorDomains?.length && rule.condition.resourceTypes?.length));
   assert.ok(core.some(rule => rule.action.type === 'block' && rule.condition.initiatorDomains?.length));
+  // A supplemental set may fail to load, so no exception may live outside the core.
+  assert.equal(supplemental.some(rules => rules.some(rule => rule.action.type !== 'block')), false);
   const cosmetic = manifest.content_scripts.find(entry => entry.js.includes('content/ad-blocker.js'));
   assert.equal(cosmetic.all_frames, true);
 });
@@ -77,7 +79,7 @@ test('background serializes global and site changes and keeps DNR state aligned'
   assert.equal(enabled.has('easylist_ads'), true);
   chrome.storage.local.set = originalSet;
   const originalUpdate = chrome.declarativeNetRequest.updateEnabledRulesets;
-  await originalUpdate({ disableRulesetIds: ['easylist_ads_extra'] });
+  await originalUpdate({ disableRulesetIds: ['easylist_ads_extra', 'easylist_ads_extra_2'] });
   chrome.declarativeNetRequest.updateEnabledRulesets = async options => {
     if (options.enableRulesetIds?.includes('easylist_ads_extra')) throw new Error('Static quota reached');
     return originalUpdate(options);
@@ -86,6 +88,8 @@ test('background serializes global and site changes and keeps DNR state aligned'
   assert.equal(fallback.ok, true);
   assert.equal(fallback.enabled, true);
   assert.equal(fallback.extraEnabled, false);
+  // One supplemental set over quota must not keep the other out.
+  assert.equal(enabled.has('easylist_ads_extra_2'), true);
   chrome.declarativeNetRequest.updateEnabledRulesets = originalUpdate;
   assert.throws(() => context.api.cleanPausedSites(['bad host']), /Invalid site/);
   assert.throws(() => context.api.cleanPausedSites(['foo.-bad.example']), /Invalid site/);

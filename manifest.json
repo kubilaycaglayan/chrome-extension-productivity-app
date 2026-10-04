@@ -163,6 +163,11 @@
         "id": "easylist_ads_extra",
         "enabled": false,
         "path": "rules/easylist-ads-extra.json"
+      },
+      {
+        "id": "easylist_ads_extra_2",
+        "enabled": false,
+        "path": "rules/easylist-ads-extra-2.json"
       }
     ]
   }
