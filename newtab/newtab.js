@@ -44,6 +44,10 @@ productivityModules.register("newtab", () => {
   const status = element("status");
 
   const language = chrome.i18n?.getUILanguage?.() || "en-US";
+  // The page follows the OS theme. `matchMedia` is missing under test, where
+  // the dark baseline is what the assertions expect.
+  const lightQuery = globalThis.matchMedia?.("(prefers-color-scheme: light)") ?? null;
+  const scheme = () => (lightQuery?.matches ? "light" : "dark");
   const pixelRatio = globalThis.devicePixelRatio || 1;
   const wallpaperWidth = Math.min(3840, Math.round((globalThis.screen?.width || 1920) * pixelRatio));
   const wallpaperHeight = Math.min(2160, Math.round((globalThis.screen?.height || 1080) * pixelRatio));
@@ -182,11 +186,16 @@ productivityModules.register("newtab", () => {
   /* Background */
 
   function applyBackground() {
-    const css = settings.backgroundCss(background, wallpaperWidth, wallpaperHeight);
+    const theme = scheme();
+    const css = settings.backgroundCss(background, wallpaperWidth, wallpaperHeight, theme);
     document.body.style.backgroundColor = css.color;
     document.body.style.backgroundImage = css.image;
     document.body.classList.toggle("has-image", css.scrim);
+    // A swatch is identified by the preset's canonical value and shows the
+    // face of it the current theme would paint, so the marked one stays
+    // marked when the theme flips under it.
     for (const swatch of panel.querySelectorAll(".swatch")) {
+      swatch.style.background = settings.presetFace(swatch.dataset.value, theme);
       swatch.setAttribute("aria-checked", String(swatch.dataset.value === background.value));
     }
     // Collection tiles carry no value: they open a list rather than pick one.
@@ -228,7 +237,7 @@ productivityModules.register("newtab", () => {
       swatch.setAttribute("aria-checked", "false");
       swatch.title = name;
       swatch.dataset.value = value;
-      swatch.style.background = value;
+      swatch.style.background = settings.presetFace(value, scheme());
       swatch.addEventListener("click", () => {
         if (!active) return;
         void chooseBackground({ type, value }, `Background set to ${name}.`);
@@ -1095,6 +1104,11 @@ productivityModules.register("newtab", () => {
     }
   }
 
+  function onSchemeChange() {
+    if (!active) return;
+    applyBackground();
+  }
+
   function onStorageChanged(changes, area) {
     if (area !== "local") return;
     if (changes[settings.groupsKey]) {
@@ -1179,6 +1193,9 @@ productivityModules.register("newtab", () => {
   buildSwatches(colorSwatches, settings.colors, "color");
   buildSwatches(gradientSwatches, settings.gradients, "gradient");
   applyBackground();
+  // The stylesheet follows `prefers-color-scheme` on its own; the background
+  // is painted from script, so it has to be told.
+  lightQuery?.addEventListener?.("change", onSchemeChange);
   setEditing(false);
   form.addEventListener("submit", onSubmit);
   query.addEventListener("input", onQueryInput);
@@ -1250,6 +1267,7 @@ productivityModules.register("newtab", () => {
     document.removeEventListener("pointerdown", onDocumentPointerDown);
     document.removeEventListener("keydown", onKeyDown);
     chrome.storage.onChanged.removeListener(onStorageChanged);
+    lightQuery?.removeEventListener?.("change", onSchemeChange);
     groupDialog.close();
     bookmarkDialog.close();
     togglePanel(false);

@@ -148,7 +148,7 @@ function dataTransfer() {
 }
 
 // Builds a page whose chrome.* and network calls are all observable.
-function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {}, browserGroups = null, browserTabs = null, responses = {}, scripts } = {}) {
+function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {}, browserGroups = null, browserTabs = null, responses = {}, scripts, colorScheme = "dark" } = {}) {
   const store = JSON.parse(JSON.stringify(stored));
   const writes = [];
   const storageListeners = new Set();
@@ -167,6 +167,16 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     }];
   }));
   const fetches = [];
+  // The one media query the page asks about. Only the light one is consulted,
+  // so anything else answers "no" the way a real browser would.
+  let scheme = colorScheme;
+  const schemeListeners = new Set();
+  const mediaQuery = query => ({
+    media: query,
+    get matches() { return query === "(prefers-color-scheme: light)" && scheme === "light"; },
+    addEventListener(name, handler) { if (name === "change") schemeListeners.add(handler); },
+    removeEventListener(name, handler) { if (name === "change") schemeListeners.delete(handler); }
+  });
   const timers = new Map();
   let nextTimer = 0;
   let lastCanvas = null;
@@ -217,6 +227,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     AbortController,
     screen: { width: 1280, height: 800 },
     devicePixelRatio: 2,
+    matchMedia: mediaQuery,
     location: { assign: url => navigations.push(url) },
     fetch(url, options) {
       fetches.push({ url, options });
@@ -323,6 +334,12 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     storageChange(changes) {
       for (const handler of storageListeners) handler(changes, "local");
     },
+    // Flips the OS theme under a page that is already open.
+    setColorScheme(value) {
+      scheme = value;
+      for (const handler of schemeListeners) handler({ matches: value === "light" });
+    },
+    schemeListenerCount: () => schemeListeners.size,
     flushTimers() {
       for (const [id, handler] of timers) {
         timers.delete(id);

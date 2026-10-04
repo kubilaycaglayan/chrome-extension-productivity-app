@@ -1,5 +1,13 @@
-/* Dark, soft-contrast New Tab page. Text sits at >= 7:1 against every preset
-   background, and image backgrounds get a scrim so they never wash it out. */
+/* Soft-contrast New Tab page, in two skins. Text sits at >= 7:1 against every
+   preset background, and image backgrounds get a scrim so they never wash it
+   out. Dark is the baseline; the light theme at the foot of this file is the
+   same page at roughly half strength -- a tinted grey field, not white -- so
+   both skins keep the muted, low-glare feel.
+
+   Everything colour-bearing reads from a token here, except the handful of
+   layers the contrast test has to measure literally (the scrim and the
+   surfaces stacked over a photo). Those keep real rgba() values in both
+   themes so the test can blend them itself. */
 :root {
   color-scheme: dark;
   --text: #e9edf3;
@@ -11,6 +19,28 @@
   --accent: #8fb0f5;
   --danger: #f0a1a1;
   --radius: 14px;
+
+  /* The page floor, used when no background has been chosen yet. */
+  --page: #15181d;
+  --page-image: linear-gradient(160deg, #1a1f2b 0%, #12161d 55%, #191320 100%);
+  /* Tints of the accent, for the controls that sit "on" rather than beside it. */
+  --accent-soft: rgba(143, 176, 245, 0.16);
+  --accent-soft-hover: rgba(143, 176, 245, 0.26);
+  --accent-fill: rgba(143, 176, 245, 0.22);
+  --accent-fill-hover: rgba(143, 176, 245, 0.32);
+  /* The disc behind a favicon, and the placeholder behind a loading preview. */
+  --circle: rgba(255, 255, 255, 0.1);
+  --thumb: rgba(255, 255, 255, 0.06);
+  --dialog: #121620;
+  --backdrop: rgba(8, 10, 14, 0.62);
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --chip: rgba(12, 15, 20, 0.82);
+  --chip-hover: rgba(35, 41, 51, 0.95);
+  /* Chrome hands us an ungrouped colour name we do not map; this is its stand-in. */
+  --group-default: #a9b3c1;
+  /* The search field's clear button is a dark glyph, so dark mode flips it. */
+  --cancel-filter: invert(1) opacity(.5);
+
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
@@ -30,8 +60,8 @@ body {
   min-height: 100vh;
   padding: 0 24px 64px;
   color: var(--text);
-  background-color: #15181d;
-  background-image: linear-gradient(160deg, #1a1f2b 0%, #12161d 55%, #191320 100%);
+  background-color: var(--page);
+  background-image: var(--page-image);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -98,7 +128,7 @@ body.has-image #attribution {
   scrollbar-width: thin;
 }
 .tab-group-chip {
-  --group-color: #a9b3c1;
+  --group-color: var(--group-default);
   display: inline-flex;
   align-items: center;
   flex: none;
@@ -107,12 +137,12 @@ body.has-image #attribution {
   padding: 6px 10px;
   border: 1px solid var(--group-color);
   border-radius: 999px;
-  background: rgba(12, 15, 20, 0.82);
+  background: var(--chip);
   color: var(--text);
   font: 500 12px/1.3 inherit;
   cursor: pointer;
 }
-.tab-group-chip:hover { background: rgba(35, 41, 51, 0.95); }
+.tab-group-chip:hover { background: var(--chip-hover); }
 .tab-group-chip::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--group-color); }
 .tab-group-chip .tab-group-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .tab-group-chip .tab-group-count { color: var(--muted); }
@@ -157,18 +187,18 @@ body.has-image #attribution {
 }
 #query::placeholder { color: var(--muted); }
 #query:focus { outline: none; }
-#query::-webkit-search-cancel-button { filter: invert(1) opacity(.5); }
+#query::-webkit-search-cancel-button { filter: var(--cancel-filter); }
 #search button {
   flex-shrink: 0;
   padding: 9px 16px;
   border: 0;
   border-radius: 999px;
-  background: rgba(143, 176, 245, 0.16);
+  background: var(--accent-soft);
   color: var(--accent);
   font: 600 13px/1 inherit;
   cursor: pointer;
 }
-#search button:hover { background: rgba(143, 176, 245, 0.26); }
+#search button:hover { background: var(--accent-soft-hover); }
 
 #suggestions {
   position: absolute;
@@ -188,7 +218,7 @@ body.has-image #attribution {
   border-radius: 14px;
   background: rgba(16, 19, 25, 0.97);
   backdrop-filter: blur(14px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow);
 }
 #bookmark-suggestions { margin: -8px 0 14px; max-height: 190px; overflow-y: auto; }
 
@@ -303,7 +333,7 @@ body.has-image #attribution {
   height: 44px;
   padding: 10px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--circle);
   object-fit: contain;
 }
 .tile .initial, .add-icon {
@@ -378,8 +408,8 @@ body.has-image #attribution {
   cursor: pointer;
 }
 .ghost-button:hover { background: var(--card-hover); }
-.primary-button { border-color: transparent; background: rgba(143, 176, 245, 0.22); color: var(--accent); font-weight: 600; }
-.primary-button:hover { background: rgba(143, 176, 245, 0.32); }
+.primary-button { border-color: transparent; background: var(--accent-fill); color: var(--accent); font-weight: 600; }
+.primary-button:hover { background: var(--accent-fill-hover); }
 #group-actions { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
 
 /* Adding a group reads like the cards it will join: the same surface, with the
@@ -423,7 +453,7 @@ body.has-image #attribution {
 #edit-toggle svg, #background-toggle svg { width: 22px; height: 22px; fill: var(--text); }
 #extensions-toggle:hover,
 #edit-toggle:hover, #background-toggle:hover { background: var(--card-hover); }
-#edit-toggle[aria-pressed="true"] { border-color: var(--accent); background: rgba(143, 176, 245, 0.22); }
+#edit-toggle[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-fill); }
 #edit-toggle[aria-pressed="true"] svg { fill: var(--accent); }
 
 #background-panel {
@@ -440,7 +470,7 @@ body.has-image #attribution {
   border-radius: var(--radius);
   background: rgba(16, 19, 25, 0.94);
   backdrop-filter: blur(14px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow);
 }
 #background-panel h2 { margin: 0 0 12px; font-size: 15px; }
 #background-panel h3 { margin: 14px 0 8px; font-size: 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
@@ -473,7 +503,7 @@ body.has-image #attribution {
 }
 .wallpaper:hover { background: var(--card-hover); }
 .wallpaper[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
-.wallpaper img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: rgba(255, 255, 255, 0.06); }
+.wallpaper img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--thumb); }
 .wallpaper span {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -495,10 +525,10 @@ dialog {
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #121620;
+  background: var(--dialog);
   color: var(--text);
 }
-dialog::backdrop { background: rgba(8, 10, 14, 0.62); }
+dialog::backdrop { background: var(--backdrop); }
 dialog h2 { margin: 0 0 14px; font-size: 16px; }
 dialog label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--muted); }
 dialog input {
@@ -562,4 +592,64 @@ dialog input::placeholder { color: var(--muted); }
 
 @media (prefers-reduced-motion: no-preference) {
   .tile, .icon-button, .ghost-button, .primary-button, #search, #extensions-toggle, #edit-toggle, #background-toggle { transition: background-color 120ms ease, opacity 120ms ease, border-color 120ms ease; }
+}
+
+/* Light: halfway, not all the way. The page floor lands near 78% lightness so
+   it still reads as a tinted surface rather than a white sheet, and every
+   accent is re-picked dark enough to carry text on it.
+
+   The photo path inverts with the rest: where dark mode drops an opaque-dark
+   plate under text on a bright wallpaper, light mode drops an opaque-light one
+   under dark text on a dim wallpaper. */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --text: #171b21;
+    --muted: #495261;
+    --card: rgba(255, 255, 255, 0.42);
+    --card-hover: rgba(255, 255, 255, 0.66);
+    --border: rgba(20, 26, 35, 0.16);
+    --field: rgba(248, 249, 252, 0.78);
+    --accent: #1f3d7a;
+    --danger: #9c1f1f;
+
+    --page: #cbced4;
+    --page-image: linear-gradient(160deg, #ccd1dc 0%, #c4c9d4 55%, #cfc8d8 100%);
+    --accent-soft: rgba(31, 61, 122, 0.16);
+    --accent-soft-hover: rgba(31, 61, 122, 0.26);
+    --accent-fill: rgba(31, 61, 122, 0.18);
+    --accent-fill-hover: rgba(31, 61, 122, 0.28);
+    --circle: rgba(255, 255, 255, 0.34);
+    --thumb: rgba(20, 26, 35, 0.07);
+    --dialog: #dadde2;
+    --backdrop: rgba(58, 64, 74, 0.42);
+    --shadow: 0 16px 40px rgba(20, 26, 35, 0.2);
+    --chip: rgba(246, 247, 250, 0.88);
+    --chip-hover: rgba(226, 230, 236, 0.96);
+    --group-default: #5a6472;
+    /* The glyph is already dark; here it only needs softening. */
+    --cancel-filter: opacity(.55);
+  }
+
+  /* Chrome's group colours are pastels tuned for a dark strip. On a pale chip
+     they would vanish, so each one drops to a shade that still reads at 3:1. */
+  .tab-group-chip[data-color="blue"] { --group-color: #2f58a8; }
+  .tab-group-chip[data-color="red"] { --group-color: #a8333a; }
+  .tab-group-chip[data-color="yellow"] { --group-color: #7d5c07; }
+  .tab-group-chip[data-color="green"] { --group-color: #2f6f36; }
+  .tab-group-chip[data-color="pink"] { --group-color: #9e3570; }
+  .tab-group-chip[data-color="purple"] { --group-color: #5e3fa0; }
+  .tab-group-chip[data-color="cyan"] { --group-color: #10697c; }
+  .tab-group-chip[data-color="orange"] { --group-color: #8d4d1d; }
+
+  /* A light scrim lifts a dim photo instead of dimming a bright one. */
+  body.has-image #scrim { background: rgba(242, 244, 248, 0.42); }
+  body.has-image {
+    --card: rgba(236, 238, 243, 0.64);
+    --card-hover: rgba(236, 238, 243, 0.82);
+  }
+  body.has-image #drag-hint { background: rgba(239, 241, 245, 0.78); }
+  body.has-image #attribution { background: rgba(239, 241, 245, 0.85); }
+  #suggestions, #bookmark-suggestions { background: rgba(233, 236, 241, 0.97); }
+  #background-panel { background: rgba(233, 236, 241, 0.95); }
 }

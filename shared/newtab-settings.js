@@ -24,6 +24,48 @@ globalThis.newtabSettings = {
     ["Tide", "linear-gradient(160deg, #13202b 0%, #121a24 55%, #141722 100%)"]
   ],
 
+  // The same six tints and four gradients, in the same order, walked halfway
+  // to white rather than all of it: a light theme that is still a tinted
+  // field, matching how the page's own surfaces are pitched.
+  lightColors: [
+    ["Ink", "#cbced4"],
+    ["Slate", "#c6ccd4"],
+    ["Moss", "#c6d0c9"],
+    ["Plum", "#d0c9d6"],
+    ["Ocean", "#c5cfda"],
+    ["Cocoa", "#d6cec8"]
+  ],
+  lightGradients: [
+    ["Dusk", "linear-gradient(160deg, #ccd1dc 0%, #c4c9d4 55%, #cfc8d8 100%)"],
+    ["Pine", "linear-gradient(160deg, #c7d2cd 0%, #c3cdcd 55%, #c6ccd2 100%)"],
+    ["Ember", "linear-gradient(160deg, #dcccc6 0%, #d3c6c8 55%, #cbc7cc 100%)"],
+    ["Tide", "linear-gradient(160deg, #c3d1dc 0%, #c4cdd8 55%, #c8cbd6 100%)"]
+  ],
+
+  // The flat colour painted under a photo, so a slow or broken image still
+  // leaves the page looking like the theme it is in.
+  photoBase: { dark: "#0f1216", light: "#e4e7ec" },
+
+  // A stored background always names its dark value, whichever theme picked
+  // it: that is the preset's canonical name, so a choice made in daylight
+  // still reads as "Moss" after dark. The page looks the face up at paint
+  // time instead of rewriting storage on every theme switch.
+  presets(scheme) {
+    return scheme === "light"
+      ? { colors: this.lightColors, gradients: this.lightGradients }
+      : { colors: this.colors, gradients: this.gradients };
+  },
+
+  // Anything that is not a preset -- a colour from an imported backup, an
+  // uploaded photo -- has no counterpart to swap in, so it passes through.
+  presetFace(value, scheme) {
+    for (const key of ["colors", "gradients"]) {
+      const index = this[key].findIndex(([, preset]) => preset === value);
+      if (index >= 0) return this.presets(scheme)[key][index][1];
+    }
+    return value;
+  },
+
   get defaultBackground() {
     return { type: "gradient", value: this.gradients[0][1] };
   },
@@ -245,14 +287,19 @@ globalThis.newtabSettings = {
   },
 
   // The page paints a flat colour plus an optional layer, so a failed image
-  // still leaves readable text on a dark field.
-  backgroundCss(value, width = 1920, height = 1080) {
+  // still leaves readable text on the field behind it. `scheme` picks which
+  // face of a preset gets painted; a wallpaper looks the same in both.
+  backgroundCss(value, width = 1920, height = 1080, scheme = "dark") {
     const background = this.cleanBackground(value);
-    if (background.type === "color") return { color: background.value, image: "none", scrim: false };
-    if (background.type === "gradient") return { color: this.colors[0][1], image: background.value, scrim: false };
+    if (background.type === "color") {
+      return { color: this.presetFace(background.value, scheme), image: "none", scrim: false };
+    }
+    if (background.type === "gradient") {
+      return { color: this.presets(scheme).colors[0][1], image: this.presetFace(background.value, scheme), scrim: false };
+    }
     const source = background.type === "google"
       ? `${background.value}=w${Math.max(1, Math.round(width))}-h${Math.max(1, Math.round(height))}-p-k-no-nd-mv`
       : background.value;
-    return { color: "#0f1216", image: `url("${source}")`, scrim: true };
+    return { color: scheme === "light" ? this.photoBase.light : this.photoBase.dark, image: `url("${source}")`, scrim: true };
   }
 };
