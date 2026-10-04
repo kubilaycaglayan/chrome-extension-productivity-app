@@ -13,6 +13,9 @@ const ENABLED_KEY = 'moduleEnabled:ad-blocker';
 const SITES_KEY = 'adBlockerPausedSites';
 const RULE_ID_START = 1000000;
 const RULE_PRIORITY = 1000000;
+const COSMETIC_SCRIPT_ID = 'ad-blocker-cosmetic';
+const GENERIC_CSS_ID = 'ad-blocker-generic';
+const COSMETIC_IDS = [COSMETIC_SCRIPT_ID, GENERIC_CSS_ID];
 let queue = Promise.resolve();
 
 export function cleanPausedSites(value) {
@@ -54,6 +57,64 @@ export function resolveCosmetic(rules, site) {
   return [...new Set(scoped(rules.hides))].filter(selector => !cancelled.has(selector));
 }
 
+// The two halves of the cosmetic layer are registered apart because only one of them can
+// be switched off from inside a frame. The content script owns the per-host sheet, so it
+// stays registered even while the module is off: a frame already open adopts the sheet
+// again the moment the setting comes back. Content-script CSS has no such handle, as a
+// frame cannot detach what Chrome injected for it, so the generic stylesheet is instead
+// registered only while the module is on and excluded on paused hosts. Registering it
+// rather than declaring it in the manifest is also what honors the pause list at all, and
+// what puts generic hiding in front of first paint.
+const siteMatches = site => /^\d{1,3}(?:\.\d{1,3}){3}$/.test(site)
+  ? [`*://${site}/*`]
+  : [`*://${site}/*`, `*://*.${site}/*`];
+
+export function cosmeticScripts(enabled, sites) {
+  const scripts = [{
+    id: COSMETIC_SCRIPT_ID,
+    js: ['content/ad-blocker-excepted.js', 'content/ad-blocker.js'],
+    matches: ['<all_urls>'],
+    allFrames: true,
+    runAt: 'document_start'
+  }];
+  if (!enabled) return scripts;
+  return [...scripts, {
+    id: GENERIC_CSS_ID,
+    css: ['content/ad-blocker-generic.css'],
+    matches: ['<all_urls>'],
+    // A hostname covers its subdomains here the way `matchesSite` covers them elsewhere.
+    // An IP literal gets no subdomain pattern: it has no subdomains to cover, and a
+    // match pattern is not the place to find out whether Chrome agrees.
+    ...(sites.length ? { excludeMatches: sites.flatMap(siteMatches) } : {}),
+    allFrames: true,
+    runAt: 'document_start'
+  }];
+}
+
+// Chrome echoes a registration back with its own defaults filled in, so only the fields
+// this module sets are compared.
+const scriptShape = script => JSON.stringify([
+  script.id, script.js || [], script.css || [], script.matches || [],
+  script.excludeMatches || [], script.allFrames === true, script.runAt
+]);
+
+// A registration persists across browser sessions and survives an extension update, so the
+// set that is already there is read back rather than assumed, and one left behind by an
+// earlier preference is replaced. `updateContentScripts` would do for a registration that
+// only changed shape, but not for one that has to appear or go away, so both cases take the
+// same unregister-then-register path.
+async function reconcileCosmetic(enabled, sites) {
+  const desired = cosmeticScripts(enabled, sites);
+  const wanted = new Map(desired.map(script => [script.id, scriptShape(script)]));
+  const existing = (await chrome.scripting.getRegisteredContentScripts()).filter(script => COSMETIC_IDS.includes(script.id));
+  const keep = new Set(existing.filter(script => scriptShape(script) === wanted.get(script.id)).map(script => script.id));
+  const stale = existing.filter(script => !keep.has(script.id)).map(script => script.id);
+  if (stale.length) await chrome.scripting.unregisterContentScripts({ ids: stale });
+  const missing = desired.filter(script => !keep.has(script.id));
+  if (missing.length) await chrome.scripting.registerContentScripts(missing);
+  return desired.some(script => script.id === GENERIC_CSS_ID);
+}
+
 function enqueue(task) {
   const next = queue.then(task);
   queue = next.catch(error => console.error('Ad blocker:', error));
@@ -77,6 +138,7 @@ async function reconcile() {
   const stored = await chrome.storage.local.get([ENABLED_KEY, SITES_KEY]);
   const enabled = stored[ENABLED_KEY] !== false;
   const sites = cleanPausedSites(stored[SITES_KEY] || []);
+  await reconcileCosmetic(enabled, sites);
   const activeSets = await chrome.declarativeNetRequest.getEnabledRulesets();
   if (enabled && !activeSets.includes(RULESET)) await chrome.declarativeNetRequest.updateEnabledRulesets({ enableRulesetIds: [RULESET] });
   if (!enabled) {

@@ -56,17 +56,6 @@
         "<all_urls>"
       ],
       "js": [
-        "content/ad-blocker-excepted.js",
-        "content/ad-blocker.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
-    },
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
         "content/module-settings.js",
         "content/tab-marker.js",
         "content/dark-mode.js"

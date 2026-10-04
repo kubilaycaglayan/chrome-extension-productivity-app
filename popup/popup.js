@@ -299,7 +299,11 @@ async function initialize() {
             const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-enabled", enabled });
             if (!result?.ok || result.enabled !== enabled) throw new Error(result?.error || "Could not change network rules.");
           } else await chrome.storage.local.set({ [key]: enabled });
-          status.textContent = `${name} ${enabled ? "enabled" : "disabled"}.`;
+          // The ad blocker's generic stylesheet is a registered content script, which the
+          // browser applies on the next navigation, so an open page is only partly updated.
+          status.textContent = id === "ad-blocker"
+            ? `${name} ${enabled ? "enabled" : "disabled"}. Reload open pages to apply it fully.`
+            : `${name} ${enabled ? "enabled" : "disabled"}.`;
         } catch {
           input.checked = !enabled;
           status.textContent = id === "ad-blocker" ? "Could not change ad blocking. Check extension errors and try again." : "Could not save. Please try again.";
@@ -510,7 +514,7 @@ async function saveAdSites(sites) {
     if (!result?.ok) throw new Error(result?.error || "Could not update sites");
     pausedAdSites = result.sites;
     adSitesEditor.value = pausedAdSites.join("\n");
-    status.textContent = "Ad blocker site exceptions saved. Reload affected pages to restore network requests.";
+    status.textContent = "Ad blocker site exceptions saved. Reload affected pages to restore network requests and ad spaces.";
   } catch (error) {
     status.textContent = error.message || "Could not save sites.";
   } finally {
