@@ -253,12 +253,16 @@ body.has-image #attribution {
   align-items: start;
 }
 
+/* No backdrop-filter here, deliberately. Hovering a tile repaints a rectangle
+   inside the card; Chrome re-blurs only the damaged region and patches it into
+   the cached backdrop, and the patch edges show as hairlines ruled across the
+   card. The card's own translucent fill, over the scrim, already does the work
+   the blur was there for. */
 .group {
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
-  backdrop-filter: blur(10px);
 }
 .group-header { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
 .icon-button.handle { cursor: grab; font-size: 15px; }
