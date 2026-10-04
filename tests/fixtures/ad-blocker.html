@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Ad blocker regression fixture</title></head>
+<body>
+  <nav id="navigation"><a href="#article">Article</a></nav>
+  <aside id="AdBox2">Ad placement</aside>
+  <article id="article">Article content</article>
+  <form id="login"><input aria-label="Username" name="username"><button type="submit">Sign in</button></form>
+  <button id="checkout" type="button">Continue to checkout</button>
+  <button id="consent" type="button">Consent choices</button>
+  <video id="video" src="ad-blocker-video.mp4" muted playsinline controls></video>
+  <script>
+    window.fixtureActions = { login: 0, checkout: 0, consent: 0 };
+    document.getElementById('login').addEventListener('submit', event => { event.preventDefault(); fixtureActions.login++; });
+    document.getElementById('checkout').addEventListener('click', () => fixtureActions.checkout++);
+    document.getElementById('consent').addEventListener('click', () => fixtureActions.consent++);
+  </script>
+</body>
+</html>

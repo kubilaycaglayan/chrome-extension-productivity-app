@@ -1,0 +1,92 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const root = path.join(__dirname, '..');
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
+const core = JSON.parse(fs.readFileSync(path.join(root, 'rules/easylist-ads.json')));
+const extra = JSON.parse(fs.readFileSync(path.join(root, 'rules/easylist-ads-extra.json')));
+
+test('packaged rules are within guaranteed core and supplemental quotas, with exceptions and site conditions', () => {
+  assert.equal(manifest.permissions.includes('declarativeNetRequestWithHostAccess'), true);
+  assert.equal(manifest.declarative_net_request.rule_resources.length, 2);
+  assert.ok(core.length > 25000 && core.length < 30000);
+  assert.ok(extra.length > 15000 && extra.length < 30000);
+  for (const rules of [core, extra]) {
+    assert.equal(new Set(rules.map(rule => rule.id)).size, rules.length);
+    assert.ok(rules.every(rule => ['block', 'allow', 'allowAllRequests'].includes(rule.action.type)));
+    assert.ok(rules.every(rule => !rule.condition.regexFilter));
+  }
+  for (const host of ['doubleclick.net', 'amazon-adsystem.com', 'adnxs.com', 'pubmatic.com', 'openx.net', 'taboola.com', 'outbrain.com']) {
+    assert.ok(core.some(rule => rule.action.type === 'block' && rule.condition.urlFilter?.includes(host)), `${host} must be in the guaranteed core`);
+  }
+  assert.ok(core.some(rule => rule.action.type === 'allow' && rule.condition.initiatorDomains?.length && rule.condition.resourceTypes?.length));
+  assert.ok(core.some(rule => rule.action.type === 'block' && rule.condition.initiatorDomains?.length));
+  const cosmetic = manifest.content_scripts.find(entry => entry.js.includes('content/ad-blocker.js'));
+  assert.equal(cosmetic.all_frames, true);
+});
+
+test('background serializes global and site changes and keeps DNR state aligned', async () => {
+  let enabled = new Set(['easylist_ads']);
+  let dynamic = [];
+  const storage = {};
+  const listeners = {};
+  const chrome = {
+    runtime: { onInstalled: { addListener(fn) { listeners.installed = fn; } }, onStartup: { addListener(fn) { listeners.startup = fn; } }, onMessage: { addListener(fn) { listeners.message = fn; } } },
+    storage: { local: { async get() { return { ...storage }; }, async set(values) { Object.assign(storage, values); listeners.changed?.(Object.fromEntries(Object.entries(values).map(([key, newValue]) => [key, { newValue }])), 'local'); } }, onChanged: { addListener(fn) { listeners.changed = fn; } } },
+    declarativeNetRequest: {
+      async getEnabledRulesets() { return [...enabled]; },
+      async updateEnabledRulesets({ enableRulesetIds = [], disableRulesetIds = [] }) { disableRulesetIds.forEach(id => enabled.delete(id)); enableRulesetIds.forEach(id => enabled.add(id)); },
+      async getDynamicRules() { return dynamic; },
+      async updateDynamicRules({ removeRuleIds, addRules }) { dynamic = dynamic.filter(rule => !removeRuleIds.includes(rule.id)).concat(addRules); }
+    }
+  };
+  const source = fs.readFileSync(path.join(root, 'modules/ad-blocker.js'), 'utf8').replace('export function ', 'function ').replace('export function ', 'function ') + '\nthis.api = { cleanPausedSites, initializeAdBlocker };';
+  const context = { chrome, console: { error() {}, warn() {} }, URL };
+  vm.runInNewContext(source, context);
+  context.api.initializeAdBlocker();
+  const message = request => new Promise(resolve => listeners.message(request, { tab: { url: 'https://news.example/story' } }, resolve));
+  const pause = await message({ type: 'ad-blocker:set-sites', sites: ['https://news.example/story', 'NEWS.EXAMPLE', ''] });
+  assert.equal(pause.ok, true);
+  assert.deepEqual(Array.from(pause.sites), ['news.example']);
+  assert.equal(dynamic.length, 2);
+  assert.equal(dynamic[0].action.type, 'allow');
+  assert.equal(dynamic[1].action.type, 'allowAllRequests');
+  const off = await message({ type: 'ad-blocker:set-enabled', enabled: false });
+  assert.equal(off.enabled, false);
+  assert.equal(storage['moduleEnabled:ad-blocker'], false);
+  const on = await message({ type: 'ad-blocker:set-enabled', enabled: true });
+  assert.equal(on.enabled, true);
+  assert.equal(on.extraEnabled, true);
+  assert.equal((await message({ type: 'ad-blocker:get' })).topSite, 'news.example');
+  storage['moduleEnabled:ad-blocker'] = false;
+  listeners.installed();
+  assert.equal((await message({ type: 'ad-blocker:get' })).enabled, false);
+  storage['moduleEnabled:ad-blocker'] = true;
+  listeners.startup();
+  assert.equal((await message({ type: 'ad-blocker:get' })).enabled, true);
+  const originalSet = chrome.storage.local.set;
+  chrome.storage.local.set = async () => { throw new Error('Storage unavailable'); };
+  const failedPause = await message({ type: 'ad-blocker:set-sites', sites: ['other.example'] });
+  assert.equal(failedPause.ok, false);
+  assert.equal(dynamic[0].condition.initiatorDomains[0], 'news.example');
+  const failedToggle = await message({ type: 'ad-blocker:set-enabled', enabled: false });
+  assert.equal(failedToggle.ok, false);
+  assert.equal(enabled.has('easylist_ads'), true);
+  chrome.storage.local.set = originalSet;
+  const originalUpdate = chrome.declarativeNetRequest.updateEnabledRulesets;
+  await originalUpdate({ disableRulesetIds: ['easylist_ads_extra'] });
+  chrome.declarativeNetRequest.updateEnabledRulesets = async options => {
+    if (options.enableRulesetIds?.includes('easylist_ads_extra')) throw new Error('Static quota reached');
+    return originalUpdate(options);
+  };
+  const fallback = await message({ type: 'ad-blocker:reconcile' });
+  assert.equal(fallback.ok, true);
+  assert.equal(fallback.enabled, true);
+  assert.equal(fallback.extraEnabled, false);
+  chrome.declarativeNetRequest.updateEnabledRulesets = originalUpdate;
+  assert.throws(() => context.api.cleanPausedSites(['bad host']), /Invalid site/);
+  assert.throws(() => context.api.cleanPausedSites(['foo.-bad.example']), /Invalid site/);
+});

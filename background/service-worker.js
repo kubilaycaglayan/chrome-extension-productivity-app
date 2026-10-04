@@ -1,8 +1,10 @@
 import { initializeTabHistory } from "../modules/tab-history.js";
+import { initializeAdBlocker } from "../modules/ad-blocker.js";
 import { initializeTabMarkers } from "../modules/tab-marker.js";
 
 initializeTabHistory();
 initializeTabMarkers();
+initializeAdBlocker();
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;

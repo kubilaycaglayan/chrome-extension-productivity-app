@@ -1,4 +1,5 @@
 const MODULES = [
+  ["ad-blocker", "Ad blocker", "Block ads and hide ad spaces. Pause it on sites that need an exception.", "browser", "🛡️"],
   ["page-outline", "Page outline", "Show a clickable outline of headings on the current page.", "browser", "📑"],
   ["tab-history", "Recent-tab switching", "Switch between your two most recent tabs.", "browser", "🔁"],
   ["tab-marker", "Tab markers", "Mark tabs with colored emoji from the context menu.", "browser", "🏷️"],
@@ -29,6 +30,12 @@ const darkModeToggle = document.getElementById("dark-mode-toggle");
 const darkModeSiteToggle = document.getElementById("dark-mode-site-toggle");
 const darkModeKey = "moduleEnabled:dark-mode";
 const darkModeSitesKey = "darkModeSites";
+const adSitesKey = "adBlockerPausedSites";
+const adSiteToggle = document.getElementById("ad-blocker-site-toggle");
+const adSitesEditor = document.getElementById("ad-blocker-sites");
+const adSitesSave = document.getElementById("save-ad-blocker-sites");
+let pausedAdSites = [];
+let adBlockerReady = false;
 let currentSite = null;
 let outlineTabId = null;
 
@@ -46,6 +53,7 @@ Promise.all([
     darkModeSiteToggle.checked = Array.isArray(settings[darkModeSitesKey]) && settings[darkModeSitesKey].includes(currentSite);
     darkModeSiteToggle.title = currentSite;
     darkModeSiteToggle.disabled = false;
+    refreshAdSiteToggle();
   } else {
     darkModeSiteToggle.title = "Available on website tabs";
   }
@@ -239,16 +247,20 @@ async function initialize() {
       input.setAttribute("role", "switch");
       input.setAttribute("aria-label", name);
       input.checked = settings[key] !== false;
+      if (id === "ad-blocker") input.disabled = true;
       inputs.set(key, input);
       input.addEventListener("change", async () => {
         const enabled = input.checked;
         input.disabled = true;
         try {
-          await chrome.storage.local.set({ [key]: enabled });
+          if (id === "ad-blocker") {
+            const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-enabled", enabled });
+            if (!result?.ok || result.enabled !== enabled) throw new Error(result?.error || "Could not change network rules.");
+          } else await chrome.storage.local.set({ [key]: enabled });
           status.textContent = `${name} ${enabled ? "enabled" : "disabled"}.`;
         } catch {
           input.checked = !enabled;
-          status.textContent = "Could not save. Please try again.";
+          status.textContent = id === "ad-blocker" ? "Could not change ad blocking. Check extension errors and try again." : "Could not save. Please try again.";
         } finally {
           input.disabled = false;
         }
@@ -257,6 +269,7 @@ async function initialize() {
       document.getElementById(`group-${group}`).appendChild(row);
     }
     status.textContent = "Changes apply immediately and are saved.";
+    await initializeAdControls();
   } catch {
     status.textContent = "Could not load settings. Reopen the popup to retry.";
   }
@@ -271,7 +284,16 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
   for (const [key, change] of Object.entries(changes)) {
     const input = inputs.get(key);
-    if (input) input.checked = change.newValue !== false;
+    if (input && key === "moduleEnabled:ad-blocker") {
+      void chrome.runtime.sendMessage({ type: "ad-blocker:get" }).then(result => {
+        if (result?.ok) input.checked = result.enabled;
+      }).catch(() => {});
+    } else if (input) input.checked = change.newValue !== false;
+  }
+  if (changes[adSitesKey]) {
+    pausedAdSites = Array.isArray(changes[adSitesKey].newValue) ? changes[adSitesKey].newValue : [];
+    if (document.activeElement !== adSitesEditor) adSitesEditor.value = pausedAdSites.join("\n");
+    refreshAdSiteToggle();
   }
   if (changes[xKeywords.key]) {
     const words = changes[xKeywords.key].newValue;
@@ -315,7 +337,7 @@ document.getElementById("keyword-settings").addEventListener("submit", async eve
 document.getElementById("export-settings").addEventListener("click", async () => {
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
-    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
+    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
     const modules = Object.fromEntries(MODULES.map(([id]) => [id, settings[`moduleEnabled:${id}`] !== false]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
@@ -324,7 +346,7 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
     const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
     const darkModeSites = Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : [];
-    const backup = { version: 1, modules, darkMode: settings[darkModeKey] === true, darkModeSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
+    const backup = { version: 1, modules, adBlockerPausedSites: settings[adSitesKey] || [], darkMode: settings[darkModeKey] === true, darkModeSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -348,6 +370,11 @@ document.getElementById("import-settings").addEventListener("change", async (eve
       if (backup.modules[id] === undefined) continue;
       if (typeof backup.modules[id] !== "boolean") throw new Error("Invalid setting");
       settings[`moduleEnabled:${id}`] = backup.modules[id];
+    }
+    if (backup.adBlockerPausedSites !== undefined) {
+      const checked = await chrome.runtime.sendMessage({ type: "ad-blocker:validate-sites", sites: backup.adBlockerPausedSites });
+      if (!checked?.ok) throw new Error(checked?.error || "Invalid paused sites");
+      settings[adSitesKey] = checked.sites;
     }
     if (backup.darkMode !== undefined) {
       if (typeof backup.darkMode !== "boolean") throw new Error("Invalid dark mode setting");
@@ -376,7 +403,21 @@ document.getElementById("import-settings").addEventListener("change", async (eve
     if (backup.newtabBackground !== undefined) {
       settings[newtabSettings.backgroundKey] = newtabSettings.cleanBackground(backup.newtabBackground);
     }
+    const importedAdEnabled = settings["moduleEnabled:ad-blocker"];
+    const importedAdSites = settings[adSitesKey];
+    delete settings["moduleEnabled:ad-blocker"];
+    delete settings[adSitesKey];
     await chrome.storage.local.set(settings);
+    if (importedAdEnabled !== undefined) {
+      const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-enabled", enabled: importedAdEnabled });
+      if (!result?.ok) throw new Error(result?.error || "Could not apply ad blocker setting");
+    }
+    if (importedAdSites !== undefined) {
+      const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-sites", sites: importedAdSites });
+      if (!result?.ok) throw new Error(result?.error || "Could not apply paused sites");
+    }
+    const adResult = await chrome.runtime.sendMessage({ type: "ad-blocker:reconcile" });
+    if (!adResult?.ok) throw new Error(adResult?.error || "Could not apply ad rules");
     if (settings[mackolikSettings.key]) teamEditor.value = settings[mackolikSettings.key].join("\n");
     if (settings[mackolikSettings.followedKey]) followedEditor.value = settings[mackolikSettings.followedKey].join("\n");
     if (settings[xKeywords.key]) wordEditor.value = settings[xKeywords.key].join("\n");
@@ -387,3 +428,48 @@ document.getElementById("import-settings").addEventListener("change", async (eve
     event.target.value = "";
   }
 });
+
+
+function refreshAdSiteToggle() {
+  if (!currentSite || !adBlockerReady) return;
+  const paused = pausedAdSites.some(site => currentSite === site || currentSite.endsWith(`.${site}`));
+  adSiteToggle.textContent = paused ? "Resume on this site" : "Pause on this site";
+  adSiteToggle.disabled = false;
+}
+async function initializeAdControls() {
+  const result = await chrome.runtime.sendMessage({ type: "ad-blocker:get" });
+  if (!result?.ok) throw new Error(result?.error || "Could not read ad rules");
+  const input = inputs.get("moduleEnabled:ad-blocker");
+  input.checked = result.enabled;
+  input.disabled = false;
+  pausedAdSites = result.sites;
+  adSitesEditor.value = pausedAdSites.join("\n");
+  adSitesEditor.disabled = false;
+  adSitesSave.disabled = false;
+  adBlockerReady = true;
+  document.getElementById("ad-blocker-site-name").textContent = currentSite || "Open a website to pause blocking.";
+  refreshAdSiteToggle();
+  if (result.enabled && !result.extraEnabled) status.textContent = "Core ad rules active. Supplemental rules unavailable due to browser quota.";
+}
+async function saveAdSites(sites) {
+  adSiteToggle.disabled = true;
+  adSitesSave.disabled = true;
+  try {
+    const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-sites", sites });
+    if (!result?.ok) throw new Error(result?.error || "Could not update sites");
+    pausedAdSites = result.sites;
+    adSitesEditor.value = pausedAdSites.join("\n");
+    status.textContent = "Ad blocker site exceptions saved. Reload affected pages to restore network requests.";
+  } catch (error) {
+    status.textContent = error.message || "Could not save sites.";
+  } finally {
+    adSitesSave.disabled = false;
+    refreshAdSiteToggle();
+  }
+}
+adSiteToggle.addEventListener("click", () => {
+  if (!currentSite) return;
+  const paused = pausedAdSites.some(site => currentSite === site || currentSite.endsWith(`.${site}`));
+  void saveAdSites(paused ? pausedAdSites.filter(site => currentSite !== site && !currentSite.endsWith(`.${site}`)) : [...pausedAdSites, currentSite]);
+});
+adSitesSave.addEventListener("click", () => void saveAdSites(adSitesEditor.value.split(/\r?\n/)));

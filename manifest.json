@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Productivity",
   "version": "1.1.0",
-  "description": "Browse page outlines, switch recent tabs, force dark mode on websites, mark tabs, and customize the new tab page.",
+  "description": "Browse page outlines, block ads, switch recent tabs, force dark mode, mark tabs, and customize the new tab page.",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
@@ -17,7 +17,8 @@
     "storage",
     "tabGroups",
     "tabs",
-    "topSites"
+    "topSites",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -38,6 +39,12 @@
     "newtab": "newtab/newtab.html"
   },
   "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/ad-blocker-selectors.js", "content/ad-blocker.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
     {
       "matches": [
         "<all_urls>"
@@ -113,5 +120,11 @@
       },
       "description": "Toggle between the two most recently visited tabs"
     }
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      { "id": "easylist_ads", "enabled": true, "path": "rules/easylist-ads.json" },
+      { "id": "easylist_ads_extra", "enabled": false, "path": "rules/easylist-ads-extra.json" }
+    ]
   }
 }

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "devDependencies": { "@adguard/dnr-converter": "2.0.0" },
+  "engines": { "node": ">=22" }
+}

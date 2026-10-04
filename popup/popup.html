@@ -44,6 +44,17 @@
       <section class="module-group" aria-labelledby="browser-heading">
         <h3 id="browser-heading" class="group-heading"><span aria-hidden="true">🧭</span> Browser &amp; new tab</h3>
         <div id="group-browser" class="module-list"></div>
+        <details class="panel">
+          <summary>Ad blocker sites</summary>
+          <div class="ad-blocker-sites">
+            <button id="ad-blocker-site-toggle" type="button" disabled>Pause on this site</button>
+            <p id="ad-blocker-site-name" class="description">Open a website to pause blocking.</p>
+            <label for="ad-blocker-sites" class="name">Paused sites</label>
+            <p class="description">One hostname per line. Subdomains are included.</p>
+            <textarea id="ad-blocker-sites" rows="4" disabled></textarea>
+            <button id="save-ad-blocker-sites" type="button" disabled>Save sites</button>
+          </div>
+        </details>
       </section>
       <section class="module-group" aria-labelledby="youtube-heading">
         <h3 id="youtube-heading" class="group-heading"><span aria-hidden="true">▶️</span> YouTube</h3>
