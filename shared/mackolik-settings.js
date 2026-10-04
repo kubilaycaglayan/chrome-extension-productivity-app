@@ -1,6 +1,8 @@
 globalThis.mackolikSettings = {
   key: "mackolikHighlightedTeams",
   followedKey: "mackolikFollowedTeams",
+  // Personal lists stay out of the repo: the popup prefills from the gitignored
+  // mackolik-teams.local.json when storage holds no teams yet.
   defaults: [],
   normalize(value) {
     return value.toLocaleLowerCase("tr-TR").normalize("NFD")

@@ -48,7 +48,7 @@ async function run() {
   vm.runInContext(fs.readFileSync("shared/mackolik-settings.js", "utf8"), context);
   vm.runInContext(fs.readFileSync("content/mackolik-priority-rows.js", "utf8"), context);
   vm.runInContext(fs.readFileSync("content/mackolik-featured-video.js", "utf8"), context);
-  assert.deepEqual(rows.map(r => r.hasAttribute(attribute)), [true, true, true, true, false]);
+  assert.deepEqual(rows.map(r => r.hasAttribute(attribute)), [false, false, false, false, false], "No rows are highlighted before teams are configured");
   assert.equal(context.mackolikSettings.normalize("FENERBAHÇE"), "fenerbahce");
   assert.equal(context.mackolikSettings.clean(["Türkiye", "TURKIYE", "", "  Arsenal  "]).join(","), "Türkiye,Arsenal");
   assert.equal(observation.characterData, true);

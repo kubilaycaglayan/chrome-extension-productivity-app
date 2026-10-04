@@ -23,12 +23,15 @@ const saveTeams = document.getElementById("save-highlight-teams");
 const wordEditor = document.getElementById("blocked-words");
 const saveWords = document.getElementById("save-blocked-words");
 
-async function loadBlockedWordsPrefill() {
+// Personal lists are kept in gitignored files beside the extension rather than
+// in the source, so a fresh profile still starts with them while the
+// repository ships none. A missing file simply prefills nothing.
+async function loadLocalList(file, clean) {
   try {
-    const response = await fetch(chrome.runtime.getURL("x-keywords.local.json"));
+    const response = await fetch(chrome.runtime.getURL(file));
     if (!response.ok) return [];
-    const words = await response.json();
-    return Array.isArray(words) ? xKeywords.clean(words) : [];
+    const values = await response.json();
+    return Array.isArray(values) ? clean(values) : [];
   } catch {
     return [];
   }
@@ -251,14 +254,16 @@ async function initialize() {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
     const settings = await chrome.storage.local.get([...keys, mackolikSettings.key, mackolikSettings.followedKey, xKeywords.key]);
     const teams = settings[mackolikSettings.key];
-    teamEditor.value = (Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults).join("\n");
+    teamEditor.value = (Array.isArray(teams)
+      ? mackolikSettings.clean(teams)
+      : await loadLocalList("mackolik-teams.local.json", values => mackolikSettings.clean(values))).join("\n");
     teamEditor.disabled = false;
     followedEditor.value = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []).join("\n");
     followedEditor.disabled = false;
     saveTeams.disabled = false;
     const blockedWords = Array.isArray(settings[xKeywords.key])
       ? xKeywords.clean(settings[xKeywords.key])
-      : await loadBlockedWordsPrefill();
+      : await loadLocalList("x-keywords.local.json", values => xKeywords.clean(values));
     wordEditor.value = blockedWords.join("\n");
     wordEditor.disabled = false;
     saveWords.disabled = false;
@@ -380,7 +385,7 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, cookieAccepterSettings.pausedKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
     const modules = Object.fromEntries(MODULES.map(([id]) => [id, id === "cookie-accepter" ? settings[`moduleEnabled:${id}`] === true : settings[`moduleEnabled:${id}`] !== false]));
     const teams = settings[mackolikSettings.key];
-    const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : mackolikSettings.defaults;
+    const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : [];
     const followedTeams = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []);
     const blockedWords = Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : [];
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
