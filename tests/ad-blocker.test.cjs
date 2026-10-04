@@ -7,11 +7,15 @@ const vm = require('node:vm');
 const root = path.join(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
 const core = JSON.parse(fs.readFileSync(path.join(root, 'rules/easylist-ads.json')));
-const supplemental = ['rules/easylist-ads-extra.json', 'rules/easylist-ads-extra-2.json'].map(file => JSON.parse(fs.readFileSync(path.join(root, file))));
+const supplementalResources = manifest.declarative_net_request.rule_resources.filter(resource => resource.id !== 'easylist_ads');
+const supplemental = supplementalResources.map(resource => JSON.parse(fs.readFileSync(path.join(root, resource.path))));
 
 test('packaged rules are within guaranteed core and supplemental quotas, with exceptions and site conditions', () => {
   assert.equal(manifest.permissions.includes('declarativeNetRequestWithHostAccess'), true);
-  assert.equal(manifest.declarative_net_request.rule_resources.length, 3);
+  assert.equal(manifest.declarative_net_request.rule_resources.length, 7);
+  // Only the core may load from the manifest; the rest are enabled at runtime so a
+  // set that does not fit the shared static quota cannot keep the others out.
+  assert.equal(manifest.declarative_net_request.rule_resources.filter(resource => resource.enabled).map(resource => resource.id).join(), 'easylist_ads');
   assert.ok(core.length > 25000 && core.length < 30000);
   for (const rules of supplemental) assert.ok(rules.length > 15000 && rules.length < 30000);
   for (const rules of [core, ...supplemental]) {
@@ -79,7 +83,7 @@ test('background serializes global and site changes and keeps DNR state aligned'
   assert.equal(enabled.has('easylist_ads'), true);
   chrome.storage.local.set = originalSet;
   const originalUpdate = chrome.declarativeNetRequest.updateEnabledRulesets;
-  await originalUpdate({ disableRulesetIds: ['easylist_ads_extra', 'easylist_ads_extra_2'] });
+  await originalUpdate({ disableRulesetIds: supplementalResources.map(resource => resource.id) });
   chrome.declarativeNetRequest.updateEnabledRulesets = async options => {
     if (options.enableRulesetIds?.includes('easylist_ads_extra')) throw new Error('Static quota reached');
     return originalUpdate(options);

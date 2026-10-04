@@ -1,5 +1,8 @@
 const RULESET = 'easylist_ads';
-const EXTRA_RULESETS = ['easylist_ads_extra', 'easylist_ads_extra_2'];
+const EXTRA_RULESETS = [
+  'easylist_ads_extra', 'easylist_ads_extra_2', 'easylist_ads_extra_3',
+  'easylist_ads_extra_4', 'easylist_ads_extra_5', 'easylist_ads_extra_6'
+];
 const ENABLED_KEY = 'moduleEnabled:ad-blocker';
 const SITES_KEY = 'adBlockerPausedSites';
 const RULE_ID_START = 1000000;

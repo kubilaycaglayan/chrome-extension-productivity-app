@@ -11,11 +11,23 @@
       "directory": "easyprivacy",
       "homepage": "https://easylist.to/",
       "license": "GPL-3.0-or-later and CC BY-SA 3.0 Unported"
+    },
+    {
+      "name": "AdGuard Tracking Protection filter",
+      "filterId": 3,
+      "homepage": "https://github.com/AdguardTeam/AdguardFilters",
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "AdGuard Mobile Ads filter",
+      "filterId": 11,
+      "homepage": "https://github.com/AdguardTeam/AdguardFilters",
+      "license": "GPL-3.0-only"
     }
   ],
   "revision": "bde0d888ef7c5cb99e9c682b1862988e358d10d6",
   "converter": "@adguard/dnr-converter@2.0.0",
-  "generatedAt": "2026-10-04T11:09:47.666Z",
+  "generatedAt": "2026-10-04T11:25:35.926Z",
   "files": [
     {
       "list": "easylist",
@@ -151,16 +163,75 @@
       "lines": 969
     }
   ],
+  "adguard": [
+    {
+      "list": "adguard_tracking",
+      "url": "https://filters.adtidy.org/extension/chromium/filters/3.txt",
+      "Title": "AdGuard Tracking Protection filter",
+      "Version": "2.1.12.77",
+      "TimeUpdated": "2026-10-03T16:18:26+00:00",
+      "Checksum": "ItC8X+qlgBkaYXHSClSntw",
+      "sha256": "0aca447c3ceb7046446006e15054d54c5813ae866db38aba88ddee1fec7e788f",
+      "lines": 331197,
+      "selected": {
+        "General (unsorted) url blocking": 713,
+        "Specific web sites": 5506,
+        "Mobile analytics": 1309,
+        "Mobile analytics exceptions": 23,
+        "Fixing filtration errors (false-positive)": 2372,
+        "Tracking servers list": 103368
+      },
+      "skipped": {
+        "CNAME mail trackers": 209715,
+        "Fixing filtration errors (false-positive) Cookies": 36,
+        "General rules - Cookies": 447,
+        "Specific rules - Cookies": 613,
+        "General javascript, CSS and HTML extensions": 5,
+        "General hiding rules": 0,
+        "Including a part of domains from EasyPrivacy": 2642
+      }
+    },
+    {
+      "list": "adguard_mobile",
+      "url": "https://filters.adtidy.org/extension/chromium/filters/11.txt",
+      "Title": "AdGuard Mobile Ads filter",
+      "Version": "2.0.72.51",
+      "TimeUpdated": "2026-10-03T14:52:18+00:00",
+      "Checksum": "9ZlCpdx+IaEmP0DHmwx3Ww",
+      "sha256": "792e02ff3b4c4396b6e710f5186a1e22017852fa4af99b1848c63302ce6cd0aa",
+      "lines": 9136,
+      "selected": {
+        "Advertising networks": 988,
+        "For HTTPS websites when HTTPS filtering is disabled": 2,
+        "General URL blocking rules": 41,
+        "Fixing filtration errors (false-positive)": 142,
+        "Rules for specific websites": 279
+      },
+      "skipped": {
+        "Rules for specific applications": 69,
+        "Anti-adblock rules": 23,
+        "Content replacement rules": 2,
+        "General element hiding rules": 0,
+        "popular banner sizes": 0,
+        "General javascript, CSS and HTML extensions": 1
+      }
+    }
+  ],
   "network": {
-    "input": 66850,
-    "selected": 66835,
+    "input": 181593,
+    "selected": 181161,
     "coreSelection": {
-      "guaranteedCount": 21595,
+      "guaranteedCount": 27478,
       "pooledFiles": [
-        "easylist_adservers.txt"
+        "easylist_adservers.txt",
+        "easyprivacy_trackingservers.txt",
+        "easyprivacy_trackingservers_general.txt",
+        "easyprivacy_trackingservers_thirdparty.txt",
+        "easyprivacy_trackingservers_international.txt",
+        "adguard_tracking: Tracking servers list"
       ],
-      "pooledCount": 45240,
-      "corePooledCount": 7805,
+      "pooledCount": 148765,
+      "corePooledCount": 1922,
       "priorityHosts": [
         "doubleclick.net",
         "googlesyndication.com",
@@ -188,23 +259,25 @@
       "||html-load.com^$document,popup",
       "||img-load.com^$document,popup",
       "@@||google.com/recaptcha/$csp,subdocument",
-      "/earn.php?z=$popup,subdocument",
-      "||2mdn.net/videoplayback/$rewrite=abp-resource:blank-mp4,domain=laurelberninteriors.com|safeframe.googlesyndication.com",
-      "||googlevideo.com/videoplayback?$rewrite=abp-resource:blank-mp4,domain=laurelberninteriors.com|safeframe.googlesyndication.com",
-      "||innovid.com/media/encoded/*.mp4$rewrite=abp-resource:blank-mp4,domain=ktla.com",
-      "$csp=child-src 'none'; frame-src 'self' *; worker-src 'none',domain=fileone.tv|theappguruz.com",
-      "$csp=child-src 'none'; frame-src *; worker-src 'none',domain=thepiratebay.org|vidoza.net",
-      "||d1z2jf7jlzjs58.cloudfront.net^$rewrite=abp-resource:blank-js,domain=voici.fr"
+      "@@://10.0.0.$generichide",
+      "@@://10.1.1.$generichide",
+      "@@://127.0.0.1$generichide",
+      "@@://192.168.$generichide",
+      "@@://localhost/$generichide",
+      "@@://localhost:$generichide",
+      "@@||accounts.google.com^$generichide",
+      "@@||ads.microsoft.com^$generichide",
+      "@@||adsmanager.facebook.com^$generichide",
+      "@@||amazon.ae^$generichide",
+      "@@||amazon.ca^$generichide",
+      "@@||amazon.cn^$generichide"
     ],
     "core": {
       "input": 29400,
-      "output": 29214,
-      "errors": 16,
+      "output": 29345,
+      "errors": 51,
       "sampleErrors": [
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)\\w{30,}\\.me\\/\\w{30,}\\./$script,third-party\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)216\\.21\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.154\\..{100,}/\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.197\\..{100,}/\"",
+        "EmptyDomainsError: Conversion initiatorDomains is empty, but original rule's domains not: \"@@||cdn.taboola.com/libtrc/unpkg/tfa.js$domain=/anitube\\d+\\.vip/\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/.*\\.(club|bid|biz|xyz|site|pro|info|online|icu|monster|buzz|website|biz|re|casa|top|one|space|network|live|systems|ml|world|life|co)\\/.*/$~image,~media,~subdocument,third-party,domain=1cloudfile.com|adblockstreamtape.art|adblockstreamtape.site|bowfile.com|clipconverter.cc|desiupload.co|dood.la|dood.pm|dood.so|dood.to|dood.watch|dood.ws|dopebox.to|downloadpirate.com|drivebuzz.icu|embedstream.me|eplayvid.net|fmovies.ps|gospeljingle.com|kissanimes.net|movies2watch.tv|myflixer.today|myflixertv.to|powvideo.net|scloud.online|skidrowcodex.net|streamtape.com|theproxy.ws|vidembed.cc|vidembed.io|vidlii.com|vidoo.org|vipbox.lc\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/[0-9a-f]{32}\\/invoke\\.js/$script,third-party\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.[0-9a-z]{8,}\\.com\\/[0-9a-z]{1,4}\\.js$/$script,third-party,domain=dood.la|dood.pm|dood.sh|dood.so|dood.to|dood.watch|dood.ws\"",
@@ -216,28 +289,100 @@
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/tmx\\.(td|tdbank)\\.com\\/[a-z0-9]{14,18}\\.js.*/$script,domain=mbna.ca|td.com|tdbank.com\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.ebay-kleinanzeigen\\.de\\/[a-z0-9]{8}\\-[0-9a-f]{4}\\-/$script,domain=kleinanzeigen.de\"",
         "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/www\\.kroger\\.com\\/content\\/{20,}/$script,xmlhttprequest,domain=kroger.com\"",
-        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/cdn\\.jsdelivr\\.net\\/npm\\/[-a-z_]{4,22}@latest\\/dist\\/script\\.min\\.js$/$script,third-party\""
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/cdn\\.jsdelivr\\.net\\/npm\\/[-a-z_]{4,22}@latest\\/dist\\/script\\.min\\.js$/$script,third-party\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/\\/([0-9a-z]+\\.){1,}[0-9a-z]+\\.[a-z]{2,}\\/[a-z]{8}\\.js\\?st=[0-9A-Z]{6,8}$/$script,~third-party,match-case\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/[a-z0-9]{12}\\/[a-zA-Z0-9\\/\\+\\-]{97,106}$/$match-case,script,~third-party\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/(?!assets|script|static)(?:[0-9a-z]{10,13}|[0-9a-z]{6})\\.[0-9A-Za-z.\\-_]+\\/(?=[0-9a-z+\\/\\-]*[A-Z])[0-9A-Za-z+\\/\\-]{80,106}$/$match-case,script,~third-party\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/cs\\d{3}\\.\\w+\\.com\\/cscript\\/\\d{3}\\/[\\w\\d]+\\.js$/$script,third-party,match-case\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/(public|resources|static|assets)\\/([a-f0-9]){28,31}$/$script,xmlhttprequest,~third-party\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/[a-z][a-z][a-z]+\\.[a-z][a-z]+\\/[a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9]\\/[a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9][a-z0-9]$/$~third-party,method=post,domain=srnky.com|aii.sh|lnbz.la|clksz.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/(android\\.com\\.pl|biznesenter\\.pl|invezz\\.com)\\/[a-z0-9]{1,4}\\/$/$script,~third-party,domain=android.com.pl|biznesenter.pl|invezz.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/robota\\.ua\\/[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]\\/$/$script,domain=robota.ua\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/https:\\/\\/www\\.fakt\\.pl\\/[a-zA-Z0-9_]{40,200}/$xmlhttprequest,~third-party,match-case,domain=fakt.pl\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/korea\\.epsilonsoft\\.to/[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9].js$/$script,domain=epsilonsoft.to\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/www\\.totaljobs\\.com\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+/$script,xmlhttprequest,domain=totaljobs.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/www\\.lowes\\.com\\/[a-zA-Z0-9-_]+\\/[a-z]+\\/[a-zA-Z0-9-_]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+\\/[a-zA-Z0-9]+$/$domain=lowes.com,xmlhttprequest,method=post\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/cdn\\.jsdelivr\\.net\\/npm\\/([a-z]|-|_){4,22}@latest\\/dist\\/script\\.min\\.js$/$domain=mlbpark.donga.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/(www|m)\\.coupang\\.com\\/[A-Za-z0-9_]+\\/[A-Za-z0-9_-]+\\/[A-Za-z0-9_-]+\\/[A-Za-z0-9_]+\\/[A-Za-z0-9_]+(\\/[A-Za-z0-9_-]+){0,5}$/$domain=coupang.com,xmlhttprequest,method=post,match-case\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/-[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+\\/[A-z0-9]+$/$domain=calvinklein.*,xmlhttprequest,script\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/lastpass.com(\\/[\\w\\d-]{2,10}){6,10}\\/[\\w]{3,5}$/$script,xmlhttprequest,domain=lastpass.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/js\\/[a-z]{3}\\d\\.js$/$script,~third-party,domain=eegg.fun\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/emirates\\.com\\/([A-Za-z0-9]+\\/){4,}[A-Za-z0-9]{4,}$/$domain=emirates.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\.com\\/[-_0-9a-zA-Z]{4,}\\/[-\\/_0-9a-zA-Z]{25,}$/$script,~third-party,domain=gu-global.com|uniqlo.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/:\\/\\/rkn.gov.ru\\/[a-g0-9]{30,}.gif/$domain=rkn.gov.ru\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/www\\.purevpn\\.[a-z]+\\/[a-z0-9]{7}\\/$/$script\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/anon1.gt\\d{6}.com/\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^anon1.gt\\d{6}.com$/\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https:\\/\\/(a|c)\\.[0-9a-f]{56}\\.com$/\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^(a|c)\\.[0-9a-f]{56}\\.com$/\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/m\\.3wwd\\.com\\/(public|static)\\/\\d+\\.js/$domain=3wwd.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/js\\/[djpf]{2}(ad)?.*a\\d{2}\\.js/$domain=biqiugexx.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/uploads\\/\\d{4}\\/\\d{2}\\/(?!85466|banner)[_0-9a-zA-Z]+\\.(?:gif|jpg)$/$image,~third-party,domain=eromoji.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/\\/slade[0-9]?\\.js/$domain=zxzj.me\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/jx.3aym.cn\\/[0-9]{1,6}.gif/$domain=3aym.cn\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/:\\/\\/[A-Za-z0-9]+.ru\\/[A-Za-z0-9]{20,25}.js/$domain=music-radio.ru\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/^https?:\\/\\/m\\.anysex\\.com\\/[a-zA-Z]{1,4}\\/[a-zA-Z]+\\.php$/$image,script,domain=m.anysex.com\"",
+        "UnsupportedRegexpError: Regex is unsupported in rule: \"/m.realgfporn.com\\/[a-z]{1,13}[0-9]{1,13}[a-z]{1,13}.js/\"",
+        "UnsupportedModifierError: Network rule with $redirect-rule modifier is not supported",
+        "UnsupportedModifierError: Network rule with $redirect-rule modifier is not supported",
+        "UnsupportedModifierError: Network rule with $redirect-rule modifier is not supported",
+        "UnsupportedModifierError: Network rule with $redirect-rule modifier is not supported"
       ]
     },
     "supplemental": [
       {
         "file": "easylist-ads-extra.json",
-        "input": 18718,
-        "output": 18716,
-        "errors": 2,
+        "input": 24474,
+        "output": 24469,
+        "errors": 5,
         "sampleErrors": [
-          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)130\\.211\\..{100,}/\"",
-          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)217\\.182\\.11\\..{100,}/\""
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)\\w{30,}\\.me\\/\\w{30,}\\./$script,third-party\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)216\\.21\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.154\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.197\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)130\\.211\\..{100,}/\""
         ]
       },
       {
         "file": "easylist-ads-extra-2.json",
-        "input": 18717,
-        "output": 18713,
-        "errors": 4,
+        "input": 24474,
+        "output": 24473,
+        "errors": 1,
         "sampleErrors": [
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)217\\.182\\.11\\..{100,}/\""
+        ]
+      },
+      {
+        "file": "easylist-ads-extra-3.json",
+        "input": 24474,
+        "output": 24474,
+        "errors": 0,
+        "sampleErrors": []
+      },
+      {
+        "file": "easylist-ads-extra-4.json",
+        "input": 24474,
+        "output": 24474,
+        "errors": 0,
+        "sampleErrors": []
+      },
+      {
+        "file": "easylist-ads-extra-5.json",
+        "input": 24474,
+        "output": 24471,
+        "errors": 3,
+        "sampleErrors": [
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/grabify.link\\/[0-9A-Z]{6,8}$/$domain=grabify.link,all\"",
           "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)142\\.91\\.159\\..{100,}/\"",
-          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)213\\.32\\.115\\..{100,}/\"",
+          "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)213\\.32\\.115\\..{100,}/\""
+        ]
+      },
+      {
+        "file": "easylist-ads-extra-6.json",
+        "input": 24473,
+        "output": 24471,
+        "errors": 2,
+        "sampleErrors": [
           "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)104\\.198\\..{100,}/\"",
           "UnsupportedRegexpError: Regex is unsupported in rule: \"/(https?:\\/\\/)51\\.195\\.31\\..{100,}/\""
         ]
