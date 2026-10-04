@@ -105,20 +105,29 @@ test('the cosmetic registration keeps the per-host script apart from the generic
   for (const file of [...on[0].js, ...on[1].css]) assert.ok(fs.existsSync(path.join(root, file)), `${file} is registered but missing`);
 });
 
-test('the generic stylesheet is one rule Chrome can parse whole', () => {
+test('the generic stylesheet is grouped rules Chrome can parse and match whole', () => {
   const css = fs.readFileSync(path.join(root, 'content/ad-blocker-generic.css'), 'utf8');
-  // One grouped rule means one invalid selector would drop every selector with it, so the
-  // shape is pinned here and the selectors themselves are validated in Chrome at build time.
-  // The file is an attribution banner, which the license requires, and then that one rule.
-  const [, banner, selectors] = css.match(/^(\/\*[^*]*(?:\*(?!\/)[^*]*)*\*\/\n)([^{}]+)\{display:none!important\}\n$/) || [];
-  assert.ok(selectors, 'the stylesheet must be a comment banner and exactly one display:none rule');
+  // An attribution banner, which the license requires, and then one display:none rule per
+  // line. Grouping means one invalid selector would drop every selector sharing its rule,
+  // so the shape is pinned here and the selectors are validated in Chrome at build time.
+  const [, banner, body] = css.match(/^(\/\*[^*]*(?:\*(?!\/)[^*]*)*\*\/\n)([\s\S]+)$/) || [];
+  assert.ok(body, 'the stylesheet must open with a comment banner');
   assert.match(banner, /EasyList/);
-  assert.equal(css.split('{').length - 1, 1);
-  assert.equal(css.split('}').length - 1, 1);
-  // An at-rule, a comment or a stray semicolon would each mean more than one rule, or a
-  // rule the parser ends early.
-  for (const token of ['@', '/*', ';']) assert.equal(selectors.includes(token), false, `the selector list must not contain ${token}`);
-  const list = selectors.split(',');
+  const rules = body.replace(/\n$/, '').split('\n');
+  const groups = rules.map(rule => (rule.match(/^([^{}]+)\{display:none!important\}$/) || [])[1]);
+  assert.deepEqual(groups.filter(group => !group), [], 'every rule must be one display:none group');
+  assert.equal(css.split('{').length - 1, rules.length);
+  assert.equal(css.split('}').length - 1, rules.length);
+  // Blink indexes a rule's selectors in 13 bits, counting CSSSelector entries rather than
+  // list positions, so a selector starting past entry 8191 of its rule is parsed and kept
+  // but never matched. One rule over all 12,980 selectors lost 37% of them that way, which
+  // neither the parser nor `selectorText` reports. The rules stay small enough that no
+  // selector mix reaches the limit, and the build confirms it by matching.
+  const list = groups.flatMap(group => group.split(','));
+  for (const group of groups) assert.ok(group.split(',').length <= 1000, 'a rule may not group more than 1000 selectors');
+  assert.ok(rules.length >= Math.ceil(list.length / 1000));
+  // An at-rule, a comment or a stray semicolon would each mean a rule the parser ends early.
+  for (const token of ['@', '/*', ';']) assert.equal(body.includes(token), false, `the selector lists must not contain ${token}`);
   assert.ok(list.length > 12000);
   for (const selector of list) {
     assert.equal(selector, selector.trim());
@@ -264,7 +273,7 @@ test('the shipped excepted list is generic selectors with the hosts that cancel 
   assert.ok(excepted.every(entry => typeof entry.s === 'string' && entry.s
     && Array.isArray(entry.d) && entry.d.length && entry.d.every(domain => typeof domain === 'string' && domain === domain.toLowerCase())));
   const generic = fs.readFileSync(path.join(root, 'content/ad-blocker-generic.css'), 'utf8');
-  const genericSelectors = generic.match(/^(.*)\{display:none!important\}$/m)[1].split(',');
+  const genericSelectors = [...generic.matchAll(/^(.*)\{display:none!important\}$/gm)].flatMap(match => match[1].split(','));
   assert.ok(genericSelectors.length > 12000);
   // The generic stylesheet is static and injected whole, so no selector any host cancels
   // may be in it; those are exactly the ones the frame assembles instead.

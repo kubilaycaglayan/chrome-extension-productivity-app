@@ -456,8 +456,10 @@
     "validated": 20163,
     "generic": {
       "file": "content/ad-blocker-generic.css",
-      "bytes": 189506,
-      "selectors": 12980
+      "bytes": 189794,
+      "selectors": 12980,
+      "rules": 13,
+      "matchTested": 12823
     },
     "excepted": {
       "file": "content/ad-blocker-excepted.js",

@@ -4,7 +4,7 @@
 // host. A frame is then left with assembly instead of filtering a 20,660-entry corpus.
 //
 // Three artifacts come out of it:
-//   content/ad-blocker-generic.css          one grouped rule, injected on every page
+//   content/ad-blocker-generic.css          grouped display:none rules, registered on every page
 //   content/ad-blocker-excepted.js          generic selectors some host cancels
 //   content/ad-blocker-domain-rules.js      the domain-scoped index, service worker only
 //
@@ -22,6 +22,15 @@ export const cosmeticFiles = ['easylist_general_hide.txt', 'easylist_specific_hi
 const consent = /(?:cookie|consent|privacy|onetrust|didomi|usercentrics|quantcast|\bcmp\b)/i;
 // How many selectors to hand Chrome's CSS parser per round trip.
 const probeSize = 2000;
+// How many selectors one generated rule may group. Blink indexes a rule's selectors with a
+// 13-bit field that counts CSSSelector entries rather than list positions, so a selector
+// starting past entry 8191 of its rule is parsed, kept, reported by `selectorText` -- and
+// never matched against anything. Measured on Chrome 154: with all 12,980 generic selectors
+// in one rule, every selector from list position 8137 on silently stopped matching, which is
+// 37% of the list. Grouping is still worth having, so the list is emitted as several rules
+// small enough that no selector mix can reach the limit, and `unmatched()` below checks that
+// by matching rather than trusting the arithmetic.
+const ruleSelectors = 1000;
 
 export function parseCosmetic(bodies) {
   const entries = [];
@@ -93,6 +102,45 @@ async function invalidSelectors(chrome, selectors) {
   return invalid;
 }
 
+// A selector Chrome parses is not a selector Chrome necessarily matches, which is how the
+// entry limit above went unnoticed: it is invisible to the parser and to `selectorText`.
+// Every selector that can be handed an element gets one, and the stylesheet has to hide it.
+// The selectors too structural to synthesize an element for -- descendant and child
+// combinators, attribute values, compounds -- are covered by the rule size instead.
+function probeElement(selector) {
+  const id = selector.match(/^#([A-Za-z0-9_-]+)$/);
+  if (id) return `<div id="${id[1]}"></div>`;
+  const className = selector.match(/^\.([A-Za-z0-9_-]+)$/);
+  if (className) return `<div class="${className[1]}"></div>`;
+  const attribute = selector.match(/^\[([A-Za-z-]+)\]$/);
+  if (attribute) return `<div ${attribute[1]}></div>`;
+  return null;
+}
+
+async function unmatched(chrome, css, selectors) {
+  const pairs = selectors.map(selector => [selector, probeElement(selector)]).filter(([, html]) => html);
+  const missed = [];
+  for (let start = 0; start < pairs.length; start += probeSize) {
+    const batch = pairs.slice(start, start + probeSize);
+    missed.push(...await chrome.evaluate(`(() => {
+      const pairs = ${JSON.stringify(batch)};
+      const host = document.createElement('div');
+      document.body.append(host);
+      host.innerHTML = pairs.map(pair => pair[1]).join('');
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(${JSON.stringify(css)});
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+      const missed = [...host.children]
+        .map((element, index) => getComputedStyle(element).display === 'none' ? null : pairs[index][0])
+        .filter(Boolean);
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(adopted => adopted !== sheet);
+      host.remove();
+      return missed;
+    })()`));
+  }
+  return { tested: pairs.length, missed };
+}
+
 export async function buildCosmetic({ root, revision, bodies }) {
   const { entries, skipped, skippedSamples } = parseCosmetic(bodies);
   const banner = `Generated from EasyList; attribution and license: rules/README.md\nSource revision: ${revision}`;
@@ -130,16 +178,24 @@ export async function buildCosmetic({ root, revision, bodies }) {
     // host key can express; the service worker evaluates these against the host instead.
     const globalExceptions = liveExceptions.filter(entry => !positives(entry.domains).length).map(value);
 
-    const css = `/* ${banner.replace('\n', '\n   ')} */\n${generic.join(',')}{display:none!important}\n`;
+    const chunks = [];
+    for (let start = 0; start < generic.length; start += ruleSelectors) chunks.push(generic.slice(start, start + ruleSelectors));
+    const css = `/* ${banner.replace('\n', '\n   ')} */\n${chunks.map(chunk => `${chunk.join(',')}{display:none!important}`).join('\n')}\n`;
     const parsed = await chrome.evaluate(`(() => {
       const sheet = new CSSStyleSheet();
       sheet.replaceSync(${JSON.stringify(css)});
-      const rule = sheet.cssRules[0];
-      return { rules: sheet.cssRules.length, selectors: rule ? rule.selectorText.split(',').length : 0,
-        display: rule ? rule.style.getPropertyValue('display') : '', priority: rule ? rule.style.getPropertyPriority('display') : '' };
+      const rules = [...sheet.cssRules];
+      const counts = rules.map(rule => rule.selectorText.split(',').length);
+      return { rules: rules.length, selectors: counts.reduce((total, count) => total + count, 0),
+        widest: Math.max(0, ...counts),
+        wrong: rules.filter(rule => rule.style.getPropertyValue('display') !== 'none' || rule.style.getPropertyPriority('display') !== 'important').length };
     })()`);
-    if (parsed.rules !== 1 || parsed.selectors !== generic.length || parsed.display !== 'none' || parsed.priority !== 'important') {
-      throw new Error(`generic stylesheet did not parse as one rule over ${generic.length} selectors: ${JSON.stringify(parsed)}`);
+    if (parsed.rules !== chunks.length || parsed.selectors !== generic.length || parsed.widest > ruleSelectors || parsed.wrong) {
+      throw new Error(`generic stylesheet did not parse as ${chunks.length} rules over ${generic.length} selectors: ${JSON.stringify(parsed)}`);
+    }
+    const matchTest = await unmatched(chrome, css, generic);
+    if (matchTest.missed.length) {
+      throw new Error(`${matchTest.missed.length} of ${matchTest.tested} generic selectors parse but match nothing, e.g. ${JSON.stringify(matchTest.missed.slice(0, 5))}`);
     }
 
     verify({ entries, invalid, generic, excepted, domainHides, domainExceptions, globalExceptions });
@@ -149,14 +205,10 @@ export async function buildCosmetic({ root, revision, bodies }) {
     await writeFile(resolve(root, 'content/ad-blocker-domain-rules.js'),
       `// ${banner.replace('\n', '\n// ')}\n// The domain-scoped corpus, keyed by the domain each rule names. A value is a selector,\n// or [selector, ...hosts the rule excludes]. Loaded by the service worker, never by a page.\n` +
       `export const hides = ${JSON.stringify(domainHides)};\nexport const exceptions = ${JSON.stringify(domainExceptions)};\nexport const globalExceptions = ${JSON.stringify(globalExceptions)};\n`);
-    // Still written for content/ad-blocker.js, which phases 4 and 5 move onto the three
-    // artifacts above; it goes away with the last reader.
-    await writeFile(resolve(root, 'content/ad-blocker-selectors.js'),
-      `// ${banner.replace('\n', '\n// ')}\nglobalThis.adBlockerSelectors = ${JSON.stringify(entries)};\n`);
 
     return {
       output: entries.length, skipped, skippedSamples, validated: candidates.length,
-      generic: { file: 'content/ad-blocker-generic.css', bytes: Buffer.byteLength(css), selectors: generic.length },
+      generic: { file: 'content/ad-blocker-generic.css', bytes: Buffer.byteLength(css), selectors: generic.length, rules: chunks.length, matchTested: matchTest.tested },
       excepted: { file: 'content/ad-blocker-excepted.js', entries: excepted.length, selectors: new Set(excepted.map(entry => entry.s)).size },
       domainRules: {
         file: 'content/ad-blocker-domain-rules.js',
