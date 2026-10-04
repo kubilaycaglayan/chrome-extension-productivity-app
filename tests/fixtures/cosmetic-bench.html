@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cosmetic filtering benchmark fixture</title>
+</head>
+<body>
+  <!--
+    Served by tools/bench-cosmetic.mjs for both the top document and every frame. The
+    harness replaces the "bench:frames" placeholder comment below with same- and
+    cross-origin iframes when it serves the top document, and with nothing when it
+    serves a frame. The fixture carries no style element of its own, so every style
+    element the benchmark counts was injected by content/ad-blocker.js.
+  -->
+  <nav id="navigation"><a href="#article">Article</a></nav>
+  <!--
+    Real EasyList selectors, verified against content/ad-blocker-selectors.js: three
+    generic hides, one hide scoped to screenrant.com, and one generic hide that
+    screenrant.com excepts, so the benchmark exercises every branch of the current
+    runtime filter.
+  -->
+  <aside id="AD_300">Generic id placement</aside>
+  <div data-ad-module="leader">Generic attribute placement</div>
+  <figure class="banner-img"><span class="pbl">Generic combinator placement</span></figure>
+  <aside class="ad-zone-sidebar-default">Placement scoped to screenrant.com</aside>
+  <aside class="ad-current">Excepted on screenrant.com, stays visible</aside>
+  <article id="article">Article content</article>
+  <div id="filler"></div>
+  <script>
+    // Element volume, so style recalculation against ~13,000 generic selectors is
+    // measurable. Synchronous, so it is part of the first paint the benchmark records.
+    const filler = document.getElementById('filler');
+    for (let index = 0; index < 300; index++) {
+      const row = document.createElement('p');
+      row.className = `row row-${index % 10}`;
+      row.textContent = `Filler paragraph ${index}`;
+      filler.append(row);
+    }
+  </script>
+  <!--bench:frames-->
+</body>
+</html>
