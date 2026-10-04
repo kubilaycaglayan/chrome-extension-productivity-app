@@ -30,13 +30,14 @@ test('packaged rules are within guaranteed core and supplemental quotas, with ex
   assert.ok(core.some(rule => rule.action.type === 'block' && rule.condition.initiatorDomains?.length));
   // A supplemental set may fail to load, so no exception may live outside the core.
   assert.equal(supplemental.some(rules => rules.some(rule => rule.action.type !== 'block')), false);
-  const cosmetic = manifest.content_scripts.find(entry => entry.js.includes('content/ad-blocker.js'));
-  assert.equal(cosmetic.all_frames, true);
-  assert.equal(cosmetic.run_at, 'document_start');
+  // The cosmetic layer is registered from modules/ad-blocker.js rather than declared here.
+  // A declared entry would apply the generic stylesheet on every host, including one the
+  // user paused, and Chrome gives a frame no way to take injected CSS back off.
+  assert.deepEqual(manifest.content_scripts.filter(entry => entry.js.some(file => file.includes('ad-blocker'))), []);
+  assert.equal(manifest.permissions.includes('scripting'), true);
   // A frame is handed the 275 generic rules some host cancels and nothing else; the
   // 1.4 MB corpus it used to parse per frame is now resolved at build time and in the
   // service worker.
-  assert.deepEqual(cosmetic.js, ['content/ad-blocker-excepted.js', 'content/ad-blocker.js']);
   assert.ok(fs.statSync(path.join(root, 'content/ad-blocker-excepted.js')).size < 50000);
 });
 
@@ -56,9 +57,80 @@ const domainRules = {
 const loadModule = () => {
   const source = fs.readFileSync(path.join(root, 'modules/ad-blocker.js'), 'utf8')
     .replace(/^import .*$/m, 'const { hides, exceptions, globalExceptions } = this.domainRules;')
-    .replaceAll('export function ', 'function ') + '\nthis.api = { cleanPausedSites, resolveCosmetic, initializeAdBlocker };';
+    .replaceAll('export function ', 'function ') + '\nthis.api = { cleanPausedSites, resolveCosmetic, cosmeticScripts, initializeAdBlocker };';
   return source;
 };
+
+// Values cross the VM boundary, so they are rebuilt in this realm before `assert/strict`
+// compares them against plain objects and arrays.
+const plain = value => JSON.parse(JSON.stringify(value));
+
+test('the cosmetic registration keeps the per-host script apart from the generic stylesheet', () => {
+  const context = { domainRules, chrome: {}, console, URL };
+  vm.runInNewContext(loadModule(), context);
+  const scripts = (enabled, sites = []) => plain(context.api.cosmeticScripts(enabled, sites));
+
+  // The per-host script is registered whether the module is on or off: a frame already open
+  // has to be able to adopt its sheet again when the setting comes back, and the sheet it
+  // adopts is its own, so leaving the script in place costs a disabled module nothing.
+  const off = scripts(false);
+  assert.deepEqual(off.map(script => script.id), ['ad-blocker-cosmetic']);
+  assert.deepEqual(off[0], {
+    id: 'ad-blocker-cosmetic',
+    js: ['content/ad-blocker-excepted.js', 'content/ad-blocker.js'],
+    matches: ['<all_urls>'],
+    allFrames: true,
+    runAt: 'document_start'
+  });
+  // Injected CSS is the half a frame cannot take back off, so it is only registered while
+  // the module is on. Both halves run at document_start in every frame, which is what puts
+  // generic hiding in front of first paint.
+  const on = scripts(true);
+  assert.deepEqual(on[0], off[0]);
+  assert.deepEqual(on[1], {
+    id: 'ad-blocker-generic',
+    css: ['content/ad-blocker-generic.css'],
+    matches: ['<all_urls>'],
+    allFrames: true,
+    runAt: 'document_start'
+  });
+  // A paused hostname is excluded along with its subdomains, matching the way the service
+  // worker and the content script read the same list.
+  assert.deepEqual(scripts(true, ['paused.example', 'other.example'])[1].excludeMatches, [
+    '*://paused.example/*', '*://*.paused.example/*', '*://other.example/*', '*://*.other.example/*'
+  ]);
+  // An IP literal has no subdomains, and `cleanPausedSites` accepts one, so it gets the
+  // bare pattern rather than a `*.` pattern Chrome has no reason to accept.
+  assert.deepEqual(scripts(true, ['127.0.0.1'])[1].excludeMatches, ['*://127.0.0.1/*']);
+  for (const file of [...on[0].js, ...on[1].css]) assert.ok(fs.existsSync(path.join(root, file)), `${file} is registered but missing`);
+});
+
+test('the generic stylesheet is one rule Chrome can parse whole', () => {
+  const css = fs.readFileSync(path.join(root, 'content/ad-blocker-generic.css'), 'utf8');
+  // One grouped rule means one invalid selector would drop every selector with it, so the
+  // shape is pinned here and the selectors themselves are validated in Chrome at build time.
+  // The file is an attribution banner, which the license requires, and then that one rule.
+  const [, banner, selectors] = css.match(/^(\/\*[^*]*(?:\*(?!\/)[^*]*)*\*\/\n)([^{}]+)\{display:none!important\}\n$/) || [];
+  assert.ok(selectors, 'the stylesheet must be a comment banner and exactly one display:none rule');
+  assert.match(banner, /EasyList/);
+  assert.equal(css.split('{').length - 1, 1);
+  assert.equal(css.split('}').length - 1, 1);
+  // An at-rule, a comment or a stray semicolon would each mean more than one rule, or a
+  // rule the parser ends early.
+  for (const token of ['@', '/*', ';']) assert.equal(selectors.includes(token), false, `the selector list must not contain ${token}`);
+  const list = selectors.split(',');
+  assert.ok(list.length > 12000);
+  for (const selector of list) {
+    assert.equal(selector, selector.trim());
+    assert.ok(selector.length > 0);
+    // Unbalanced brackets or quotes would swallow the selectors that follow, so the rule
+    // would parse as something narrower than it reads.
+    for (const [open, close] of [['(', ')'], ['[', ']']]) {
+      assert.equal(selector.split(open).length, selector.split(close).length, `unbalanced ${open}${close} in ${selector}`);
+    }
+    for (const quote of ['"', "'"]) assert.equal((selector.split(quote).length - 1) % 2, 0, `unbalanced ${quote} in ${selector}`);
+  }
+});
 
 test('cosmetic rules resolve by host suffix with exceptions subtracted', () => {
   const context = { domainRules, chrome: {}, console, URL };
@@ -216,9 +288,28 @@ test('the shipped excepted list is generic selectors with the hosts that cancel 
 test('background serializes global and site changes and keeps DNR state aligned', async () => {
   let enabled = new Set(['easylist_ads']);
   let dynamic = [];
+  // A registration left over from an earlier preference, which is what survives a browser
+  // restart and an extension update: the module is on below, so this one is wrong and has
+  // to be replaced rather than counted as already correct.
+  let registered = [{ id: 'ad-blocker-generic', css: ['content/ad-blocker-generic.css'], matches: ['<all_urls>'], excludeMatches: ['*://stale.example/*'], allFrames: true, runAt: 'document_start', persistAcrossSessions: true, world: 'ISOLATED' }];
   const storage = {};
   const listeners = {};
   const chrome = {
+    scripting: {
+      async getRegisteredContentScripts() { return registered.map(script => ({ ...script })); },
+      async registerContentScripts(scripts) {
+        for (const script of scripts) {
+          if (registered.some(existing => existing.id === script.id)) throw new Error(`Duplicate script ID ${script.id}`);
+          // Chrome fills in its own defaults, so the stub does too: a reconcile that
+          // compared them literally would unregister and register on every wake.
+          registered.push({ persistAcrossSessions: true, world: 'ISOLATED', ...script });
+        }
+      },
+      async unregisterContentScripts({ ids }) {
+        for (const id of ids) if (!registered.some(script => script.id === id)) throw new Error(`Nonexistent script ID ${id}`);
+        registered = registered.filter(script => !ids.includes(script.id));
+      }
+    },
     runtime: { onInstalled: { addListener(fn) { listeners.installed = fn; } }, onStartup: { addListener(fn) { listeners.startup = fn; } }, onMessage: { addListener(fn) { listeners.message = fn; } } },
     storage: { local: { async get() { return { ...storage }; }, async set(values) { Object.assign(storage, values); listeners.changed?.(Object.fromEntries(Object.entries(values).map(([key, newValue]) => [key, { newValue }])), 'local'); } }, onChanged: { addListener(fn) { listeners.changed = fn; } } },
     declarativeNetRequest: {
@@ -232,18 +323,35 @@ test('background serializes global and site changes and keeps DNR state aligned'
   vm.runInNewContext(loadModule(), context);
   context.api.initializeAdBlocker();
   const message = request => new Promise(resolve => listeners.message(request, { tab: { url: 'https://news.example/story' } }, resolve));
+  const scriptIds = () => registered.map(script => script.id).sort();
+  const generic = () => registered.find(script => script.id === 'ad-blocker-generic');
+  // The first reconcile replaced the stale registration rather than leaving it in place.
+  await message({ type: 'ad-blocker:get' });
+  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.equal(generic().excludeMatches, undefined);
   const pause = await message({ type: 'ad-blocker:set-sites', sites: ['https://news.example/story', 'NEWS.EXAMPLE', ''] });
   assert.equal(pause.ok, true);
   assert.deepEqual(Array.from(pause.sites), ['news.example']);
   assert.equal(dynamic.length, 2);
   assert.equal(dynamic[0].action.type, 'allow');
   assert.equal(dynamic[1].action.type, 'allowAllRequests');
+  assert.deepEqual(Array.from(generic().excludeMatches), ['*://news.example/*', '*://*.news.example/*']);
   const off = await message({ type: 'ad-blocker:set-enabled', enabled: false });
   assert.equal(off.enabled, false);
   assert.equal(storage['moduleEnabled:ad-blocker'], false);
+  // Disabled, the generic stylesheet goes away, because a frame cannot detach it itself.
+  // The per-host script stays, which is what lets an open frame drop and restore its sheet.
+  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic']);
   const on = await message({ type: 'ad-blocker:set-enabled', enabled: true });
   assert.equal(on.enabled, true);
   assert.equal(on.extraEnabled, true);
+  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.deepEqual(Array.from(generic().excludeMatches), ['*://news.example/*', '*://*.news.example/*']);
+  // A reconcile over a registration that is already right must not churn it, or every
+  // worker wake would unregister and re-register in every tab's way.
+  const before = JSON.stringify(registered);
+  assert.equal((await message({ type: 'ad-blocker:reconcile' })).ok, true);
+  assert.equal(JSON.stringify(registered), before);
   assert.equal((await message({ type: 'ad-blocker:get' })).topSite, 'news.example');
   // Paused, so the host map is not consulted at all and the frame is handed nothing.
   assert.deepEqual(Array.from((await message({ type: 'ad-blocker:get' })).cosmetic), []);

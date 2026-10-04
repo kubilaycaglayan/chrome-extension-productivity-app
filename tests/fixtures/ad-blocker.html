@@ -8,6 +8,17 @@
        assembles it per frame. The two cover both halves of the cosmetic layer. -->
   <aside id="AdBox2">Ad placement</aside>
   <aside id="ad-carousel">Ad carousel</aside>
+  <script>
+    // Read while the parser is still inside <body> and nothing has painted, which is what
+    // makes this a pre-paint reading rather than an eventual one. The registered generic
+    // stylesheet already applies here; #ad-carousel cannot, since the content script is
+    // still waiting on its round trip to the service worker.
+    window.fixtureEarly = {
+      paints: performance.getEntriesByType('paint').length,
+      adBox: getComputedStyle(document.getElementById('AdBox2')).display,
+      adCarousel: getComputedStyle(document.getElementById('ad-carousel')).display
+    };
+  </script>
   <article id="article">Article content</article>
   <form id="login"><input aria-label="Username" name="username"><button type="submit">Sign in</button></form>
   <button id="checkout" type="button">Continue to checkout</button>
