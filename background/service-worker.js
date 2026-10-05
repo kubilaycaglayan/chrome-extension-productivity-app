@@ -1,10 +1,12 @@
 import { initializeTabHistory } from "../modules/tab-history.js";
 import { initializeAdBlocker } from "../modules/ad-blocker.js";
 import { initializeTabMarkers } from "../modules/tab-marker.js";
+import { initializeCsvViewer } from "../modules/csv-viewer.js";
 
 initializeTabHistory();
 initializeTabMarkers();
 initializeAdBlocker();
+initializeCsvViewer();
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;

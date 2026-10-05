@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Productivity",
   "version": "1.1.0",
-  "description": "Browse page outlines, block ads, switch recent tabs, force dark mode, mark tabs, and customize the new tab page.",
+  "description": "Browse page outlines, block ads, read CSVs as tables, switch recent tabs, force dark mode, mark tabs, and customize the new tab page.",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
@@ -58,7 +58,9 @@
       "js": [
         "content/module-settings.js",
         "content/tab-marker.js",
-        "content/dark-mode.js"
+        "content/dark-mode.js",
+        "shared/csv-table.js",
+        "content/csv-viewer.js"
       ],
       "run_at": "document_start"
     },

@@ -4,6 +4,7 @@ const MODULES = [
   ["tab-history", "Recent-tab switching", "Switch between your two most recent tabs.", "browser", "🔁"],
   ["tab-marker", "Tab markers", "Mark tabs with colored emoji from the context menu.", "browser", "🏷️"],
   ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers.", "browser", "🗂️"],
+  ["csv-viewer", "CSV viewer", "Show CSV and TSV links as a sortable, filterable table instead of downloading them, and read text files that are laid out like one.", "browser", "📊"],
   ["cookie-accepter", "Cookie accepter", "Automatically accept all cookie categories, including optional analytics and marketing, on recognized banners. Off until enabled.", "browser", "🍪"],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations.", "youtube", "🎛️"],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home.", "youtube", "🚫"],
