@@ -1,0 +1,6 @@
+product;stock;price;note
+widget;10;9.99;plain
+"bracket; small";2;1.50;"has a semicolon, and a comma"
+cap;;0.25;blank stock
+"multi
+line";7;3.00;wrapped
