@@ -59,6 +59,7 @@
         "content/module-settings.js",
         "content/tab-marker.js",
         "content/dark-mode.js",
+        "content/text-highlights.js",
         "shared/csv-table.js",
         "content/csv-viewer.js"
       ],
@@ -141,6 +142,13 @@
         "default": "Ctrl+Shift+Tab"
       },
       "description": "Toggle between the two most recently visited tabs"
+    },
+    "highlight-selection": {
+      "suggested_key": {
+        "mac": "Command+Shift+S",
+        "default": "Ctrl+Shift+S"
+      },
+      "description": "Highlight the selected text on this page"
     }
   },
   "declarative_net_request": {

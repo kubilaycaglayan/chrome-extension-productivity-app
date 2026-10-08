@@ -8,6 +8,16 @@ initializeTabMarkers();
 initializeAdBlocker();
 initializeCsvViewer();
 
+chrome.commands.onCommand.addListener(command => {
+  if (command !== "highlight-selection") return;
+  chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([tab]) => {
+    if (tab?.id == null) return;
+    chrome.tabs.sendMessage(tab.id, { type: "text-highlights:save-selection" }).catch(() => {
+      // Restricted pages and tabs without the content script cannot be highlighted.
+    });
+  }).catch(() => {});
+});
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   const globalEnabled = changes["moduleEnabled:dark-mode"]?.newValue === true;
