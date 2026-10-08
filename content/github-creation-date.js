@@ -15,19 +15,21 @@ productivityModules.register("github-creation-date", () => {
   }
 
   function showDate(createdAt) {
-    const heading = [...document.querySelectorAll("h2")].find(node =>
-      node.textContent.trim().startsWith("About") && !node.closest("article")
+    const headings = [...document.querySelectorAll("h2")].filter(node =>
+      node.textContent.trim() === "About"
     );
-    if (!heading || heading.querySelector(`[${marker}]`)) return;
-    const span = document.createElement("span");
-    span.setAttribute(marker, "");
-    span.textContent = ` · Created ${new Date(createdAt).toLocaleDateString(undefined, {
-      year: "numeric", month: "short", day: "numeric"
-    })}`;
-    Object.assign(span.style, {
-      fontWeight: "normal", fontSize: "0.8em", color: "var(--fgColor-muted)"
-    });
-    heading.appendChild(span);
+    for (const heading of headings) {
+      if (heading.querySelector(`[${marker}]`)) continue;
+      const span = document.createElement("span");
+      span.setAttribute(marker, "");
+      span.textContent = ` · Created ${new Date(createdAt).toLocaleDateString(undefined, {
+        year: "numeric", month: "short", day: "numeric"
+      })}`;
+      Object.assign(span.style, {
+        fontWeight: "normal", fontSize: "0.8em", color: "var(--fgColor-muted)"
+      });
+      heading.appendChild(span);
+    }
   }
 
   async function update() {
