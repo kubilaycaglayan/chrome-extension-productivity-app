@@ -34,6 +34,28 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "huggingface-model-created-at") {
+    if (!sender.url?.startsWith("https://huggingface.co/")) return;
+
+    const { owner, model } = message;
+    if (![owner, model].every(part => typeof part === "string" && /^[\w.-]+$/.test(part))) {
+      sendResponse({ error: "Invalid model" });
+      return;
+    }
+
+    const query = new URLSearchParams();
+    query.append("expand[]", "createdAt");
+    query.append("expand[]", "lastModified");
+    fetch(`https://huggingface.co/api/models/${encodeURIComponent(owner)}/${encodeURIComponent(model)}?${query}`)
+      .then(async response => {
+        if (!response.ok) throw new Error(`Hugging Face API returned ${response.status}`);
+        const data = await response.json();
+        if (typeof data.createdAt !== "string") throw new Error("Missing upload date");
+        sendResponse({ createdAt: data.createdAt, lastModified: data.lastModified });
+      }).catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+
   if (message?.type !== "github-repository-created-at") return;
   if (!sender.url?.startsWith("https://github.com/")) return;
 

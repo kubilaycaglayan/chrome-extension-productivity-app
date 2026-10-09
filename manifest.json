@@ -91,7 +91,8 @@
         "https://huggingface.co/*"
       ],
       "js": [
-        "content/scrollbar-width.js"
+        "content/scrollbar-width.js",
+        "content/huggingface-model-date.js"
       ],
       "run_at": "document_start"
     },
