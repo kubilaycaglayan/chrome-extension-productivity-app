@@ -79,12 +79,43 @@ try {
   // The domain-scoped host map is a static import, so a worker that cannot parse it
   // never answers at all; the popup names no tab, so its own host resolves to nothing.
   assert.deepEqual(state.cosmetic, []);
-  assert.deepEqual(await registeredIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.deepEqual(await registeredIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic', 'ad-blocker-shims']);
   const genericScript = (await registrations()).find(script => script.id === 'ad-blocker-generic');
   assert.deepEqual(genericScript.css, ['content/ad-blocker-generic.css']);
   assert.equal(genericScript.allFrames, true);
   assert.equal(genericScript.runAt, 'document_start');
   assert.ok(!genericScript.excludeMatches?.length);
+  // The per-site pause switch. Its wiring to the stored list is covered under node, in
+  // tests/popup-ad-blocker-pause.test.cjs -- here, opened as its own tab, the popup names
+  // no tab but itself and so has no site to act on, which is the same reason `cosmetic`
+  // above comes back empty. What only a browser can say is how the control is drawn: it
+  // declares role="switch", and every other toggle in the popup is a sliding switch rather
+  // than a system checkbox.
+  const pauseSwitch = await evaluate(`(() => {
+    const box = document.getElementById('ad-blocker-pause-toggle');
+    const knob = getComputedStyle(box, '::before');
+    box.checked = true;
+    const on = getComputedStyle(box, '::before').transform;
+    box.checked = false;
+    return {
+      role: box.getAttribute('role'),
+      type: box.type,
+      checked: box.checked,
+      disabled: box.disabled,
+      appearance: getComputedStyle(box).appearance,
+      width: getComputedStyle(box).width,
+      knob: knob.transform,
+      on
+    };
+  })()`);
+  assert.equal(pauseSwitch.type, 'checkbox');
+  assert.equal(pauseSwitch.role, 'switch');
+  assert.equal(pauseSwitch.checked, false, 'nothing is paused in a fresh profile');
+  assert.equal(pauseSwitch.disabled, true, 'and the popup here has no site of its own to pause');
+  assert.equal(pauseSwitch.appearance, 'none', 'the switch must not fall back to a system checkbox');
+  assert.equal(pauseSwitch.width, '32px');
+  assert.notEqual(pauseSwitch.knob, pauseSwitch.on, 'checking it must move the knob');
+
   const page = await attach(localUrl);
   assert.ok((await outcome(ad, localUrl)).matchedRules.some(rule => rule.rulesetId === 'easylist_ads'));
   assert.ok((await outcome('https://2mdn.net/instream/html5/ima3.js', 'https://zdnet.com')).matchedRules.some(rule => rule.ruleId === exceptionId));
@@ -173,12 +204,12 @@ try {
   assert.equal((await message({ type: 'ad-blocker:set-enabled', enabled: true })).enabled, true);
   await wait(250);
   assert.equal(await display('ad-carousel'), 'none');
-  assert.deepEqual(await registeredIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.deepEqual(await registeredIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic', 'ad-blocker-shims']);
   const resumed = await openFixture();
   assert.equal(resumed.early.paints, 0);
   assert.equal(resumed.early.adBox, 'none');
   assert.equal(resumed.carousel, 'none');
-  console.log('PASS Chrome loaded the rules, hid a generic ad space before first paint, matched block/exception/site rules, paused a site, reconciled registrations and rules after a worker restart, toggled globally, and kept page controls and video working.');
+  console.log('PASS Chrome loaded the rules, hid a generic ad space before first paint, matched block/exception/site rules, paused a site, drew the pause switch as a switch, reconciled registrations and rules after a worker restart, toggled globally, and kept page controls and video working.');
   await call('Browser.close');
   closed = true;
 } finally {

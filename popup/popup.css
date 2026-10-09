@@ -117,11 +117,11 @@ h1 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: .01em; }
 .name { font-size: 12px; font-weight: 650; line-height: 1.25; }
 .module .description { overflow: hidden; color: var(--muted); font-size: 10.5px; line-height: 1.3; margin-top: 2px; text-overflow: ellipsis; white-space: nowrap; }
 
-:is(.module, .dark-mode-option) input[type="checkbox"] { appearance: none; flex: none; width: 32px; height: 18px; border: 1px solid var(--line-track); border-radius: 20px; background: var(--track); margin: 0; cursor: pointer; transition: background 120ms, border-color 120ms; }
-:is(.module, .dark-mode-option) input[type="checkbox"]::before { content: ""; display: block; width: 12px; height: 12px; margin: 2px; border-radius: 50%; background: var(--knob); transition: transform 120ms; }
-:is(.module, .dark-mode-option) input[type="checkbox"]:checked { border-color: var(--cyan); background: var(--cyan); }
-:is(.module, .dark-mode-option) input[type="checkbox"]:checked::before { background: var(--knob-on); transform: translateX(14px); }
-:is(.module, .dark-mode-option) input[type="checkbox"]:disabled { opacity: .55; cursor: wait; }
+:is(.module, .dark-mode-option, .site-pause) input[type="checkbox"] { appearance: none; flex: none; width: 32px; height: 18px; border: 1px solid var(--line-track); border-radius: 20px; background: var(--track); margin: 0; cursor: pointer; transition: background 120ms, border-color 120ms; }
+:is(.module, .dark-mode-option, .site-pause) input[type="checkbox"]::before { content: ""; display: block; width: 12px; height: 12px; margin: 2px; border-radius: 50%; background: var(--knob); transition: transform 120ms; }
+:is(.module, .dark-mode-option, .site-pause) input[type="checkbox"]:checked { border-color: var(--cyan); background: var(--cyan); }
+:is(.module, .dark-mode-option, .site-pause) input[type="checkbox"]:checked::before { background: var(--knob-on); transform: translateX(14px); }
+:is(.module, .dark-mode-option, .site-pause) input[type="checkbox"]:disabled { opacity: .55; cursor: wait; }
 
 .panel { border-bottom: 1px solid var(--line); }
 .panel summary { display: flex; align-items: center; justify-content: space-between; min-height: 34px; color: var(--text-soft); font-size: 11.5px; font-weight: 600; cursor: pointer; list-style: none; }
@@ -151,11 +151,10 @@ button:disabled { opacity: .5; cursor: wait; }
 .import-button { position: relative; overflow: hidden; }
 .import-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .backup-note { margin: 7px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.4; }
-.cookie-pause { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px; color: var(--muted); font-size: 11px; }
-.cookie-pause input { flex: none; }
+.site-pause { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px; color: var(--muted); font-size: 11px; cursor: pointer; }
 
 #status { margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
-:is(.module input, .dark-mode-option input, .cookie-pause input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
+:is(.module input, .dark-mode-option input, .site-pause input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
 .import-button:focus-within { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

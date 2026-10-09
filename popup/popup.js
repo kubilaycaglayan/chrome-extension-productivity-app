@@ -50,7 +50,7 @@ const darkModeKey = "moduleEnabled:dark-mode";
 const darkModeSitesKey = "darkModeSites";
 const cookiePauseToggle = document.getElementById("cookie-pause-toggle");
 const adSitesKey = "adBlockerPausedSites";
-const adSiteToggle = document.getElementById("ad-blocker-site-toggle");
+const adPauseToggle = document.getElementById("ad-blocker-pause-toggle");
 const adSitesEditor = document.getElementById("ad-blocker-sites");
 const adSitesSave = document.getElementById("save-ad-blocker-sites");
 let pausedAdSites = [];
@@ -81,10 +81,12 @@ Promise.all([
     cookiePauseToggle.checked = cookieAccepterSettings.cleanSites(settings[cookieAccepterSettings.pausedKey]).includes(currentSite);
     cookiePauseToggle.disabled = false;
     cookiePauseToggle.title = currentSite;
-    refreshAdSiteToggle();
+    adPauseToggle.title = currentSite;
+    refreshAdPauseToggle();
   } else {
     darkModeSiteToggle.title = "Available on website tabs";
     cookiePauseToggle.title = "Available on website tabs";
+    adPauseToggle.title = "Available on website tabs";
   }
 }).catch(() => {
   darkModeToggle.title = "Could not load dark mode setting. Reopen the popup to retry.";
@@ -360,7 +362,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (changes[adSitesKey]) {
     pausedAdSites = Array.isArray(changes[adSitesKey].newValue) ? changes[adSitesKey].newValue : [];
     if (document.activeElement !== adSitesEditor) adSitesEditor.value = pausedAdSites.join("\n");
-    refreshAdSiteToggle();
+    refreshAdPauseToggle();
   }
   if (changes[xKeywords.key]) {
     const words = changes[xKeywords.key].newValue;
@@ -503,11 +505,20 @@ document.getElementById("import-settings").addEventListener("change", async (eve
 });
 
 
-function refreshAdSiteToggle() {
-  if (!currentSite || !adBlockerReady) return;
-  const paused = pausedAdSites.some(site => currentSite === site || currentSite.endsWith(`.${site}`));
-  adSiteToggle.textContent = paused ? "Resume on this site" : "Pause on this site";
-  adSiteToggle.disabled = false;
+// A paused entry covers its own subdomains, so `example.com` on the list pauses blocking
+// on `news.example.com` too. The switch has to answer for the site the user is actually on,
+// which means reading every entry that reaches it rather than looking for its exact name:
+// an unchecked box on a subdomain of a paused site would say blocking is on while it is off.
+function adSitesCoveringCurrent() {
+  if (!currentSite) return [];
+  return pausedAdSites.filter(site => currentSite === site || currentSite.endsWith(`.${site}`));
+}
+function refreshAdPauseToggle() {
+  if (!adBlockerReady) return;
+  // Off unless this site is on the list, which is the state a fresh profile starts in and
+  // the one the switch returns to when a save fails.
+  adPauseToggle.checked = adSitesCoveringCurrent().length > 0;
+  adPauseToggle.disabled = !currentSite;
 }
 async function initializeAdControls() {
   const result = await chrome.runtime.sendMessage({ type: "ad-blocker:get" });
@@ -520,29 +531,47 @@ async function initializeAdControls() {
   adSitesEditor.disabled = false;
   adSitesSave.disabled = false;
   adBlockerReady = true;
-  document.getElementById("ad-blocker-site-name").textContent = currentSite || "Open a website to pause blocking.";
-  refreshAdSiteToggle();
+  refreshAdPauseToggle();
   if (result.enabled && !result.extraEnabled) status.textContent = "Core ad rules active. Supplemental rules unavailable due to browser quota.";
 }
-async function saveAdSites(sites) {
-  adSiteToggle.disabled = true;
+// `saved` is the line to show when the write lands; the pause switch says something more
+// specific than the bulk editor can.
+async function saveAdSites(sites, saved) {
+  adPauseToggle.disabled = true;
   adSitesSave.disabled = true;
   try {
     const result = await chrome.runtime.sendMessage({ type: "ad-blocker:set-sites", sites });
     if (!result?.ok) throw new Error(result?.error || "Could not update sites");
     pausedAdSites = result.sites;
     adSitesEditor.value = pausedAdSites.join("\n");
-    status.textContent = "Ad blocker site exceptions saved. Reload affected pages to restore network requests and ad spaces.";
+    status.textContent = saved ?? "Ad blocker site exceptions saved. Reload affected pages to restore network requests and ad spaces.";
   } catch (error) {
     status.textContent = error.message || "Could not save sites.";
   } finally {
     adSitesSave.disabled = false;
-    refreshAdSiteToggle();
+    // Nothing reverts the switch by hand: this redraws it from the list that was actually
+    // stored, so a write that failed leaves the list untouched and the switch snaps back.
+    refreshAdPauseToggle();
   }
 }
-adSiteToggle.addEventListener("click", () => {
-  if (!currentSite) return;
-  const paused = pausedAdSites.some(site => currentSite === site || currentSite.endsWith(`.${site}`));
-  void saveAdSites(paused ? pausedAdSites.filter(site => currentSite !== site && !currentSite.endsWith(`.${site}`)) : [...pausedAdSites, currentSite]);
+adPauseToggle.addEventListener("change", () => {
+  if (!currentSite) {
+    refreshAdPauseToggle();
+    return;
+  }
+  const paused = adPauseToggle.checked;
+  // Resuming has to clear every entry that reaches this site, or the switch would come
+  // back checked and the click would read as having done nothing. Where that entry is a
+  // parent domain, its other subdomains lose their pause too, so the status line says so
+  // rather than letting it happen quietly.
+  const covering = adSitesCoveringCurrent();
+  const inherited = covering.filter(site => site !== currentSite);
+  void saveAdSites(
+    paused ? [...pausedAdSites, currentSite] : pausedAdSites.filter(site => !covering.includes(site)),
+    paused
+      ? `Ad blocker paused on ${currentSite}. Reload the page to let its ads and ad spaces back.`
+      : inherited.length
+        ? `Ad blocker resumed on ${currentSite}. This removed ${inherited.join(", ")}, so their other subdomains are no longer paused either.`
+        : `Ad blocker resumed on ${currentSite}. Reload the page to block its ads again.`);
 });
 adSitesSave.addEventListener("click", () => void saveAdSites(adSitesEditor.value.split(/\r?\n/)));
