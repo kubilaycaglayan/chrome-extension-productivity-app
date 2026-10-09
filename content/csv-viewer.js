@@ -13,6 +13,10 @@ productivityModules.register("csv-viewer", () => {
   // copy of the file. The count above the list is the part that was worth asking for, so
   // the list itself stops here and says how many it did not draw.
   const MAX_VALUES = 50;
+  // Ten values is a list you take in at a glance. Past that a card folds, because the
+  // panel's whole purpose is that a file's columns can be compared side by side, and one
+  // long column of values pushes the rest of them off the screen.
+  const PREVIEW_VALUES = 10;
   const DELIMITER_NAMES = { ",": "comma", ";": "semicolon", "\t": "tab", "|": "pipe" };
   const SHEET = `
 .pcsv-host {
@@ -218,6 +222,23 @@ productivityModules.register("csv-viewer", () => {
   white-space: nowrap;
 }
 .pcsv-host .pcsv-stat-more { color: var(--pcsv-muted); }
+.pcsv-host .pcsv-stat-fold {
+  display: block;
+  width: 100%;
+  padding: 4px 10px;
+  font: inherit;
+  text-align: left;
+  color: var(--pcsv-accent);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--pcsv-line);
+  cursor: pointer;
+}
+.pcsv-host .pcsv-stat-fold:hover { background: color-mix(in srgb, var(--pcsv-accent) 10%, transparent); }
+.pcsv-host .pcsv-stat-fold:focus-visible {
+  outline: 2px solid var(--pcsv-accent);
+  outline-offset: -2px;
+}
 .pcsv-host.pcsv-reading-raw > pre {
   margin: 0;
   padding: 10px 12px;
@@ -309,6 +330,10 @@ productivityModules.register("csv-viewer", () => {
     // slot under the toolbar. Each button is a round trip to its own panel and back.
     const panels = { table: scroll, raw: source, stats: statsPanel };
     let panel = "table";
+    // Which cards the user has unfolded, by column. It lives out here because the cards
+    // are rebuilt from scratch on every keystroke in the filter, and a card that folded
+    // itself back up underneath the hand that opened it would be its own bug.
+    const unfolded = new Set();
     render();
 
     source.remove();
@@ -456,25 +481,45 @@ productivityModules.register("csv-viewer", () => {
       const top = element("div", "pcsv-stat-head");
       top.append(heading, meta);
 
+      // Only what is on screen is built. A wide file folded shut is 10 rows a card
+      // rather than 50, and the rest are never made until they are asked for.
+      const drawn = ranked.slice(0, MAX_VALUES);
       const list = element("ol", "pcsv-stat-values");
-      list.append(...ranked.slice(0, MAX_VALUES).map(([value, times]) => {
-        const text = element("span", "pcsv-stat-text");
-        text.textContent = value;
-        const seen = element("span", "pcsv-stat-count");
-        seen.textContent = times.toLocaleString();
-        const item = element("li");
-        item.append(text, seen);
-        return item;
-      }));
-
+      list.id = `pcsv-values-${column}`;
       const node = element("section", "pcsv-stat");
-      node.append(top, list);
-      if (ranked.length > MAX_VALUES) {
-        const more = element("p", "pcsv-stat-more");
-        more.textContent = `+ ${plural(ranked.length - MAX_VALUES, "more value")}`;
-        node.append(more);
-      }
+      const folds = drawn.length > PREVIEW_VALUES;
+      const fold = element("button", "pcsv-stat-fold");
+      fold.type = "button";
+      fold.setAttribute("aria-controls", list.id);
+      const more = element("p", "pcsv-stat-more");
+      if (ranked.length > MAX_VALUES) more.textContent = `+ ${plural(ranked.length - MAX_VALUES, "more value")}`;
+
+      fill();
+      fold.addEventListener("click", () => {
+        if (unfolded.has(column)) unfolded.delete(column);
+        else unfolded.add(column);
+        fill();
+      });
       return node;
+
+      function fill() {
+        const open = !folds || unfolded.has(column);
+        list.replaceChildren(...(open ? drawn : drawn.slice(0, PREVIEW_VALUES)).map(([value, times]) => {
+          const text = element("span", "pcsv-stat-text");
+          text.textContent = value;
+          const seen = element("span", "pcsv-stat-count");
+          seen.textContent = times.toLocaleString();
+          const item = element("li");
+          item.append(text, seen);
+          return item;
+        }));
+        fold.textContent = open ? "Show fewer" : `Show ${plural(drawn.length - PREVIEW_VALUES, "more value")}`;
+        fold.setAttribute("aria-expanded", String(open));
+        // The cap is only the card's business once the list it applies to is all there.
+        // Reading "+ 10 more values" under a list that is itself folded shut says nothing
+        // a reader can act on.
+        node.replaceChildren(top, list, ...(folds ? [fold] : []), ...(open && more.textContent ? [more] : []));
+      }
     }
 
     function plural(count, noun) {

@@ -15,17 +15,21 @@ const chromePath = process.env.CHROME_PATH || '/Applications/Google Chrome.app/C
 const profile = await mkdtemp(join(tmpdir(), 'productivity-csv-viewer-'));
 // Prose, to stand for every text file the viewer must keep its hands off.
 const notes = 'Hello, world. This is a note.\nAnother line, with a comma in it.\nA third line.\nAnd a fourth.\n';
+// Twelve distinct ids beside one repeated grade: two more values than a stats card draws
+// before it folds, and a neighbouring column with nothing to fold at all.
+const many = ['id;grade', ...Array.from({ length: 12 }, (_, index) => `id-${String(index).padStart(2, '0')};A`)].join('\n') + '\n';
+const body = request => (request.url.includes('notes') ? notes : request.url.includes('many') ? many : csv);
 const server = createServer((request, response) => {
   if (request.url.endsWith('.txt')) {
     response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    response.end(request.url.includes('notes') ? notes : csv);
+    response.end(body(request));
     return;
   }
   // Exactly what makes a CSV link a download today: the honest type, plus a disposition
   // that would download the file even if the type were changed on its own.
   response.setHeader('Content-Type', 'text/csv; charset=utf-8');
   response.setHeader('Content-Disposition', 'attachment; filename="report.csv"');
-  response.end(csv);
+  response.end(body(request));
 });
 await new Promise(ready => server.listen(0, '127.0.0.1', ready));
 const origin = `http://127.0.0.1:${server.address().port}`;
@@ -245,6 +249,46 @@ try {
   assert.deepEqual(viaQuery.headers, ['#', 'product', 'stock', 'price', 'note'], 'a CSV named in the query counts');
   await call('Target.closeTarget', { targetId: named.targetId });
 
+  // A column with more values than fit in a glance folds. This is the one place the fold
+  // is a real control in a real grid: whether it changes the layout can be measured here
+  // rather than inferred from the DOM it left behind.
+  const wide = await attach(`${origin}/many.csv`);
+  await wait(700);
+  const folded = await evaluate(`(() => {
+    document.querySelectorAll('.pcsv-toggle')[0].click();
+    const [first, second] = document.querySelectorAll('.pcsv-stat');
+    const fold = first.querySelector('.pcsv-stat-fold');
+    const state = () => ({
+      values: first.querySelectorAll('.pcsv-stat-values li').length,
+      label: fold.textContent,
+      expanded: fold.getAttribute('aria-expanded'),
+      height: first.getBoundingClientRect().height
+    });
+    const shut = state();
+    fold.click();
+    const open = state();
+    fold.click();
+    return {
+      shut, open, again: state().values,
+      meta: first.querySelector('.pcsv-stat-meta').textContent,
+      controls: fold.getAttribute('aria-controls'),
+      listId: first.querySelector('.pcsv-stat-values').id,
+      unfoldable: !second.querySelector('.pcsv-stat-fold')
+    };
+  })()`, wide.sessionId);
+  assert.equal(folded.meta, '12 distinct values · no empty cells');
+  assert.equal(folded.shut.values, 10, 'a long list arrives folded');
+  assert.equal(folded.shut.label, 'Show 2 more values');
+  assert.equal(folded.shut.expanded, 'false');
+  assert.equal(folded.controls, folded.listId, 'the button must name the list it folds');
+  assert.equal(folded.open.values, 12);
+  assert.equal(folded.open.label, 'Show fewer');
+  assert.equal(folded.open.expanded, 'true');
+  assert.ok(folded.open.height > folded.shut.height, 'unfolding must actually make the card taller');
+  assert.equal(folded.again, 10, 'and pressing it again folds the card back');
+  assert.equal(folded.unfoldable, true, 'a column of one value has nothing to fold');
+  await call('Target.closeTarget', { targetId: wide.targetId });
+
   // Switching the module off takes the rule back, and the link is a download again.
   await evaluate(`chrome.storage.local.set({ 'moduleEnabled:csv-viewer': false })`);
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -259,7 +303,7 @@ try {
   const aborted = await call('Page.navigate', { url: `${origin}/report.csv` }, off.sessionId);
   assert.match(aborted.result.errorText || '', /ERR_ABORTED/, 'with the module off, a CSV link downloads again');
 
-  console.log('CSV viewer: a text/csv link renders as a sortable table, the stats panel counts the rows the filter left, a .txt laid out like a table is read as one, prose is left alone, and switching the module off restores the download.');
+  console.log('CSV viewer: a text/csv link renders as a sortable table, the stats panel counts the rows the filter left and folds a long column of values, a .txt laid out like a table is read as one, prose is left alone, and switching the module off restores the download.');
 } finally {
   socket?.close();
   server.close();

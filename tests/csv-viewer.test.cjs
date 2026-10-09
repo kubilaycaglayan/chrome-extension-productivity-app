@@ -262,6 +262,8 @@ function page(text, { pathname = '/data.csv', contentType = 'text/plain', search
         values: find(node, '.pcsv-stat-values').children.map(item => [
           find(item, '.pcsv-stat-text').textContent, find(item, '.pcsv-stat-count').textContent
         ]),
+        // The button itself, not its label: a test has to be able to press it.
+        fold: find(node, '.pcsv-stat-fold'),
         more: find(node, '.pcsv-stat-more')?.textContent ?? null
       };
     }
@@ -432,22 +434,90 @@ test('the stats count the rows the filter left, and say that is what they did', 
   assert.equal(view.control('.pcsv-stats-note').textContent, 'Every column across the 1 row matching the filter.');
 });
 
-test('a column with more distinct values than fit says how many it is holding back', () => {
-  // 60 ids, each its own value, over a grade column of two. The long list is the one that
-  // has to be cut; the count above it is the answer that was actually asked for.
+test('a column of many values folds to ten, and says how many it is holding back', () => {
+  // 60 ids, each its own value, over a grade column of one. The long list is the one that
+  // has to be folded; the count above it is the answer that was actually asked for.
   const rows = Array.from({ length: 60 }, (_, index) => `id-${String(index).padStart(2, '0')},A`);
   const view = page(['id,grade', ...rows].join('\n') + '\n');
   view.statsButton.dispatch('click');
   assert.equal(view.card(0).meta, '60 distinct values · no empty cells');
+
+  // Folded shut: ten values, and a button that says how many more it would draw. The cap
+  // is not mentioned yet -- "+ 10 more values" under a folded list says nothing a reader
+  // can act on.
+  assert.equal(view.card(0).values.length, 10);
+  assert.equal(view.card(0).fold.textContent, 'Show 40 more values');
+  assert.equal(view.card(0).fold.getAttribute('aria-expanded'), 'false');
+  assert.equal(view.card(0).more, null);
+
+  view.card(0).fold.dispatch('click');
   assert.equal(view.card(0).values.length, 50);
+  assert.equal(view.card(0).fold.textContent, 'Show fewer');
+  assert.equal(view.card(0).fold.getAttribute('aria-expanded'), 'true');
+  // Now that the whole drawn list is there, what was left out of it is worth saying.
   assert.equal(view.card(0).more, '+ 10 more values');
   // Equal counts fall back to the collator, so the cut is the end of the list, not a
   // random fifty.
   assert.deepEqual(view.card(0).values[0], ['id-00', '1']);
   assert.deepEqual(view.card(0).values[49], ['id-49', '1']);
-  // A short list is not truncated and says nothing about more.
+
+  view.card(0).fold.dispatch('click');
+  assert.equal(view.card(0).values.length, 10);
+  assert.equal(view.card(0).more, null);
+
+  // A column short enough to read whole has nothing to fold and no button to say so.
   assert.equal(view.card(1).values.length, 1);
+  assert.equal(view.card(1).fold, null);
   assert.equal(view.card(1).more, null);
+});
+
+test('a column of exactly ten values is left unfolded; the eleventh is what folds it', () => {
+  const column = count => {
+    const rows = Array.from({ length: count }, (_, index) => `v${index},x`);
+    const view = page(['value,same', ...rows].join('\n') + '\n');
+    view.statsButton.dispatch('click');
+    return view.card(0);
+  };
+  // The threshold is the point past which the list no longer fits in a glance, so a list
+  // that does fit must not be given a control that hides half of it for nothing.
+  assert.equal(column(10).values.length, 10);
+  assert.equal(column(10).fold, null);
+  assert.equal(column(11).values.length, 10);
+  assert.equal(column(11).fold.textContent, 'Show 1 more value');
+});
+
+test('a card the user unfolded stays unfolded as the filter moves under it', () => {
+  // Twenty of the forty ids are tagged, so a filter can halve the rows and still leave
+  // the card with more values than it folds at.
+  const rows = Array.from({ length: 40 }, (_, index) =>
+    `id-${String(index).padStart(2, '0')},${index < 20 ? 'keep' : 'drop'}`);
+  const view = page(['id,tag', ...rows].join('\n') + '\n');
+  const narrow = term => {
+    view.control('.pcsv-filter').value = term;
+    view.control('.pcsv-filter').dispatch('input');
+    view.flush();
+  };
+  view.statsButton.dispatch('click');
+  view.card(0).fold.dispatch('click');
+  assert.equal(view.card(0).values.length, 40);
+
+  // Every card is rebuilt from scratch on each keystroke, so folding shut underneath the
+  // hand that opened it is the failure this guards.
+  narrow('keep');
+  assert.equal(view.card(0).fold.getAttribute('aria-expanded'), 'true');
+  assert.equal(view.card(0).values.length, 20);
+  assert.equal(view.card(0).meta, '20 distinct values · no empty cells');
+
+  // Narrowed below the threshold there is nothing left to fold, so the button goes with
+  // it rather than sitting there offering nothing.
+  narrow('id-0');
+  assert.equal(view.card(0).fold, null);
+  assert.equal(view.card(0).values.length, 10);
+
+  // Widened again, the card is still the one the user opened.
+  narrow('keep');
+  assert.equal(view.card(0).fold.getAttribute('aria-expanded'), 'true');
+  assert.equal(view.card(0).values.length, 20);
 });
 
 test('the stats and the raw text are two destinations, not a chain through the table', () => {

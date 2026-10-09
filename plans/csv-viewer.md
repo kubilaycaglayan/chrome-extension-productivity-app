@@ -44,6 +44,12 @@ A stats card per column carries the count of distinct values, those values liste
 commonest first with how many rows hold each, and how many of the column's cells are
 empty — the question a file answers before any of its numbers mean anything.
 
+A card whose list runs past ten values arrives folded, with a button saying how many more
+it would draw. The panel's whole purpose is that a file's columns can be compared side by
+side, and one column of sixty values pushes the rest of them off the screen. Only the
+visible rows are built, so a wide file folded shut is ten list items a card rather than
+fifty, and the rest are never made until they are asked for.
+
 ## Named files, and files judged on shape
 
 A name ending in `.csv` or `.tsv` is a promise, and the file is taken at its word: whatever
@@ -97,16 +103,25 @@ an unnamed 30 MB file that is not a table costs a 64 KB read rather than a full 
 - The 95% agreement bar is a judgement call. A text file that is genuinely a two-column
   table will be rendered as one; "Raw text" is one click away when that is not wanted.
 - The table renders at most 20000 rows; the count line says so when it holds rows back.
-- A stats card lists at most 50 values. An id column has as many distinct values as it has
-  rows, and listing them is a second copy of the file; the distinct count above the list is
-  the part that was asked for, and the card says how many values it did not draw.
+- A stats card draws at most 50 values and folds past 10. An id column has as many distinct
+  values as it has rows, and listing them is a second copy of the file; the distinct count
+  above the list is the part that was asked for. The 50 is only mentioned once the card is
+  unfolded — "+ 10 more values" under a list that is itself folded shut says nothing a
+  reader can act on.
+- Which cards the user unfolded is held outside them, because every card is rebuilt from
+  scratch on each keystroke in the filter, and a card that folded itself back up under the
+  hand that opened it would be its own bug. A card narrowed below 10 values loses the
+  button rather than keeping one that offers nothing.
 
 ## Checks
 
 - `node --test tests/` — parser, viewer DOM, the stats panel, and the rule's shape and
   lifecycle.
-- `node tools/check-csv-viewer-live.mjs` — loads the extension into a real Chrome, serves a
-  CSV as `text/csv` with an attachment disposition, and asserts a sortable table comes back;
-  serves the same data as `.txt` and asserts shape alone is enough; serves prose as `.txt`
-  and asserts it is left as text; then switches the module off and asserts the link aborts
+- `node tools/check-csv-viewer-live.mjs` — needs Node 22+ for global `WebSocket`. Loads the
+  extension into a real Chrome, serves a CSV as `text/csv` with an attachment disposition,
+  and asserts a sortable table comes back; serves the same data as `.txt` and asserts shape
+  alone is enough; serves prose as `.txt` and asserts it is left as text; serves a
+  twelve-value column and drives the fold, which is the only place that control sits in a
+  real grid — that unfolding makes the card taller is measured there rather than inferred
+  from the DOM it left behind; then switches the module off and asserts the link aborts
   into a download again. This is the only check that can prove the header rule works at all.
