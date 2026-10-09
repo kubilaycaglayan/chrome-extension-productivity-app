@@ -57,6 +57,12 @@ let pausedAdSites = [];
 let adBlockerReady = false;
 let currentSite = null;
 let outlineTabId = null;
+// The outline is the popup's front door, and on a page without headings it opens onto an
+// empty room. So the first load hands the popup straight to Settings when there is nothing
+// to click: no headings, a page the outline cannot reach, or the module switched off.
+// Only the first. A later load is one the user asked for by coming back from Settings, and
+// throwing them out of the view they just left would make the back button useless.
+let outlineOpened = false;
 
 Promise.all([
   chrome.tabs.query({ active: true, currentWindow: true }),
@@ -164,6 +170,12 @@ function jumpToHeading(index, expectedText) {
 }
 
 async function loadOutline() {
+  const first = !outlineOpened;
+  outlineOpened = true;
+  // Every path that ends with an unclickable outline comes through here, so the fallback
+  // cannot be forgotten by one of them. The message is still written to the outline view
+  // underneath, which is what the user finds when they press back.
+  const nothingToShow = () => { if (first) showView("settings"); };
   outlineList.replaceChildren();
   outlineMessage.hidden = false;
   outlineMessage.textContent = "Finding headings…";
@@ -175,6 +187,7 @@ async function loadOutline() {
     const { "moduleEnabled:page-outline": enabled } = await chrome.storage.local.get("moduleEnabled:page-outline");
     if (enabled === false) {
       outlineMessage.textContent = "Page outline is turned off. Enable it in Settings.";
+      nothingToShow();
       return;
     }
     if (outlineTabId === null) throw new Error("No active tab");
@@ -182,6 +195,7 @@ async function loadOutline() {
     document.getElementById("outline-count").textContent = `${headings.length} ${headings.length === 1 ? "HEADING" : "HEADINGS"}`;
     if (!headings.length) {
       outlineMessage.textContent = "No headings found on this page.";
+      nothingToShow();
       return;
     }
     const parents = [];
@@ -244,6 +258,7 @@ async function loadOutline() {
     outlineMessage.hidden = true;
   } catch {
     outlineMessage.textContent = "This page cannot be outlined. Try a regular website tab.";
+    nothingToShow();
   }
 }
 
