@@ -247,7 +247,24 @@ function page(text, { pathname = '/data.csv', contentType = 'text/plain', search
     get headers() { return view.sheet.children.find(child => child.tagName === 'THEAD').children[0].children; },
     cells: row => row.children.map(cell => cell.textContent),
     column: index => view.rows.map(row => row.children[index].textContent),
-    control: className => find(body, className)
+    control: className => find(body, className),
+    // Both toolbar buttons carry the same class, so they are told apart by their order in
+    // the bar rather than by a label that changes as they are pressed.
+    get toggles() { return view.bar.children.filter(child => child.className === 'pcsv-toggle'); },
+    get statsButton() { return view.toggles[0]; },
+    get rawButton() { return view.toggles[1]; },
+    get cards() { return view.control('.pcsv-stats-grid').children; },
+    card(index) {
+      const node = view.cards[index];
+      return {
+        name: find(node, '.pcsv-stat-name').textContent,
+        meta: find(node, '.pcsv-stat-meta').textContent,
+        values: find(node, '.pcsv-stat-values').children.map(item => [
+          find(item, '.pcsv-stat-text').textContent, find(item, '.pcsv-stat-count').textContent
+        ]),
+        more: find(node, '.pcsv-stat-more')?.textContent ?? null
+      };
+    }
   };
   return view;
 }
@@ -344,7 +361,7 @@ test('a file too tall to render says how many rows it is holding back', () => {
 
 test('"Raw text" swaps the table for the original file and back, and the toolbar stays', () => {
   const view = page('name,qty\nwidget,2\nbolt,3\n');
-  const toggle = view.control('.pcsv-toggle');
+  const toggle = view.rawButton;
   const scroll = view.control('.pcsv-scroll');
 
   toggle.dispatch('click');
@@ -360,6 +377,106 @@ test('"Raw text" swaps the table for the original file and back, and the toolbar
   assert.equal(scroll.isConnected, true);
   assert.equal(toggle.textContent, 'Raw text');
   assert.equal(view.control('.pcsv-filter').disabled, false);
+});
+
+test('"Stats" answers for every column: how many distinct values, which ones, how many empty', () => {
+  const view = page('fruit,grade,note\napple,A,\npear,B,soft\napple,A,\nplum,,\n');
+  // Held onto before the swap: an element out of the tree is no longer there to look up.
+  const scroll = view.control('.pcsv-scroll');
+  view.statsButton.dispatch('click');
+
+  assert.equal(scroll.isConnected, false, 'the table gives up its slot');
+  assert.equal(view.control('.pcsv-stats').isConnected, true);
+  assert.equal(view.statsButton.textContent, 'Table');
+  assert.equal(view.control('.pcsv-stats-note').textContent, 'Every column across all 4 rows.');
+  // One card per column, named by the header row.
+  assert.deepEqual(view.cards.map((_, index) => view.card(index).name), ['fruit', 'grade', 'note']);
+
+  // Commonest value first, each with the number of rows holding it.
+  assert.equal(view.card(0).meta, '3 distinct values · no empty cells');
+  assert.deepEqual(view.card(0).values, [['apple', '2'], ['pear', '1'], ['plum', '1']]);
+  // A blank cell is not a value: it is counted apart, and never listed among them.
+  assert.equal(view.card(1).meta, '2 distinct values · 1 of 4 cells empty');
+  assert.deepEqual(view.card(1).values, [['A', '2'], ['B', '1']]);
+  // A column that is almost all blank still says how much of it is there.
+  assert.equal(view.card(2).meta, '1 distinct value · 3 of 4 cells empty');
+  assert.deepEqual(view.card(2).values, [['soft', '1']]);
+
+  // Pressing the same button again is the way back, and the toolbar never moved.
+  view.statsButton.dispatch('click');
+  assert.equal(view.control('.pcsv-scroll').isConnected, true);
+  assert.equal(view.control('.pcsv-stats'), null);
+  assert.equal(view.statsButton.textContent, 'Stats');
+  assert.equal(view.bar.isConnected, true);
+  assert.equal(view.rows.length, 4, 'the table came back whole');
+});
+
+test('the stats count the rows the filter left, and say that is what they did', () => {
+  const view = page('fruit,grade\napple,A\npear,B\napple,A\nplum,C\n');
+  view.statsButton.dispatch('click');
+  assert.deepEqual(view.card(0).values, [['apple', '2'], ['pear', '1'], ['plum', '1']]);
+
+  // Numbers that kept answering for the whole file while the table above showed two rows
+  // would be read as describing those two.
+  view.control('.pcsv-filter').value = 'apple';
+  view.control('.pcsv-filter').dispatch('input');
+  view.flush();
+  assert.equal(view.control('.pcsv-stats-note').textContent, 'Every column across the 2 rows matching the filter.');
+  assert.deepEqual(view.card(0).values, [['apple', '2']]);
+  assert.equal(view.card(1).meta, '1 distinct value · no empty cells');
+
+  // One row: the plural goes with it.
+  view.control('.pcsv-filter').value = 'pear';
+  view.control('.pcsv-filter').dispatch('input');
+  view.flush();
+  assert.equal(view.control('.pcsv-stats-note').textContent, 'Every column across the 1 row matching the filter.');
+});
+
+test('a column with more distinct values than fit says how many it is holding back', () => {
+  // 60 ids, each its own value, over a grade column of two. The long list is the one that
+  // has to be cut; the count above it is the answer that was actually asked for.
+  const rows = Array.from({ length: 60 }, (_, index) => `id-${String(index).padStart(2, '0')},A`);
+  const view = page(['id,grade', ...rows].join('\n') + '\n');
+  view.statsButton.dispatch('click');
+  assert.equal(view.card(0).meta, '60 distinct values · no empty cells');
+  assert.equal(view.card(0).values.length, 50);
+  assert.equal(view.card(0).more, '+ 10 more values');
+  // Equal counts fall back to the collator, so the cut is the end of the list, not a
+  // random fifty.
+  assert.deepEqual(view.card(0).values[0], ['id-00', '1']);
+  assert.deepEqual(view.card(0).values[49], ['id-49', '1']);
+  // A short list is not truncated and says nothing about more.
+  assert.equal(view.card(1).values.length, 1);
+  assert.equal(view.card(1).more, null);
+});
+
+test('the stats and the raw text are two destinations, not a chain through the table', () => {
+  const view = page('name,qty\nwidget,2\nbolt,3\n');
+  view.statsButton.dispatch('click');
+  assert.equal(view.control('.pcsv-stats').isConnected, true);
+
+  // Straight from one panel to the other: each button names where it goes, and only the
+  // button for the panel you are on offers the way back.
+  view.rawButton.dispatch('click');
+  assert.equal(view.pre.isConnected, true);
+  assert.equal(view.control('.pcsv-stats'), null);
+  assert.equal(view.rawButton.textContent, 'Table');
+  assert.equal(view.statsButton.textContent, 'Stats');
+  // Raw text is one unsplit string, so there are no rows to filter; the stats have rows.
+  assert.equal(view.control('.pcsv-filter').disabled, true);
+
+  view.statsButton.dispatch('click');
+  assert.equal(view.pre.isConnected, false);
+  assert.equal(view.control('.pcsv-stats').isConnected, true);
+  assert.equal(view.rawButton.textContent, 'Raw text');
+  assert.equal(view.control('.pcsv-filter').disabled, false);
+  assert.equal(view.body.classList.contains('pcsv-reading-raw'), false);
+});
+
+test('a headerless file labels its stats cards the way it labels its columns', () => {
+  const view = page('1,2\n3,4\n5,6\n');
+  view.statsButton.dispatch('click');
+  assert.deepEqual(view.cards.map((_, index) => view.card(index).name), ['A', 'B']);
 });
 
 test('switching the module off puts the original page back', () => {

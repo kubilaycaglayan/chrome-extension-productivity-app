@@ -9,6 +9,10 @@ productivityModules.register("csv-viewer", () => {
   const MAX_BYTES = 30 * 1024 * 1024;
   // A table this tall already outruns scrolling; the count line says what is held back.
   const MAX_ROWS = 20000;
+  // An id column has as many distinct values as it has rows, and listing them is a second
+  // copy of the file. The count above the list is the part that was worth asking for, so
+  // the list itself stops here and says how many it did not draw.
+  const MAX_VALUES = 50;
   const DELIMITER_NAMES = { ",": "comma", ";": "semicolon", "\t": "tab", "|": "pipe" };
   const SHEET = `
 .pcsv-host {
@@ -151,6 +155,69 @@ productivityModules.register("csv-viewer", () => {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.pcsv-host .pcsv-stats {
+  scrollbar-gutter: stable;
+  overflow: auto;
+  max-height: calc(100vh - 41px);
+  padding: 12px;
+}
+.pcsv-host .pcsv-stats-note {
+  margin: 0 0 10px;
+  color: var(--pcsv-muted);
+}
+.pcsv-host .pcsv-stats-grid {
+  display: grid;
+  /* As many cards as fit, one per column of the file. A card is read top to bottom, so
+     they align at their tops rather than stretching to the tallest in the row. */
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.pcsv-host .pcsv-stat {
+  border: 1px solid var(--pcsv-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pcsv-host .pcsv-stat-head {
+  padding: 6px 10px;
+  background: var(--pcsv-head);
+}
+.pcsv-host .pcsv-stat-name {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+.pcsv-host .pcsv-stat-meta {
+  margin: 1px 0 0;
+  color: var(--pcsv-muted);
+}
+.pcsv-host .pcsv-stat-values {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pcsv-host .pcsv-stat-values li,
+.pcsv-host .pcsv-stat-more {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding: 3px 10px;
+  border-top: 1px solid var(--pcsv-line);
+}
+/* A value can be long; the count beside it must not be pushed out of the card. */
+.pcsv-host .pcsv-stat-text {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.pcsv-host .pcsv-stat-count {
+  color: var(--pcsv-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pcsv-host .pcsv-stat-more { color: var(--pcsv-muted); }
 .pcsv-host.pcsv-reading-raw > pre {
   margin: 0;
   padding: 10px 12px;
@@ -207,11 +274,14 @@ productivityModules.register("csv-viewer", () => {
     filter.setAttribute("aria-label", "Filter rows");
     const count = element("span", "pcsv-count");
     count.setAttribute("role", "status");
+    const stats = element("button", "pcsv-toggle");
+    stats.type = "button";
+    stats.textContent = "Stats";
     const raw = element("button", "pcsv-toggle");
     raw.type = "button";
     raw.textContent = "Raw text";
     const bar = element("div", "pcsv-bar");
-    bar.append(name, filter, count, raw);
+    bar.append(name, filter, count, stats, raw);
 
     const headRow = element("tr");
     headRow.append(corner(), ...headerCells());
@@ -220,13 +290,25 @@ productivityModules.register("csv-viewer", () => {
     const body = element("tbody");
     const sheet = element("table", "pcsv-table");
     sheet.append(head, body);
-    // The toolbar stays put while this one element swaps with the original <pre>.
+    // The toolbar stays put while the one element beneath it swaps for another.
     const scroll = element("div", "pcsv-scroll");
     scroll.append(sheet);
+    const statsNote = element("p", "pcsv-stats-note");
+    statsNote.setAttribute("role", "status");
+    const statsGrid = element("div", "pcsv-stats-grid");
+    const statsPanel = element("div", "pcsv-stats");
+    statsPanel.append(statsNote, statsGrid);
 
     // Every row keeps the line it came from, so sorting and filtering never cost you the
     // ability to find a value back in the file.
     const numbered = table.rows.map((row, index) => ({ row, line: index + 1 }));
+    // What the filter left, shared by the table and the stats so the two can never
+    // disagree about which rows they are describing.
+    let visible = [];
+    // The table, the original file, and the per-column stats, one of which occupies the
+    // slot under the toolbar. Each button is a round trip to its own panel and back.
+    const panels = { table: scroll, raw: source, stats: statsPanel };
+    let panel = "table";
     render();
 
     source.remove();
@@ -238,14 +320,8 @@ productivityModules.register("csv-viewer", () => {
       if (frame) return;
       frame = requestAnimationFrame(() => { frame = 0; render(); });
     });
-    raw.addEventListener("click", () => {
-      const showingTable = scroll.isConnected;
-      if (showingTable) scroll.replaceWith(source);
-      else source.replaceWith(scroll);
-      raw.textContent = showingTable ? "Table" : "Raw text";
-      filter.disabled = showingTable;
-      document.body.classList.toggle("pcsv-reading-raw", showingTable);
-    });
+    stats.addEventListener("click", () => display("stats"));
+    raw.addEventListener("click", () => display("raw"));
 
     return () => {
       if (frame) cancelAnimationFrame(frame);
@@ -315,7 +391,7 @@ productivityModules.register("csv-viewer", () => {
     }
 
     function render() {
-      const visible = numbered.filter(matches);
+      visible = numbered.filter(matches);
       // Original line as the tiebreak keeps equal rows in file order, so a sort on one
       // column does not scramble the rows it cannot tell apart.
       if (sortColumn >= 0) visible.sort((left, right) => compare(left, right) || left.line - right.line);
@@ -324,6 +400,85 @@ productivityModules.register("csv-viewer", () => {
       for (const entry of shown) fragment.append(rowFor(entry));
       body.replaceChildren(fragment);
       count.textContent = summary(visible.length, shown.length);
+      // Retyping in the filter while the stats are up has to move the numbers, or they
+      // would silently describe the rows from before the keystroke.
+      if (panel === "stats") renderStats();
+    }
+
+    // A second press on the button that opened a panel is how you get back to the table,
+    // so a panel asked for while it is already up means the table.
+    function display(next) {
+      const target = next === panel ? "table" : next;
+      if (target === panel) return;
+      if (target === "stats") renderStats();
+      panels[panel].replaceWith(panels[target]);
+      panel = target;
+      stats.textContent = panel === "stats" ? "Table" : "Stats";
+      raw.textContent = panel === "raw" ? "Table" : "Raw text";
+      // The filter still chooses the rows the stats are counted over. It is only the raw
+      // text, one unsplit string, that has no rows to narrow.
+      filter.disabled = panel === "raw";
+      document.body.classList.toggle("pcsv-reading-raw", panel === "raw");
+    }
+
+    // Counting is over the rows the filter left, not the file: a panel that answered for
+    // all 20000 rows while the table above it showed 12 would be read as describing those
+    // 12. The note says which it is.
+    function renderStats() {
+      statsNote.textContent = visible.length === numbered.length
+        ? `Every column across all ${plural(numbered.length, "row")}.`
+        : `Every column across the ${plural(visible.length, "row")} matching the filter.`;
+      statsGrid.replaceChildren(...Array.from({ length: table.columns }, (_, column) => card(column)));
+    }
+
+    function card(column) {
+      // A cell counts as empty when it holds nothing but space, and a row too short to
+      // reach this column has no cell at all -- which is the same absence. A spelled-out
+      // "NA" or "-" is a value the file chose to write, so it stays a value and shows up
+      // in the list below, where it can be seen for what it is.
+      const counts = new Map();
+      let empty = 0;
+      for (const entry of visible) {
+        const value = entry.row[column];
+        if (value === undefined || value.trim() === "") { empty++; continue; }
+        counts.set(value, (counts.get(value) || 0) + 1);
+      }
+      // Commonest first, because that is the shape of the column. Equal counts fall back
+      // to the collator the sort already uses, so a numeric column reads 2, 10, 50.
+      const ranked = [...counts].sort((left, right) => right[1] - left[1] || sorter.compare(left[0], right[0]));
+
+      const heading = element("h2", "pcsv-stat-name");
+      heading.textContent = table.header?.[column]?.trim() || columnName(column);
+      const meta = element("p", "pcsv-stat-meta");
+      meta.textContent = `${plural(counts.size, "distinct value")} · ${empty
+        ? `${empty.toLocaleString()} of ${plural(visible.length, "cell")} empty`
+        : "no empty cells"}`;
+      const top = element("div", "pcsv-stat-head");
+      top.append(heading, meta);
+
+      const list = element("ol", "pcsv-stat-values");
+      list.append(...ranked.slice(0, MAX_VALUES).map(([value, times]) => {
+        const text = element("span", "pcsv-stat-text");
+        text.textContent = value;
+        const seen = element("span", "pcsv-stat-count");
+        seen.textContent = times.toLocaleString();
+        const item = element("li");
+        item.append(text, seen);
+        return item;
+      }));
+
+      const node = element("section", "pcsv-stat");
+      node.append(top, list);
+      if (ranked.length > MAX_VALUES) {
+        const more = element("p", "pcsv-stat-more");
+        more.textContent = `+ ${plural(ranked.length - MAX_VALUES, "more value")}`;
+        node.append(more);
+      }
+      return node;
+    }
+
+    function plural(count, noun) {
+      return `${count.toLocaleString()} ${noun}${count === 1 ? "" : "s"}`;
     }
 
     function compare(left, right) {

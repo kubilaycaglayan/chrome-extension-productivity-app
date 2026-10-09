@@ -152,16 +152,70 @@ try {
   assert.deepEqual(filtered.rows, ['bracket; small']);
   assert.match(filtered.count, /^1 of 4 rows · /);
 
+  // The stats panel, counted over the rows the filter left standing above.
+  const stats = await evaluate(`(() => {
+    const [statsButton] = document.querySelectorAll('.pcsv-toggle');
+    statsButton.click();
+    const card = node => ({
+      name: node.querySelector('.pcsv-stat-name').textContent,
+      meta: node.querySelector('.pcsv-stat-meta').textContent,
+      values: [...node.querySelectorAll('.pcsv-stat-values li')].map(item => [
+        item.querySelector('.pcsv-stat-text').textContent,
+        item.querySelector('.pcsv-stat-count').textContent
+      ])
+    });
+    return {
+      note: document.querySelector('.pcsv-stats-note').textContent,
+      table: !!document.querySelector('.pcsv-table'),
+      bar: !!document.querySelector('.pcsv-bar'),
+      label: statsButton.textContent,
+      gutter: getComputedStyle(document.querySelector('.pcsv-stats')).scrollbarGutter,
+      columns: getComputedStyle(document.querySelector('.pcsv-stats-grid')).display,
+      cards: [...document.querySelectorAll('.pcsv-stat')].map(card)
+    };
+  })()`, page.sessionId);
+  assert.equal(stats.table, false, 'the table steps aside for the stats');
+  assert.equal(stats.bar, true, 'the toolbar survives the swap');
+  assert.equal(stats.label, 'Table', 'the button that opened the panel is the way back');
+  assert.equal(stats.columns, 'grid');
+  assert.equal(stats.gutter, 'stable');
+  // The filter above is still narrowed to one row, and the stats say so rather than
+  // quietly answering for the whole file.
+  assert.equal(stats.note, 'Every column across the 1 row matching the filter.');
+  assert.deepEqual(stats.cards.map(card => card.name), ['product', 'stock', 'price', 'note']);
+  assert.deepEqual(stats.cards[0].values, [['bracket; small', '1']]);
+
+  // Cleared, the panel answers for the file: the blank stock cell is counted as empty
+  // rather than listed as a value, and repeated values are ranked by how often they run.
+  const wholeFile = await evaluate(`(async () => {
+    const filter = document.querySelector('.pcsv-filter');
+    filter.value = '';
+    filter.dispatchEvent(new Event('input'));
+    await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+    return {
+      note: document.querySelector('.pcsv-stats-note').textContent,
+      metas: [...document.querySelectorAll('.pcsv-stat-meta')].map(node => node.textContent),
+      stock: [...document.querySelectorAll('.pcsv-stat')][1].querySelectorAll('.pcsv-stat-text').length
+    };
+  })()`, page.sessionId);
+  assert.equal(wholeFile.note, 'Every column across all 4 rows.');
+  assert.equal(wholeFile.metas[0], '4 distinct values · no empty cells');
+  assert.equal(wholeFile.metas[1], '3 distinct values · 1 of 4 cells empty');
+  assert.equal(wholeFile.stock, 3, 'the empty cell is counted apart, never listed as a value');
+
   const raw = await evaluate(`(() => {
-    document.querySelector('.pcsv-toggle').click();
+    document.querySelectorAll('.pcsv-toggle')[1].click();
     return {
       text: document.querySelector('body > pre')?.textContent,
       table: !!document.querySelector('.pcsv-table'),
+      stats: !!document.querySelector('.pcsv-stats'),
       bar: !!document.querySelector('.pcsv-bar'),
-      label: document.querySelector('.pcsv-toggle').textContent
+      label: document.querySelectorAll('.pcsv-toggle')[1].textContent
     };
   })()`, page.sessionId);
   assert.equal(raw.table, false, 'the table steps aside for the raw text');
+  // Straight from the stats to the text, without passing back through the table.
+  assert.equal(raw.stats, false);
   assert.equal(raw.bar, true, 'the toolbar survives the swap');
   assert.equal(raw.label, 'Table');
   assert.equal(raw.text, csv.toString(), 'the raw text must be the file, byte for byte');
@@ -205,7 +259,7 @@ try {
   const aborted = await call('Page.navigate', { url: `${origin}/report.csv` }, off.sessionId);
   assert.match(aborted.result.errorText || '', /ERR_ABORTED/, 'with the module off, a CSV link downloads again');
 
-  console.log('CSV viewer: a text/csv link renders as a sortable table, a .txt laid out like a table is read as one, prose is left alone, and switching the module off restores the download.');
+  console.log('CSV viewer: a text/csv link renders as a sortable table, the stats panel counts the rows the filter left, a .txt laid out like a table is read as one, prose is left alone, and switching the module off restores the download.');
 } finally {
   socket?.close();
   server.close();

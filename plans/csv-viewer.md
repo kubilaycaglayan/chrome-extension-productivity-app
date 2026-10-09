@@ -29,9 +29,20 @@ every site it is paused on, and an allow rule cancels a header rule beneath it.
 
 **`content/csv-viewer.js`** then finds the `<pre>` Chrome rendered, parses it with
 `shared/csv-table.js`, and replaces it with a table: sticky header, sticky row numbers,
-right-aligned numeric columns, click-to-sort, a filter box, and a "Raw text" button that
-puts the original file back. The original `<pre>` is kept out of the tree rather than
-rebuilt, so the raw text is the file byte for byte.
+right-aligned numeric columns, click-to-sort, and a filter box. The original `<pre>` is kept
+out of the tree rather than rebuilt, so the raw text is the file byte for byte.
+
+## Three panels under one toolbar
+
+The toolbar is fixed and the single element beneath it swaps: the table, the original
+`<pre>`, or the per-column stats. Each of the two buttons is a round trip to its own panel
+and back, so "Stats" reads "Table" while the stats are up and "Raw text" still goes
+straight to the text from there. The filter stays live in the stats panel and is disabled
+only for the raw text, which is one unsplit string with no rows to narrow.
+
+A stats card per column carries the count of distinct values, those values listed
+commonest first with how many rows hold each, and how many of the column's cells are
+empty — the question a file answers before any of its numbers mean anything.
 
 ## Named files, and files judged on shape
 
@@ -63,6 +74,15 @@ an unnamed 30 MB file that is not a table costs a 64 KB read rather than a full 
   column's empty cells in front of the data the moment you sorted descending.
 - **Rows carry the line they came from**, so a sorted or filtered value can still be found
   back in the file.
+- **The stats count the rows the filter left**, not the file. Numbers that kept answering
+  for all 20000 rows while the table above showed twelve would be read as describing those
+  twelve; the note at the top of the panel says which set it is.
+- **A blank cell is the only null.** Whitespace-only counts as blank, and a row too short
+  to reach a column has no cell there, which is the same absence. A spelled-out `NA`,
+  `null` or `-` is a value the file chose to write, so it stays a value and appears in the
+  list, where it can be seen for what it is rather than silently folded into a null count.
+- **Distinct means distinct as written.** ` apple` and `apple` are two values, because the
+  stray space is a real fact about the file and hiding it would be the wrong answer.
 
 ## Known trade-offs
 
@@ -77,10 +97,14 @@ an unnamed 30 MB file that is not a table costs a 64 KB read rather than a full 
 - The 95% agreement bar is a judgement call. A text file that is genuinely a two-column
   table will be rendered as one; "Raw text" is one click away when that is not wanted.
 - The table renders at most 20000 rows; the count line says so when it holds rows back.
+- A stats card lists at most 50 values. An id column has as many distinct values as it has
+  rows, and listing them is a second copy of the file; the distinct count above the list is
+  the part that was asked for, and the card says how many values it did not draw.
 
 ## Checks
 
-- `node --test 'tests/*.test.cjs'` — parser, viewer DOM, and the rule's shape and lifecycle.
+- `node --test tests/` — parser, viewer DOM, the stats panel, and the rule's shape and
+  lifecycle.
 - `node tools/check-csv-viewer-live.mjs` — loads the extension into a real Chrome, serves a
   CSV as `text/csv` with an attachment disposition, and asserts a sortable table comes back;
   serves the same data as `.txt` and asserts shape alone is enough; serves prose as `.txt`
