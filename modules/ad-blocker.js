@@ -15,7 +15,13 @@ const RULE_ID_START = 1000000;
 const RULE_PRIORITY = 1000000;
 const COSMETIC_SCRIPT_ID = 'ad-blocker-cosmetic';
 const GENERIC_CSS_ID = 'ad-blocker-generic';
-const COSMETIC_IDS = [COSMETIC_SCRIPT_ID, GENERIC_CSS_ID];
+const SHIM_SCRIPT_ID = 'ad-blocker-shims';
+const COSMETIC_IDS = [COSMETIC_SCRIPT_ID, GENERIC_CSS_ID, SHIM_SCRIPT_ID];
+// The hosts content/ad-blocker-shims.js carries a placeholder for. The shim has to stand in
+// the page's own world and run before the page's first statement, which rules out reading a
+// shared table at injection time, so the list it is matched on is repeated here and the
+// tests hold the two sides together.
+const SHIM_HOSTS = ['mackolik.com'];
 let queue = Promise.resolve();
 
 export function cleanPausedSites(value) {
@@ -88,6 +94,19 @@ export function cosmeticScripts(enabled, sites) {
     ...(sites.length ? { excludeMatches: sites.flatMap(siteMatches) } : {}),
     allFrames: true,
     runAt: 'document_start'
+  }, {
+    // Blocking a library the page then dereferences breaks the page's own code, so the
+    // placeholders are registered on the same terms as the hiding they repair: only while
+    // the module is on, never on a paused host, and ahead of the script that reads them.
+    id: SHIM_SCRIPT_ID,
+    js: ['content/ad-blocker-shims.js'],
+    matches: SHIM_HOSTS.flatMap(siteMatches),
+    ...(sites.length ? { excludeMatches: sites.flatMap(siteMatches) } : {}),
+    // A placeholder is only worth anything to the page's own scripts, which never see the
+    // isolated world.
+    world: 'MAIN',
+    allFrames: true,
+    runAt: 'document_start'
   }];
 }
 
@@ -95,7 +114,7 @@ export function cosmeticScripts(enabled, sites) {
 // this module sets are compared.
 const scriptShape = script => JSON.stringify([
   script.id, script.js || [], script.css || [], script.matches || [],
-  script.excludeMatches || [], script.allFrames === true, script.runAt
+  script.excludeMatches || [], script.allFrames === true, script.runAt, script.world || 'ISOLATED'
 ]);
 
 // A registration persists across browser sessions and survives an extension update, so the

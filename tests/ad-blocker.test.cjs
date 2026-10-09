@@ -102,7 +102,59 @@ test('the cosmetic registration keeps the per-host script apart from the generic
   // An IP literal has no subdomains, and `cleanPausedSites` accepts one, so it gets the
   // bare pattern rather than a `*.` pattern Chrome has no reason to accept.
   assert.deepEqual(scripts(true, ['127.0.0.1'])[1].excludeMatches, ['*://127.0.0.1/*']);
-  for (const file of [...on[0].js, ...on[1].css]) assert.ok(fs.existsSync(path.join(root, file)), `${file} is registered but missing`);
+  // The breakage shims run in the page's own world, which is the only world the page's
+  // scripts can read, and only on the hosts that have a placeholder to fill. They follow
+  // the generic stylesheet on and off, so a paused host and a disabled module both get the
+  // unmodified page back.
+  assert.deepEqual(on[2], {
+    id: 'ad-blocker-shims',
+    js: ['content/ad-blocker-shims.js'],
+    matches: ['*://mackolik.com/*', '*://*.mackolik.com/*'],
+    world: 'MAIN',
+    allFrames: true,
+    runAt: 'document_start'
+  });
+  assert.equal(off.some(script => script.id === 'ad-blocker-shims'), false);
+  assert.deepEqual(scripts(true, ['paused.example'])[2].excludeMatches, ['*://paused.example/*', '*://*.paused.example/*']);
+  for (const file of [...on[0].js, ...on[1].css, ...on[2].js]) assert.ok(fs.existsSync(path.join(root, file)), `${file} is registered but missing`);
+});
+
+test('a shim fills the hole the block list leaves and nothing else', () => {
+  const source = fs.readFileSync(path.join(root, 'content/ad-blocker-shims.js'), 'utf8');
+  const run = (hostname, globals = {}) => {
+    const context = { location: { hostname } };
+    context.globalThis = context;
+    Object.assign(context, globals);
+    vm.runInNewContext(source, context);
+    return context;
+  };
+
+  // The one shim shipped today, and the rule that makes it necessary: a page that reads
+  // AdmostClient cannot get its library, because the guaranteed core blocks the host it
+  // comes from. Should that rule ever go, the shim has nothing left to stand in for.
+  assert.ok(core.some(rule => rule.action.type === 'block' && rule.condition.urlFilter === '||go.admost.com^'));
+  assert.deepEqual(plain(run('arsiv.mackolik.com').AdmostClient), {});
+  assert.deepEqual(plain(run('mackolik.com').AdmostClient), {});
+  // A placeholder is a plain writable property, so the page's own assignment -- the one
+  // mackolik's consent handler makes before it stores the choice -- lands on it.
+  const filled = run('arsiv.mackolik.com');
+  filled.AdmostClient.isAdsChecked = 1;
+  assert.equal(filled.AdmostClient.isAdsChecked, 1);
+  // Nothing is placed on a host the table does not name, including one that merely ends
+  // with the same letters, and a global that is already there is never shadowed.
+  assert.equal('AdmostClient' in run('example.com'), false);
+  assert.equal('AdmostClient' in run('notmackolik.com'), false);
+  const real = { AdmostClient: { real: true } };
+  assert.deepEqual(run('arsiv.mackolik.com', real).AdmostClient, { real: true });
+
+  // The service worker matches this file on a host list it cannot read out of it, since a
+  // main-world script has to carry its table inline to beat the page's first statement.
+  const context = { domainRules, chrome: {}, console, URL };
+  vm.runInNewContext(loadModule(), context);
+  const registered = plain(context.api.cosmeticScripts(true, [])).find(script => script.id === 'ad-blocker-shims');
+  const tabled = [...source.matchAll(/^\s*"([a-z0-9.-]+)":\s*\[/gm)].map(match => match[1]);
+  assert.ok(tabled.length > 0);
+  assert.deepEqual(registered.matches, tabled.flatMap(host => [`*://${host}/*`, `*://*.${host}/*`]));
 });
 
 test('the generic stylesheet is grouped rules Chrome can parse and match whole', () => {
@@ -336,7 +388,7 @@ test('background serializes global and site changes and keeps DNR state aligned'
   const generic = () => registered.find(script => script.id === 'ad-blocker-generic');
   // The first reconcile replaced the stale registration rather than leaving it in place.
   await message({ type: 'ad-blocker:get' });
-  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic', 'ad-blocker-shims']);
   assert.equal(generic().excludeMatches, undefined);
   const pause = await message({ type: 'ad-blocker:set-sites', sites: ['https://news.example/story', 'NEWS.EXAMPLE', ''] });
   assert.equal(pause.ok, true);
@@ -354,7 +406,7 @@ test('background serializes global and site changes and keeps DNR state aligned'
   const on = await message({ type: 'ad-blocker:set-enabled', enabled: true });
   assert.equal(on.enabled, true);
   assert.equal(on.extraEnabled, true);
-  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic']);
+  assert.deepEqual(scriptIds(), ['ad-blocker-cosmetic', 'ad-blocker-generic', 'ad-blocker-shims']);
   assert.deepEqual(Array.from(generic().excludeMatches), ['*://news.example/*', '*://*.news.example/*']);
   // A reconcile over a registration that is already right must not churn it, or every
   // worker wake would unregister and re-register in every tab's way.
