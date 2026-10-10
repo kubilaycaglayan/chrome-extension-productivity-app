@@ -58,6 +58,7 @@ productivityModules.register("newtab", () => {
   // until they are asked for.
   let editing = false;
   let mailAccounts = [];
+  let mailHidden = [];
   let groups = [];
   let background = settings.defaultBackground;
   let collections = [];
@@ -763,8 +764,26 @@ productivityModules.register("newtab", () => {
   // the email it opens. The account list is the service worker's to find --
   // see modules/mail-accounts.js -- and the page only paints what is in
   // storage. Until something is there, or signed out of Google, that is one
-  // plain Gmail button.
+  // plain Gmail button. Accounts the user hid stay off the page, and come back
+  // dimmed with a Show switch while editing.
   function mailRow(account) {
+    const hidden = Boolean(account) && settings.mail.isHidden(mailHidden, account.email);
+    const row = document.createElement("div");
+    row.className = "mail-row";
+    if (hidden) row.classList.add("is-hidden");
+
+    if (account && editing) {
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "mail-toggle";
+      toggle.dataset.email = account.email.toLowerCase();
+      toggle.textContent = hidden ? "Show" : "Hide";
+      toggle.setAttribute("aria-pressed", String(hidden));
+      toggle.setAttribute("aria-label", `${hidden ? "Show" : "Hide"} ${account.email} on the new tab`);
+      toggle.addEventListener("click", () => void toggleMailAccount(account.email));
+      row.append(toggle);
+    }
+
     const label = settings.mail.label(account);
     const link = document.createElement("a");
     link.className = "mail-link";
@@ -778,16 +797,18 @@ productivityModules.register("newtab", () => {
       link.append(email);
     }
     link.append(mailIcon());
-    const row = document.createElement("div");
-    row.className = "mail-row";
     row.append(link);
     return row;
   }
 
   function renderMailAccounts() {
-    const rows = (mailAccounts.length ? mailAccounts : [null]).map(mailRow);
+    const rows = mailAccounts.length
+      ? mailAccounts
+        .filter(account => editing || !settings.mail.isHidden(mailHidden, account.email))
+        .map(mailRow)
+      : [mailRow(null)];
     mailLinks.replaceChildren(...rows);
-    mailLinks.hidden = false;
+    mailLinks.hidden = rows.length === 0;
     // The chips centred above the search field stop short of the column, so
     // they never scroll underneath it in a narrow window, and the background
     // chooser stops below it, so it never covers an account when open.
@@ -798,6 +819,21 @@ productivityModules.register("newtab", () => {
     } else {
       document.body.style.removeProperty("--mail-room");
       document.body.style.removeProperty("--mail-bottom");
+    }
+  }
+
+  async function toggleMailAccount(email) {
+    const hiding = !settings.mail.isHidden(mailHidden, email);
+    mailHidden = settings.mail.toggleHidden(mailHidden, email);
+    renderMailAccounts();
+    // The switch was rebuilt under the pointer; keep the keyboard on it.
+    const key = email.toLowerCase();
+    [...(mailLinks.querySelectorAll?.(".mail-toggle") ?? [])].find(toggle => toggle.dataset.email === key)?.focus();
+    try {
+      await chrome.storage.local.set({ [settings.mail.hiddenKey]: mailHidden });
+      setStatus(hiding ? `${email} hidden from the new tab.` : `${email} shown on the new tab.`);
+    } catch {
+      setStatus("Could not save which accounts are hidden.");
     }
   }
 
@@ -1048,12 +1084,15 @@ productivityModules.register("newtab", () => {
     const label = editing ? "Done editing" : "Edit shortcuts";
     editToggle.title = label;
     editToggle.setAttribute("aria-label", label);
-    if (active) render();
+    if (active) {
+      render();
+      renderMailAccounts();
+    }
   }
 
   function onEditToggle() {
     setEditing(!editing);
-    setStatus(editing ? "Editing on: rename, remove, add and drag." : "Editing off.");
+    setStatus(editing ? "Editing on: rename, remove, add and drag, or hide a Gmail account." : "Editing off.");
   }
 
   // chrome:// pages are unreachable from a link or a location change, so the
@@ -1189,9 +1228,11 @@ productivityModules.register("newtab", () => {
       background = settings.cleanBackground(changes[settings.backgroundKey].newValue);
       applyBackground();
     }
-    // An account signed in or out shows up without a reload.
-    if (changes[settings.mail.key]) {
-      mailAccounts = settings.mail.clean(changes[settings.mail.key].newValue?.accounts);
+    // An account signed in or out, or hidden from another tab, shows up
+    // without a reload.
+    if (changes[settings.mail.key] || changes[settings.mail.hiddenKey]) {
+      if (changes[settings.mail.key]) mailAccounts = settings.mail.clean(changes[settings.mail.key].newValue?.accounts);
+      if (changes[settings.mail.hiddenKey]) mailHidden = settings.mail.cleanHidden(changes[settings.mail.hiddenKey].newValue);
       renderMailAccounts();
     }
   }
@@ -1251,7 +1292,7 @@ productivityModules.register("newtab", () => {
   async function load() {
     let stored = {};
     try {
-      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key]);
+      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key, settings.mail.hiddenKey]);
     } catch {
       setStatus("Could not read your saved bookmarks.");
     }
@@ -1262,6 +1303,7 @@ productivityModules.register("newtab", () => {
     background = settings.cleanBackground(stored[settings.backgroundKey]);
     applyBackground();
     mailAccounts = settings.mail.clean(stored[settings.mail.key]?.accounts);
+    mailHidden = settings.mail.cleanHidden(stored[settings.mail.hiddenKey]);
     renderMailAccounts();
     render();
     if (saved === undefined) await saveGroups("");

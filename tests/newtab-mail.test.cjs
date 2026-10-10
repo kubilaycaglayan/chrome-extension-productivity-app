@@ -1,12 +1,13 @@
 const assert = require("node:assert/strict");
-const { setup, queryAll, settle } = require("./newtab-dom.cjs");
+const { setup, fire, queryAll, settle } = require("./newtab-dom.cjs");
 
 // The Gmail corner of the page: a column of buttons, one per account the
-// service worker found signed in, each showing the email it opens. The list
-// is read from storage and never
+// service worker found signed in, each showing the email it opens. Accounts
+// can be hidden from edit mode. The list is read from storage and never
 // fetched here; the discovery itself is tests/mail-accounts.test.cjs.
 const rows = page => page.element("mail-links").children;
 const links = page => queryAll(page.element("mail-links"), "a");
+const toggles = page => queryAll(page.element("mail-links"), ".mail-toggle");
 const describe = page => links(page).map(link => [
   link.href,
   link.getAttribute("aria-label"),
@@ -39,12 +40,55 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
     [ME, "Gmail — me@gmail.com", "me@gmail.com"]
   ]);
   assert.equal(links(both)[0].title, "Work — work@example.com", "A name, when Google has one, is in the tooltip");
+  assert.equal(toggles(both).length, 0, "Hiding is an edit, so the switches wait for edit mode");
   assert.equal(both.body.style["--mail-room"], "232px", "The chips are told how much room the column takes");
   assert.equal(both.body.style["--mail-bottom"], "40px", "...and the chooser where it ends");
 
-  /* Accounts signed in or out show up without a reload. */
+  /* Hiding: edit mode lays a switch beside every account, and a hidden one
+     stays listed there, dimmed, so it can be shown again. */
+  fire(both.element("edit-toggle"), "click");
+  assert.deepEqual(toggles(both).map(toggle => toggle.textContent), ["Hide", "Hide"]);
+  assert.equal(toggles(both)[1].getAttribute("aria-label"), "Hide me@gmail.com on the new tab");
+  fire(toggles(both)[1], "click");
+  await settle();
+  assert.deepEqual(both.store.newtabMailHidden, ["me@gmail.com"], "The choice is saved");
+  assert.equal(links(both).length, 2, "While editing, a hidden account is still there to be shown again");
+  assert.ok(rows(both)[1].classList.contains("is-hidden"));
+  assert.ok(!rows(both)[0].classList.contains("is-hidden"));
+  assert.equal(toggles(both)[1].textContent, "Show");
+  assert.equal(toggles(both)[1].getAttribute("aria-pressed"), "true");
+  assert.ok(toggles(both)[1].focused, "The keyboard stays on the switch it pressed");
+  assert.match(both.status(), /me@gmail\.com hidden/);
+
+  fire(both.element("edit-toggle"), "click");
+  assert.deepEqual(describe(both), [[WORK, "Gmail — work@example.com", "work@example.com"]], "Done editing, a hidden account is gone");
+  assert.equal(toggles(both).length, 0);
+
+  /* ...and it comes back when shown again. */
+  fire(both.element("edit-toggle"), "click");
+  fire(toggles(both)[1], "click");
+  await settle();
+  assert.deepEqual(both.store.newtabMailHidden, []);
+  fire(both.element("edit-toggle"), "click");
+  assert.equal(links(both).length, 2);
+
+  /* Hiding every account leaves the corner empty, not a plain fallback the
+     user did not ask for. */
+  const allHidden = setup({ stored: { ...accounts([{ email: "me@gmail.com" }]), newtabMailHidden: ["ME@gmail.com"] } });
+  await settle();
+  assert.equal(allHidden.element("mail-links").hidden, true);
+  assert.equal(allHidden.body.style["--mail-room"], undefined, "An empty corner needs no room");
+  fire(allHidden.element("edit-toggle"), "click");
+  assert.equal(allHidden.element("mail-links").hidden, false, "Edit mode is where it can be brought back");
+  assert.equal(toggles(allHidden)[0].textContent, "Show", "Hidden is matched without regard to case");
+
+  /* Accounts signed in or out, or hidden from another tab, show up without
+     a reload. */
   both.storageChange({ newtabMailAccounts: { newValue: { accounts: [{ email: "me@gmail.com" }], checkedAt: Date.now() } } });
   assert.deepEqual(describe(both), [[ME, "Gmail — me@gmail.com", "me@gmail.com"]]);
+  both.storageChange({ newtabMailHidden: { newValue: ["me@gmail.com"] } });
+  assert.equal(links(both).length, 0);
+  both.storageChange({ newtabMailHidden: { newValue: [] } });
   both.storageChange({ newtabMailAccounts: { newValue: { accounts: [], checkedAt: Date.now() } } });
   assert.deepEqual(describe(both), [["https://mail.google.com/mail/u/0/", "Gmail", null]], "Signed out still leaves somewhere to sign in");
 
@@ -63,7 +107,7 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   await settle();
   assert.deepEqual(describe(old), [["https://mail.google.com/mail/u/0/", "Gmail", null]], "The old index-only list is waited out, not misread");
 
-  const broken = setup({ stored: { newtabMailAccounts: "nonsense" } });
+  const broken = setup({ stored: { newtabMailAccounts: "nonsense", newtabMailHidden: "nonsense" } });
   await settle();
   assert.deepEqual(describe(broken), [["https://mail.google.com/mail/u/0/", "Gmail", null]]);
 
@@ -79,7 +123,7 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   await settle();
   assert.equal(both.element("mail-links").hidden, false, "Switching the module back on brings the shortcut back");
 
-  console.log("PASS newtab mail: a labelled column of signed-in accounts, live, and only ever read from storage");
+  console.log("PASS newtab mail: a labelled column of signed-in accounts, hidden from edit mode, live, and only ever read from storage");
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

@@ -481,6 +481,20 @@ body.has-image #attribution {
   font: 500 13px/1.3 inherit;
 }
 .mail-icon { flex: none; width: 24px; height: 24px; }
+.mail-toggle {
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--text);
+  font: 500 12px/1.3 inherit;
+  cursor: pointer;
+}
+.mail-toggle:hover { background: var(--chip-hover); }
+.mail-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+/* Only reachable while editing: a hidden account, waiting to be shown again. */
+.mail-row.is-hidden .mail-link { opacity: 0.45; }
 
 #edit-toggle, #background-toggle {
   position: fixed;

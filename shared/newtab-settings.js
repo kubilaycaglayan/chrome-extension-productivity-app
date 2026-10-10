@@ -198,6 +198,8 @@ globalThis.newtabSettings = {
   // The ones remembered only for "continue as" are already left out there.
   mail: {
     key: "newtabMailAccounts",
+    // Emails the user chose to keep off the page, in lower case.
+    hiddenKey: "newtabMailHidden",
     refreshMessage: "mail-accounts:refresh",
     cacheMaxAge: 12 * 60 * 60 * 1000,
     // Past this nobody is scanning a column of buttons anyway.
@@ -232,6 +234,27 @@ globalThis.newtabSettings = {
         accounts.push(name ? { email, name } : { email });
       }
       return accounts.slice(0, this.max);
+    },
+
+    cleanHidden(value) {
+      const hidden = [];
+      for (const entry of Array.isArray(value) ? value : []) {
+        const email = this.email(entry)?.toLowerCase();
+        if (email && !hidden.includes(email)) hidden.push(email);
+      }
+      return hidden.slice(0, 50);
+    },
+
+    isHidden(hidden, email) {
+      return hidden.includes(String(email).toLowerCase());
+    },
+
+    // Hiding toggles one email in or out of the list, leaving the rest alone.
+    toggleHidden(hidden, email) {
+      const key = this.email(email)?.toLowerCase();
+      if (!key) return this.cleanHidden(hidden);
+      const cleaned = this.cleanHidden(hidden);
+      return cleaned.includes(key) ? cleaned.filter(entry => entry !== key) : [...cleaned, key];
     },
 
     label(account) {

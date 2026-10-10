@@ -222,7 +222,16 @@ same(mail.clean([
 same(mail.clean("nonsense"), []);
 assert.equal(mail.clean(Array.from({ length: 50 }, (_, n) => ({ email: `u${n}@x.co` }))).length, mail.max);
 
+// Hidden accounts are a list of emails, kept in lower case.
+same(mail.cleanHidden(["Me@Gmail.com", "me@gmail.com", 3, "bad", null]), ["me@gmail.com"]);
+same(mail.cleanHidden("nonsense"), []);
+assert.equal(mail.isHidden(["me@gmail.com"], "ME@gmail.com"), true);
+assert.equal(mail.isHidden(["me@gmail.com"], "work@example.com"), false);
+same(mail.toggleHidden([], "Me@gmail.com"), ["me@gmail.com"]);
+same(mail.toggleHidden(["me@gmail.com", "w@x.co"], "ME@gmail.com"), ["w@x.co"], "Showing one leaves the others hidden");
+same(mail.toggleHidden(["w@x.co"], "not an email"), ["w@x.co"]);
+
 assert.equal(mail.label(null), "Gmail");
 assert.equal(mail.label({ email: "me@gmail.com" }), "Gmail \u2014 me@gmail.com");
 
-console.log("PASS newtab settings: address sanitising, search routing, group limits, background validation, Gmail accounts");
+console.log("PASS newtab settings: address sanitising, search routing, group limits, background validation, Gmail accounts and hiding");

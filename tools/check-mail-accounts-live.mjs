@@ -86,6 +86,8 @@ try {
           painted: getComputedStyle(link).backgroundColor,
           topRight: box.top < view.height / 2 && box.right > view.width / 2,
           hit: centre === link || link.contains(centre),
+          toggle: link.parentElement.querySelector('.mail-toggle')?.textContent ?? null,
+          dimmed: getComputedStyle(link).opacity !== '1',
           iconDrawn: Boolean(icon) && icon.complete && icon.naturalWidth > 0
         };
       })
@@ -173,6 +175,25 @@ try {
   assert.ok(Math.abs(two.links[0].box.right - two.links[1].box.right) <= 1, 'the column lines up on its right edge');
   assert.ok(two.links[1].box.top >= two.links[0].box.top + two.links[0].box.height, 'the second account sits below the first, not over it');
 
+  /* Hiding: edit mode lays a switch beside each account; a hidden one waits there,
+     dimmed, and is gone once editing is done. */
+  await evaluate(`document.getElementById('edit-toggle').click()`);
+  await wait(100);
+  let editing = await buttons();
+  assert.deepEqual(editing.links.map(link => link.toggle), ['Hide', 'Hide']);
+  await evaluate(`document.querySelectorAll('.mail-toggle')[1].click()`);
+  await wait(300);
+  editing = await buttons();
+  assert.equal(editing.links[1].toggle, 'Show');
+  assert.ok(editing.links[1].dimmed, 'a hidden account is dimmed while editing');
+  assert.ok(editing.links.every(link => link.hit), 'the switches must not cover the links');
+  assert.deepEqual((await evaluate(`chrome.storage.local.get('newtabMailHidden')`)).newtabMailHidden, ['me@gmail.com']);
+  await evaluate(`document.getElementById('edit-toggle').click()`);
+  await wait(100);
+  assert.deepEqual((await buttons()).links.map(link => link.email), [work.email], 'done editing, the hidden account is gone');
+  await evaluate(`chrome.storage.local.set({ newtabMailHidden: [] })`);
+  await wait(300);
+
   /* On a window narrow enough for the centred page to reach the fixed corner, the tab
      group chips have to stop short of the column -- however wide its emails make it,
      which is a cascade only a browser can be asked to resolve. */
@@ -217,7 +238,7 @@ try {
   assert.equal(off.hidden, true, 'a disabled page must take its corner with it');
   assert.equal(off.links.length, 0);
 
-  console.log('PASS Chrome drew the Gmail column in the top right corner with each account\'s email, kept it clickable beside the open chooser, kept the chips clear of it, and let the worker read ListAccounts past the Origin Google refuses.');
+  console.log('PASS Chrome drew the Gmail column in the top right corner with each account\'s email, kept it clickable beside the open chooser, hid and showed accounts from edit mode, kept the chips clear of it, and let the worker read ListAccounts past the Origin Google refuses.');
   await call('Browser.close');
   closed = true;
 } finally {

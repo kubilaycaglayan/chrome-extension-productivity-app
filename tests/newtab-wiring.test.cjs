@@ -129,6 +129,7 @@ assert.ok(script.includes("renderMailAccounts"), "The page must paint the accoun
 assert.ok(script.includes("data:image/svg+xml,"), "The envelope is drawn: the favicon cache has no icon for a site this profile has not collected one for");
 assert.ok(script.includes("settings.mail.clean("), "A list out of storage must be sanitised before it becomes an href");
 assert.ok(script.includes("changes[settings.mail.key]"), "An account found while a tab is open must show up without a reload");
+assert.ok(script.includes("changes[settings.mail.hiddenKey]"), "...and so must one hidden from another tab");
 assert.doesNotMatch(script, /fetch\([^)]*google\.com/, "The page must never ask Google itself");
 assert.ok(fs.existsSync("modules/mail-accounts.js"), "The discovery belongs to the service worker");
 assert.ok(fs.readFileSync("background/service-worker.js", "utf8").includes("initializeMailAccounts()"));
