@@ -1,4 +1,5 @@
-// Most settings default to enabled. Consent automation requires explicit opt-in.
+// Which modules default to enabled lives in shared/module-defaults.js, so the popup's
+// switches and the modules themselves cannot disagree about an unanswered setting.
 globalThis.productivityModules = {
   register(id, start) {
     const key = `moduleEnabled:${id}`;
@@ -6,7 +7,7 @@ globalThis.productivityModules = {
     let cleanup;
     let revision = 0;
     const apply = (value) => {
-      const next = id === "cookie-accepter" ? value === true : value !== false;
+      const next = productivityModuleDefaults.isEnabled(id, value);
       if (next === enabled) return;
       enabled = next;
       if (enabled) cleanup = start();

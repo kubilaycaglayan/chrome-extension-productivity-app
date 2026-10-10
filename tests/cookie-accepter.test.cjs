@@ -8,6 +8,7 @@ const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
 const settings = readFileSync(path.join(root, "shared/cookie-accepter-settings.js"), "utf8");
+const moduleDefaults = readFileSync(path.join(root, "shared/module-defaults.js"), "utf8");
 const content = readFileSync(path.join(root, "content/cookie-accepter.js"), "utf8");
 const adBlocker = readFileSync(path.join(root, "content/ad-blocker.js"), "utf8");
 const excepted = readFileSync(path.join(root, "content/ad-blocker-excepted.js"), "utf8");
@@ -20,11 +21,19 @@ const run = promisify(execFile);
 const context = { globalThis: {} };
 vm.runInNewContext(settings, context);
 const siteSettings = context.globalThis.cookieAccepterSettings;
+vm.runInNewContext(moduleDefaults, context);
+const defaults = context.globalThis.productivityModuleDefaults;
 const registration = manifest.content_scripts.find(entry => entry.js.includes("content/cookie-accepter.js"));
 assert.ok(registration?.all_frames && registration?.match_about_blank && registration?.run_at === "document_start");
 assert.deepEqual(registration.js, ["shared/cookie-accepter-settings.js", "content/cookie-accepter.js"]);
-assert.match(popup, /id === "cookie-accepter" \? settings\[key\] === true/);
-assert.match(popup, /cookieAccepterSettings\.key\] = false/);
+// Accepting cookies on someone's behalf is a choice only they can make, so an unanswered
+// setting has to read as "no". The popup's switch and the module itself both ask the shared
+// defaults, and a backup from before this module existed restores that same "no".
+assert.equal(defaults.optIn.includes("cookie-accepter"), true);
+assert.equal(defaults.isEnabled("cookie-accepter", undefined), false);
+assert.equal(defaults.isEnabled("cookie-accepter", true), true);
+assert.match(popup, /input\.checked = productivityModuleDefaults\.isEnabled\(id, settings\[key\]\);/);
+assert.match(popup, /for \(const id of productivityModuleDefaults\.optIn\) \{/);
 assert.match(popup, /cookieAccepterPausedSites/);
 assert.match(popup, /normalizeHost\(site\) === null/);
 assert.equal(siteSettings.normalizeHost("EXAMPLE.COM."), "example.com");
@@ -300,6 +309,7 @@ function page(mode) {
     chrome: { storage: { onChanged: { addListener() {} }, local: { get: async () => ({}) } } }
   };
   settingsContext.globalThis = settingsContext;
+  vm.runInNewContext(readFileSync(path.join(root, "shared/module-defaults.js"), "utf8"), settingsContext);
   vm.runInNewContext(readFileSync(path.join(root, "content/module-settings.js"), "utf8"), settingsContext);
   settingsContext.productivityModules.register("cookie-accepter", () => { starts.push("cookie"); return () => {}; });
   settingsContext.productivityModules.register("tab-marker", () => { starts.push("tab-marker"); return () => {}; });

@@ -299,7 +299,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
   });
   context.globalThis = context;
 
-  for (const file of scripts ?? ["content/module-settings.js", "shared/newtab-settings.js", "shared/newtab-wallpapers.js", "newtab/newtab.js"]) {
+  for (const file of scripts ?? ["shared/module-defaults.js", "content/module-settings.js", "shared/newtab-settings.js", "shared/newtab-wallpapers.js", "newtab/newtab.js"]) {
     vm.runInContext(fs.readFileSync(file, "utf8"), context);
   }
 

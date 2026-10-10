@@ -308,7 +308,7 @@ async function initialize() {
       input.type = "checkbox";
       input.setAttribute("role", "switch");
       input.setAttribute("aria-label", name);
-      input.checked = id === "cookie-accepter" ? settings[key] === true : settings[key] !== false;
+      input.checked = productivityModuleDefaults.isEnabled(id, settings[key]);
       if (id === "ad-blocker") input.disabled = true;
       inputs.set(key, input);
       input.addEventListener("change", async () => {
@@ -357,7 +357,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
       void chrome.runtime.sendMessage({ type: "ad-blocker:get" }).then(result => {
         if (result?.ok) input.checked = result.enabled;
       }).catch(() => {});
-    } else if (input) input.checked = key === cookieAccepterSettings.key ? change.newValue === true : change.newValue !== false;
+    } else if (input) input.checked = productivityModuleDefaults.isEnabled(key.slice("moduleEnabled:".length), change.newValue);
   }
   if (changes[adSitesKey]) {
     pausedAdSites = Array.isArray(changes[adSitesKey].newValue) ? changes[adSitesKey].newValue : [];
@@ -407,7 +407,7 @@ document.getElementById("export-settings").addEventListener("click", async () =>
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
     const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, cookieAccepterSettings.pausedKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
-    const modules = Object.fromEntries(MODULES.map(([id]) => [id, id === "cookie-accepter" ? settings[`moduleEnabled:${id}`] === true : settings[`moduleEnabled:${id}`] !== false]));
+    const modules = Object.fromEntries(MODULES.map(([id]) => [id, productivityModuleDefaults.isEnabled(id, settings[`moduleEnabled:${id}`])]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : [];
     const followedTeams = mackolikSettings.clean(settings[mackolikSettings.followedKey] || []);
@@ -441,7 +441,11 @@ document.getElementById("import-settings").addEventListener("change", async (eve
       if (typeof backup.modules[id] !== "boolean") throw new Error("Invalid setting");
       settings[`moduleEnabled:${id}`] = backup.modules[id];
     }
-    if (backup.modules["cookie-accepter"] === undefined) settings[cookieAccepterSettings.key] = false;
+    // A backup written before a module existed says nothing about it. For an opt-in module
+    // that silence is a "no", not a reason to keep whatever this profile already had.
+    for (const id of productivityModuleDefaults.optIn) {
+      if (backup.modules[id] === undefined) settings[`moduleEnabled:${id}`] = false;
+    }
     if (backup.cookieAccepterPausedSites !== undefined) {
       if (!Array.isArray(backup.cookieAccepterPausedSites) || backup.cookieAccepterPausedSites.some(site => cookieAccepterSettings.normalizeHost(site) === null)) throw new Error("Invalid cookie pause sites");
       settings[cookieAccepterSettings.pausedKey] = cookieAccepterSettings.cleanSites(backup.cookieAccepterPausedSites);

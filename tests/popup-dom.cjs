@@ -113,7 +113,7 @@ function popupPage({
     },
     console
   });
-  for (const file of ["mackolik-settings", "newtab-settings", "x-keywords", "cookie-accepter-settings"]) {
+  for (const file of ["module-defaults", "mackolik-settings", "newtab-settings", "x-keywords", "cookie-accepter-settings"]) {
     vm.runInContext(fs.readFileSync(path.join(root, "shared", `${file}.js`), "utf8"), context);
   }
   vm.runInContext(source, context);

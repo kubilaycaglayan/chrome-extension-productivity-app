@@ -16,7 +16,7 @@ for (const permission of ["storage", "favicon", "bookmarks", "topSites"]) {
 // Suggest and Backdrop are plain https fetches, covered by the existing hosts.
 assert.ok(manifest.host_permissions.includes("<all_urls>"));
 
-const assets = ["newtab.css", "../content/module-settings.js", "../shared/newtab-settings.js", "../shared/newtab-wallpapers.js", "newtab.js"];
+const assets = ["newtab.css", "../shared/module-defaults.js", "../content/module-settings.js", "../shared/newtab-settings.js", "../shared/newtab-wallpapers.js", "newtab.js"];
 for (const asset of assets) {
   assert.ok(page.includes(asset), `newtab.html must load ${asset}`);
   const path = asset.startsWith("../") ? asset.slice(3) : `newtab/${asset}`;
