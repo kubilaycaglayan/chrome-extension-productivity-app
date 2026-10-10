@@ -233,6 +233,27 @@ same(mail.toggleHidden(["w@x.co"], "not an email"), ["w@x.co"]);
 
 assert.equal(mail.shortName({ email: "first.last@gmail.com" }, [{ email: "first.last@gmail.com" }]), "first.last");
 assert.equal(mail.shortName({ email: "me@a.co" }, [{ email: "me@a.co" }, { email: "ME@b.co" }]), "me@a.co", "A shared username keeps the whole email");
+// Custom inboxes: an http(s) address, a label defaulting to the site, an id
+// that is unique, and a cap.
+const inboxes = mail.cleanCustom([
+  { id: "a", label: " Work ", url: "webmail.example.com" },
+  { id: "a", url: "https://outlook.live.com/mail/" },
+  { id: "<script>", url: "proton.me" },
+  { label: "x".repeat(99), url: "http://intranet.local/mail" },
+  { url: "javascript:alert(1)" }, { url: "data:text/html,hi" }, { url: 7 }, null, "mail.com"
+]);
+same(inboxes.map(({ label, url }) => [label, url]), [
+  ["Work", "https://webmail.example.com/"],
+  ["outlook.live.com", "https://outlook.live.com/mail/"],
+  ["proton.me", "https://proton.me/"],
+  ["x".repeat(40), "http://intranet.local/mail"]
+]);
+assert.equal(inboxes[0].id, "a");
+assert.equal(new Set(inboxes.map(({ id }) => id)).size, inboxes.length, "A repeated or unusable id is replaced");
+assert.ok(inboxes.every(({ id }) => /^[A-Za-z0-9_-]+$/.test(id)));
+assert.equal(mail.cleanCustom(Array.from({ length: 20 }, (_, n) => ({ url: `m${n}.example.com` }))).length, mail.customMax);
+same(mail.cleanCustom("nonsense"), []);
+
 assert.equal(mail.label(null), "Gmail");
 assert.equal(mail.label({ email: "me@gmail.com" }), "Gmail \u2014 me@gmail.com");
 

@@ -117,6 +117,90 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   await settle();
   assert.deepEqual(describe(broken), [["https://mail.google.com/mail/u/0/", "Gmail", null]]);
 
+  /* Custom inboxes: edit mode ends the column with an Add button, whose dialog
+     takes a label and an address, and the new inbox is listed under the
+     Google accounts with the site's own icon. */
+  const save = (page, label, url) => {
+    page.element("inbox-label").value = label;
+    page.element("inbox-url").value = url;
+    page.element("inbox-dialog").returnValue = "save";
+    page.element("inbox-dialog").close();
+  };
+  const addButton = page => queryAll(page.element("mail-links"), ".mail-add")[0];
+  const custom = setup({ stored: accounts([{ email: "me@gmail.com" }]) });
+  await settle();
+  assert.equal(addButton(custom), undefined, "Adding is an edit, so the button waits for edit mode");
+  fire(custom.element("edit-toggle"), "click");
+  fire(addButton(custom), "click");
+  assert.equal(custom.element("inbox-dialog").open, true);
+  assert.equal(custom.element("inbox-dialog-title").textContent, "Add inbox");
+  save(custom, "", "outlook.live.com/mail/");
+  await settle();
+  assert.deepEqual(JSON.parse(JSON.stringify(custom.store.newtabMailCustom)).map(({ label, url }) => [label, url]),
+    [["outlook.live.com", "https://outlook.live.com/mail/"]], "A bare address is completed, and the site names it when no label is given");
+  fire(addButton(custom), "click");
+  save(custom, "Work", "https://webmail.example.com/");
+  await settle();
+  assert.deepEqual(describe(custom).map(([url, label, text]) => [url, label, text]), [
+    [ME, "Gmail — me@gmail.com", "me"],
+    ["https://outlook.live.com/mail/", "outlook.live.com", "outlook.live.com"],
+    ["https://webmail.example.com/", "Work", "Work"]
+  ], "Custom inboxes come after the Google accounts, in the order they were added");
+  const [, outlookIcon] = queryAll(custom.element("mail-links"), ".mail-icon");
+  assert.ok(outlookIcon.src.includes("_favicon/?pageUrl=https%3A%2F%2Foutlook.live.com%2Fmail%2F"), "A custom inbox wears its site's icon");
+  fire(outlookIcon, "error");
+  assert.ok(queryAll(custom.element("mail-links"), ".mail-icon")[1].src.startsWith("data:image/svg+xml,"), "...or the envelope, when Chrome has none");
+
+  /* Edit and Remove sit beside each custom inbox while editing. */
+  const workRow = rows(custom)[2];
+  assert.deepEqual(queryAll(workRow, ".mail-toggle").map(button => button.textContent), ["Edit", "Remove"]);
+  fire(queryAll(workRow, ".mail-toggle")[0], "click");
+  assert.equal(custom.element("inbox-dialog-title").textContent, "Edit inbox");
+  assert.equal(custom.element("inbox-url").value, "https://webmail.example.com/", "Editing starts from what is there");
+  save(custom, "Office", "webmail.example.com/inbox");
+  await settle();
+  assert.deepEqual(JSON.parse(JSON.stringify(custom.store.newtabMailCustom)).map(({ label }) => label), ["outlook.live.com", "Office"], "An edit stays in place");
+  fire(queryAll(rows(custom)[1], ".mail-toggle")[1], "click");
+  await settle();
+  assert.deepEqual(JSON.parse(JSON.stringify(custom.store.newtabMailCustom)).map(({ label }) => label), ["Office"]);
+  assert.match(custom.status(), /outlook\.live\.com removed/);
+
+  /* An address that cannot be a web page is refused, and nothing is saved. */
+  fire(addButton(custom), "click");
+  save(custom, "Bad", "javascript:alert(1)");
+  await settle();
+  assert.equal(custom.element("inbox-error").hidden, false, "The dialog says why");
+  assert.equal(custom.store.newtabMailCustom.length, 1);
+
+  /* Cancel is a no. */
+  fire(addButton(custom), "click");
+  custom.element("inbox-url").value = "proton.me/mail";
+  fire(custom.element("inbox-cancel"), "click");
+  await settle();
+  assert.equal(custom.store.newtabMailCustom.length, 1);
+
+  /* Done editing, the switches and the Add button go; the inbox stays. */
+  fire(custom.element("edit-toggle"), "click");
+  assert.equal(addButton(custom), undefined);
+  assert.equal(toggles(custom).length, 0);
+  assert.equal(links(custom).length, 2);
+
+  /* With no Google account but inboxes of their own, the corner is the
+     user's: no plain Gmail button is pushed in. The list is capped, and the
+     Add button says so rather than failing on save. */
+  const own = setup({ stored: { newtabMailCustom: [{ id: "a", label: "Proton", url: "https://mail.proton.me/" }, { url: "javascript:alert(1)" }, { url: 7 }] } });
+  await settle();
+  assert.deepEqual(describe(own), [["https://mail.proton.me/", "Proton", "Proton"]], "Only an http(s) address survives storage");
+  const full = setup({ stored: { newtabMailCustom: Array.from({ length: 12 }, (_, n) => ({ label: `Inbox ${n}`, url: `https://mail${n}.example.com/` })) } });
+  await settle();
+  assert.equal(links(full).length, 8);
+  fire(full.element("edit-toggle"), "click");
+  assert.equal(addButton(full).disabled, true);
+
+  /* An inbox added in another tab shows up here too. */
+  own.storageChange({ newtabMailCustom: { newValue: [] } });
+  assert.deepEqual(describe(own), [["https://mail.google.com/mail/u/0/", "Gmail", null]], "Nothing left means the plain Gmail button again");
+
   /* Switching the module off clears the corner with the rest of the page. */
   both.storageChange({ newtabMailAccounts: { newValue: { accounts: [{ email: "me@gmail.com" }], checkedAt: Date.now() } } });
   both.toggleModule(false);
@@ -129,7 +213,7 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   await settle();
   assert.equal(both.element("mail-links").hidden, false, "Switching the module back on brings the shortcut back");
 
-  console.log("PASS newtab mail: a labelled column of signed-in accounts, hidden from edit mode, live, and only ever read from storage");
+  console.log("PASS newtab mail: a labelled column of signed-in accounts, hidden from edit mode, custom inboxes added, edited and removed, live, and only ever read from storage");
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

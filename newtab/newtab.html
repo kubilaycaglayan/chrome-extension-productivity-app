@@ -118,6 +118,21 @@
       </form>
     </dialog>
 
+    <dialog id="inbox-dialog">
+      <form id="inbox-form" method="dialog">
+        <h2 id="inbox-dialog-title">Add inbox</h2>
+        <label for="inbox-label">Label</label>
+        <input id="inbox-label" type="text" maxlength="40" autocomplete="off" placeholder="Optional — defaults to the site name">
+        <label for="inbox-url">Address</label>
+        <input id="inbox-url" type="text" required autocomplete="off" placeholder="outlook.live.com/mail">
+        <p id="inbox-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="inbox-cancel" type="button" class="ghost-button">Cancel</button>
+          <button value="save" type="submit" class="primary-button">Save</button>
+        </div>
+      </form>
+    </dialog>
+
     <p id="notice">The New Tab module is off. Turn it on from the Productivity popup to use this page.</p>
     <p id="status" role="status" aria-live="polite"></p>
   </body>

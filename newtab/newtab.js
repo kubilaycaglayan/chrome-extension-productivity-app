@@ -41,6 +41,11 @@ productivityModules.register("newtab", () => {
   const bookmarkLabel = element("bookmark-label");
   const bookmarkUrl = element("bookmark-url");
   const bookmarkError = element("bookmark-error");
+  const inboxDialog = element("inbox-dialog");
+  const inboxCancel = element("inbox-cancel");
+  const inboxLabel = element("inbox-label");
+  const inboxUrl = element("inbox-url");
+  const inboxError = element("inbox-error");
   const attribution = element("attribution");
   const status = element("status");
 
@@ -59,6 +64,7 @@ productivityModules.register("newtab", () => {
   let editing = false;
   let mailAccounts = [];
   let mailHidden = [];
+  let mailCustom = [];
   let groups = [];
   let background = settings.defaultBackground;
   let collections = [];
@@ -801,12 +807,112 @@ productivityModules.register("newtab", () => {
     return row;
   }
 
+  // The site's own icon, from the same favicon cache the tiles use. For a
+  // site this profile has never visited, Chrome answers with a grey globe
+  // rather than an error, and an envelope says "inbox" better than that. The
+  // globe is the same picture for every unknown site, so it is told apart by
+  // its pixels -- read from a canvas, which these extension-origin images
+  // leave untainted -- and the icon stays invisible until it has been asked.
+  const faviconUrl = url => chrome.runtime.getURL(`_favicon/?pageUrl=${encodeURIComponent(url)}&size=32`);
+  let globePixels = null;
+
+  function pixels(image) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context?.getImageData) return null;
+    context.drawImage(image, 0, 0, 32, 32);
+    return context.getImageData(0, 0, 32, 32).data.join(",");
+  }
+
+  function globe() {
+    globePixels ??= new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => resolve(pixels(image));
+      image.onerror = () => resolve(null);
+      // .invalid is reserved: no profile has ever collected an icon for it.
+      image.src = faviconUrl("https://favicon-probe.invalid/");
+    });
+    return globePixels;
+  }
+
+  function inboxIcon(url) {
+    const icon = document.createElement("img");
+    icon.className = "mail-icon";
+    icon.alt = "";
+    icon.width = 24;
+    icon.height = 24;
+    icon.style.visibility = "hidden";
+    icon.addEventListener("load", async () => {
+      const unknown = await globe();
+      if (unknown && pixels(icon) === unknown) icon.replaceWith(mailIcon());
+      else icon.style.visibility = "";
+    });
+    icon.addEventListener("error", () => icon.replaceWith(mailIcon()));
+    icon.src = faviconUrl(url);
+    return icon;
+  }
+
+  function editSwitch(text, label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mail-toggle";
+    button.textContent = text;
+    button.setAttribute("aria-label", label);
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
+  // An inbox the user added. While editing it can be changed or removed;
+  // hiding would only be a slower way of removing it.
+  function customRow(inbox) {
+    const row = document.createElement("div");
+    row.className = "mail-row";
+    row.dataset.inbox = inbox.id;
+    if (editing) {
+      row.append(
+        editSwitch("Edit", `Edit ${inbox.label}`, () => void editInbox(inbox)),
+        editSwitch("Remove", `Remove ${inbox.label}`, () => void removeInbox(inbox))
+      );
+    }
+    const link = document.createElement("a");
+    link.className = "mail-link";
+    link.href = inbox.url;
+    link.title = `${inbox.label} \u2014 ${inbox.url}`;
+    link.setAttribute("aria-label", inbox.label);
+    const text = document.createElement("span");
+    text.className = "mail-email";
+    text.textContent = inbox.label;
+    link.append(text, inboxIcon(inbox.url));
+    row.append(link);
+    return row;
+  }
+
+  function addInboxRow() {
+    const row = document.createElement("div");
+    row.className = "mail-row";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mail-add";
+    button.textContent = "+ Add inbox";
+    button.disabled = mailCustom.length >= settings.mail.customMax;
+    if (button.disabled) button.title = `Up to ${settings.mail.customMax} inboxes`;
+    button.addEventListener("click", () => void editInbox(null));
+    row.append(button);
+    return row;
+  }
+
   function renderMailAccounts() {
-    const rows = mailAccounts.length
-      ? mailAccounts
-        .filter(account => editing || !settings.mail.isHidden(mailHidden, account.email))
-        .map(mailRow)
+    const google = mailAccounts
+      .filter(account => editing || !settings.mail.isHidden(mailHidden, account.email))
+      .map(mailRow);
+    // The plain Gmail button is somewhere to sign in from. Once the user has
+    // listed inboxes of their own, the corner is theirs.
+    const rows = mailAccounts.length || mailCustom.length
+      ? [...google, ...mailCustom.map(customRow)]
       : [mailRow(null)];
+    if (editing) rows.push(addInboxRow());
     mailLinks.replaceChildren(...rows);
     mailLinks.hidden = rows.length === 0;
     // The chips centred above the search field stop short of the column, so
@@ -835,6 +941,50 @@ productivityModules.register("newtab", () => {
     } catch {
       setStatus("Could not save which accounts are hidden.");
     }
+  }
+
+  async function saveInboxes(message) {
+    try {
+      await chrome.storage.local.set({ [settings.mail.customKey]: mailCustom });
+      setStatus(message);
+    } catch {
+      setStatus("Could not save your inboxes.");
+    }
+  }
+
+  async function editInbox(inbox) {
+    element("inbox-dialog-title").textContent = inbox ? "Edit inbox" : "Add inbox";
+    inboxLabel.value = inbox?.label ?? "";
+    inboxUrl.value = inbox?.url ?? "";
+    setMessage(inboxError, "");
+    if (await askDialog(inboxDialog) !== "save" || !active) return;
+    const url = settings.cleanUrl(inboxUrl.value);
+    if (!url) {
+      setMessage(inboxError, "That address could not be used. Enter a web address such as outlook.live.com/mail.");
+      setStatus("That address could not be used.");
+      return;
+    }
+    const [entry] = settings.mail.cleanCustom([{ id: inbox?.id, label: inboxLabel.value, url }]);
+    if (inbox) {
+      mailCustom = mailCustom.map(other => (other.id === inbox.id ? entry : other));
+    } else if (mailCustom.length >= settings.mail.customMax) {
+      setStatus(`You can keep up to ${settings.mail.customMax} inboxes.`);
+      return;
+    } else {
+      mailCustom = [...mailCustom, entry];
+    }
+    renderMailAccounts();
+    await saveInboxes(inbox ? `${entry.label} updated.` : `${entry.label} added.`);
+  }
+
+  async function removeInbox(inbox) {
+    mailCustom = mailCustom.filter(other => other.id !== inbox.id);
+    renderMailAccounts();
+    await saveInboxes(`${inbox.label} removed.`);
+  }
+
+  function onInboxCancel() {
+    inboxDialog.close("cancel");
   }
 
   // The worker owns the list and decides whether it is stale; the page only
@@ -1092,7 +1242,7 @@ productivityModules.register("newtab", () => {
 
   function onEditToggle() {
     setEditing(!editing);
-    setStatus(editing ? "Editing on: rename, remove, add and drag, or hide a Gmail account." : "Editing off.");
+    setStatus(editing ? "Editing on: rename, remove, add and drag, or hide and add inboxes." : "Editing off.");
   }
 
   // chrome:// pages are unreachable from a link or a location change, so the
@@ -1230,9 +1380,10 @@ productivityModules.register("newtab", () => {
     }
     // An account signed in or out, or hidden from another tab, shows up
     // without a reload.
-    if (changes[settings.mail.key] || changes[settings.mail.hiddenKey]) {
+    if (changes[settings.mail.key] || changes[settings.mail.hiddenKey] || changes[settings.mail.customKey]) {
       if (changes[settings.mail.key]) mailAccounts = settings.mail.clean(changes[settings.mail.key].newValue?.accounts);
       if (changes[settings.mail.hiddenKey]) mailHidden = settings.mail.cleanHidden(changes[settings.mail.hiddenKey].newValue);
+      if (changes[settings.mail.customKey]) mailCustom = settings.mail.cleanCustom(changes[settings.mail.customKey].newValue);
       renderMailAccounts();
     }
   }
@@ -1292,7 +1443,7 @@ productivityModules.register("newtab", () => {
   async function load() {
     let stored = {};
     try {
-      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key, settings.mail.hiddenKey]);
+      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key, settings.mail.hiddenKey, settings.mail.customKey]);
     } catch {
       setStatus("Could not read your saved bookmarks.");
     }
@@ -1304,6 +1455,7 @@ productivityModules.register("newtab", () => {
     applyBackground();
     mailAccounts = settings.mail.clean(stored[settings.mail.key]?.accounts);
     mailHidden = settings.mail.cleanHidden(stored[settings.mail.hiddenKey]);
+    mailCustom = settings.mail.cleanCustom(stored[settings.mail.customKey]);
     renderMailAccounts();
     render();
     if (saved === undefined) await saveGroups("");
@@ -1342,6 +1494,7 @@ productivityModules.register("newtab", () => {
   resetBackground.addEventListener("click", onReset);
   groupCancel.addEventListener("click", onGroupCancel);
   bookmarkCancel.addEventListener("click", onBookmarkCancel);
+  inboxCancel.addEventListener("click", onInboxCancel);
   bookmarkSearch.addEventListener("input", onBookmarkSearchInput);
   bookmarkSearch.addEventListener("keydown", onBookmarkSearchKeyDown);
   document.addEventListener("pointerdown", onDocumentPointerDown);
@@ -1387,6 +1540,7 @@ productivityModules.register("newtab", () => {
     resetBackground.removeEventListener("click", onReset);
     groupCancel.removeEventListener("click", onGroupCancel);
     bookmarkCancel.removeEventListener("click", onBookmarkCancel);
+    inboxCancel.removeEventListener("click", onInboxCancel);
     bookmarkSearch.removeEventListener("input", onBookmarkSearchInput);
     bookmarkSearch.removeEventListener("keydown", onBookmarkSearchKeyDown);
     document.removeEventListener("pointerdown", onDocumentPointerDown);
@@ -1395,6 +1549,7 @@ productivityModules.register("newtab", () => {
     lightQuery?.removeEventListener?.("change", onSchemeChange);
     groupDialog.close();
     bookmarkDialog.close();
+    inboxDialog.close();
     togglePanel(false);
     closeSuggestions();
     closeBookmarkSuggestions();

@@ -200,6 +200,10 @@ globalThis.newtabSettings = {
     key: "newtabMailAccounts",
     // Emails the user chose to keep off the page, in lower case.
     hiddenKey: "newtabMailHidden",
+    // Inboxes the user added by hand -- Outlook, Proton, a work webmail --
+    // listed under the Google accounts.
+    customKey: "newtabMailCustom",
+    customMax: 8,
     refreshMessage: "mail-accounts:refresh",
     cacheMaxAge: 12 * 60 * 60 * 1000,
     // Past this nobody is scanning a column of buttons anyway.
@@ -265,6 +269,23 @@ globalThis.newtabSettings = {
       const name = email.split("@")[0];
       const twins = accounts.filter(other => other.email.split("@")[0].toLowerCase() === name.toLowerCase());
       return twins.length > 1 ? email : name;
+    },
+
+    // Custom inboxes travel through storage like everything else: only an
+    // http(s) address survives, so none can become a javascript: link.
+    cleanCustom(value) {
+      const inboxes = [];
+      const ids = new Set();
+      for (const entry of Array.isArray(value) ? value : []) {
+        const url = newtabSettings.cleanUrl(entry?.url);
+        if (!url) continue;
+        let id = typeof entry.id === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(entry.id) ? entry.id : newtabSettings.randomId();
+        while (ids.has(id)) id = newtabSettings.randomId();
+        ids.add(id);
+        const label = typeof entry.label === "string" ? entry.label.trim().slice(0, newtabSettings.limits.label) : "";
+        inboxes.push({ id, label: label || newtabSettings.labelFor(url), url });
+      }
+      return inboxes.slice(0, this.customMax);
     },
 
     label(account) {

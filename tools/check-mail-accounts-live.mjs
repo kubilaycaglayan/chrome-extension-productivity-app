@@ -88,7 +88,9 @@ try {
           hit: centre === link || link.contains(centre),
           toggle: link.parentElement.querySelector('.mail-toggle')?.textContent ?? null,
           dimmed: getComputedStyle(link).opacity !== '1',
-          iconDrawn: Boolean(icon) && icon.complete && icon.naturalWidth > 0
+          iconDrawn: Boolean(icon) && icon.complete && icon.naturalWidth > 0,
+          iconSrc: icon?.src.slice(0, 120) ?? null,
+          iconVisible: Boolean(icon) && getComputedStyle(icon).visibility === 'visible'
         };
       })
     };
@@ -194,6 +196,47 @@ try {
   await evaluate(`chrome.storage.local.set({ newtabMailHidden: [] })`);
   await wait(300);
 
+  /* A custom inbox, added the way a user would: edit mode, the Add button, the dialog. It
+     lands under the Google accounts, with an icon either way, and is a real link. A site
+     this profile has visited keeps its own icon; one it has not gets the envelope rather
+     than the grey globe Chrome answers with. */
+  const visited = (await call('Target.createTarget', { url: 'https://www.google.com/' })).result.targetId;
+  await wait(4000);
+  await call('Target.closeTarget', { targetId: visited });
+  await evaluate(`document.getElementById('edit-toggle').click()`);
+  await wait(100);
+  await evaluate(`document.querySelector('.mail-add').click()`);
+  await wait(100);
+  assert.equal(await evaluate(`document.getElementById('inbox-dialog').open`), true, 'the Add button opens the dialog');
+  await evaluate(`(() => {
+    document.getElementById('inbox-label').value = 'Outlook';
+    document.getElementById('inbox-url').value = 'outlook.live.com/mail/';
+    document.querySelector('#inbox-form button[type=submit]').click();
+  })()`);
+  await wait(400);
+  let withInbox = await buttons();
+  assert.deepEqual(withInbox.links.map(link => link.email), ['someone.with.a.long.address', 'me', 'Outlook']);
+  const outlook = withInbox.links[2];
+  assert.equal(outlook.href, 'https://outlook.live.com/mail/');
+  assert.ok(outlook.hit, `the custom inbox must be clickable: ${JSON.stringify(outlook)}`);
+  await evaluate(`document.querySelector('.mail-add').click()`);
+  await wait(100);
+  await evaluate(`(() => {
+    document.getElementById('inbox-label').value = 'Google';
+    document.getElementById('inbox-url').value = 'https://www.google.com/';
+    document.querySelector('#inbox-form button[type=submit]').click();
+  })()`);
+  await evaluate(`document.getElementById('edit-toggle').click()`);
+  await wait(800);
+  withInbox = await buttons();
+  assert.ok(withInbox.links[2].iconDrawn && withInbox.links[2].iconSrc.startsWith('data:image/svg+xml,'),
+    `a site Chrome has no icon for gets the envelope, not the globe: ${withInbox.links[2].iconSrc}`);
+  assert.ok(withInbox.links[3].iconSrc.includes('_favicon/') && withInbox.links[3].iconVisible && withInbox.links[3].iconDrawn,
+    `a visited site keeps its own icon: ${JSON.stringify(withInbox.links[3])}`);
+  assert.equal(withInbox.links[2].toggle, null, 'done editing, no switches');
+  await evaluate(`chrome.storage.local.set({ newtabMailCustom: [] })`);
+  await wait(300);
+
   /* On a window narrow enough for the centred page to reach the fixed corner, the tab
      group chips have to stop short of the column -- however wide its emails make it,
      which is a cascade only a browser can be asked to resolve. */
@@ -238,7 +281,7 @@ try {
   assert.equal(off.hidden, true, 'a disabled page must take its corner with it');
   assert.equal(off.links.length, 0);
 
-  console.log('PASS Chrome drew the Gmail column in the top right corner with each account\'s email, kept it clickable beside the open chooser, hid and showed accounts from edit mode, kept the chips clear of it, and let the worker read ListAccounts past the Origin Google refuses.');
+  console.log('PASS Chrome drew the Gmail column in the top right corner with each account\'s email, kept it clickable beside the open chooser, hid and showed accounts and added a custom inbox from edit mode, kept the chips clear of it, and let the worker read ListAccounts past the Origin Google refuses.');
   await call('Browser.close');
   closed = true;
 } finally {

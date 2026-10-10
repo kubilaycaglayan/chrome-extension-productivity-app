@@ -11,6 +11,7 @@ const PAGE_IDS = [
   "group-dialog", "group-form", "group-name", "group-dialog-title", "group-cancel",
   "bookmark-dialog", "bookmark-form", "bookmark-search", "bookmark-suggestions",
   "bookmark-label", "bookmark-url", "bookmark-error", "bookmark-dialog-title", "bookmark-cancel",
+  "inbox-dialog", "inbox-form", "inbox-label", "inbox-url", "inbox-error", "inbox-dialog-title", "inbox-cancel",
   "mail-links", "status", "notice"
 ];
 

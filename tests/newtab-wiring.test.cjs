@@ -131,6 +131,9 @@ assert.ok(script.includes("data:image/svg+xml,"), "The envelope is drawn: the fa
 assert.ok(script.includes("settings.mail.clean("), "A list out of storage must be sanitised before it becomes an href");
 assert.ok(script.includes("changes[settings.mail.key]"), "An account found while a tab is open must show up without a reload");
 assert.ok(script.includes("changes[settings.mail.hiddenKey]"), "...and so must one hidden from another tab");
+assert.ok(script.includes("changes[settings.mail.customKey]"), "...and an inbox added in another tab");
+assert.match(page, /<dialog id="inbox-dialog">[\s\S]*id="inbox-label"[\s\S]*id="inbox-url"[^>]*required[\s\S]*id="inbox-cancel"/, "Adding an inbox asks for a label and a required address");
+assert.ok(script.includes("settings.mail.cleanCustom("), "A custom inbox out of storage must be sanitised before it becomes an href");
 assert.doesNotMatch(script, /fetch\([^)]*google\.com/, "The page must never ask Google itself");
 assert.ok(fs.existsSync("modules/mail-accounts.js"), "The discovery belongs to the service worker");
 assert.ok(fs.readFileSync("background/service-worker.js", "utf8").includes("initializeMailAccounts()"));
@@ -156,7 +159,7 @@ assert.match(css, /\.wallpaper\[aria-pressed="true"\] \{[^}]*outline:/, "The cho
 // The popup is the only place modules are toggled, and backups carry the data.
 assert.match(popup, /\["newtab", "New Tab page",/);
 assert.ok(popupPage.includes("../shared/newtab-settings.js"), "The popup needs the shared helpers for backups");
-for (const fragment of ["newtabSettings.groupsKey", "newtabSettings.backgroundKey", "newtabSettings.cleanGroups", "newtabSettings.cleanBackground"]) {
+for (const fragment of ["newtabSettings.groupsKey", "newtabSettings.backgroundKey", "newtabSettings.cleanGroups", "newtabSettings.cleanBackground", "newtabSettings.mail.customKey", "newtabSettings.mail.cleanCustom(backup.newtabInboxes)", "newtabSettings.mail.cleanHidden(backup.newtabHiddenAccounts)"]) {
   assert.ok(popup.includes(fragment), `popup.js must use ${fragment}`);
 }
 

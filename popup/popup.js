@@ -407,7 +407,7 @@ document.getElementById("keyword-settings").addEventListener("submit", async eve
 document.getElementById("export-settings").addEventListener("click", async () => {
   try {
     const keys = MODULES.map(([id]) => `moduleEnabled:${id}`);
-    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, cookieAccepterSettings.pausedKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, xKeywords.key]);
+    const settings = await chrome.storage.local.get([...keys, darkModeKey, darkModeSitesKey, adSitesKey, cookieAccepterSettings.pausedKey, mackolikSettings.key, mackolikSettings.followedKey, newtabSettings.groupsKey, newtabSettings.backgroundKey, newtabSettings.mail.customKey, newtabSettings.mail.hiddenKey, xKeywords.key]);
     const modules = Object.fromEntries(MODULES.map(([id]) => [id, productivityModuleDefaults.isEnabled(id, settings[`moduleEnabled:${id}`])]));
     const teams = settings[mackolikSettings.key];
     const highlightedTeams = Array.isArray(teams) ? mackolikSettings.clean(teams) : [];
@@ -415,9 +415,11 @@ document.getElementById("export-settings").addEventListener("click", async () =>
     const blockedWords = Array.isArray(settings[xKeywords.key]) ? xKeywords.clean(settings[xKeywords.key]) : [];
     const newtabGroups = newtabSettings.cleanGroups(settings[newtabSettings.groupsKey] || []);
     const newtabBackground = newtabSettings.cleanBackground(settings[newtabSettings.backgroundKey]);
+    const newtabInboxes = newtabSettings.mail.cleanCustom(settings[newtabSettings.mail.customKey]);
+    const newtabHiddenAccounts = newtabSettings.mail.cleanHidden(settings[newtabSettings.mail.hiddenKey]);
     const darkModeSites = Array.isArray(settings[darkModeSitesKey]) ? settings[darkModeSitesKey] : [];
     const cookieAccepterPausedSites = cookieAccepterSettings.cleanSites(settings[cookieAccepterSettings.pausedKey]);
-    const backup = { version: 1, modules, adBlockerPausedSites: settings[adSitesKey] || [], darkMode: settings[darkModeKey] === true, darkModeSites, cookieAccepterPausedSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground };
+    const backup = { version: 1, modules, adBlockerPausedSites: settings[adSitesKey] || [], darkMode: settings[darkModeKey] === true, darkModeSites, cookieAccepterPausedSites, highlightedTeams, followedTeams, blockedWords, newtabGroups, newtabBackground, newtabInboxes, newtabHiddenAccounts };
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
@@ -482,6 +484,14 @@ document.getElementById("import-settings").addEventListener("change", async (eve
     }
     if (backup.newtabBackground !== undefined) {
       settings[newtabSettings.backgroundKey] = newtabSettings.cleanBackground(backup.newtabBackground);
+    }
+    if (backup.newtabInboxes !== undefined) {
+      if (!Array.isArray(backup.newtabInboxes)) throw new Error("Invalid inboxes");
+      settings[newtabSettings.mail.customKey] = newtabSettings.mail.cleanCustom(backup.newtabInboxes);
+    }
+    if (backup.newtabHiddenAccounts !== undefined) {
+      if (!Array.isArray(backup.newtabHiddenAccounts)) throw new Error("Invalid hidden accounts");
+      settings[newtabSettings.mail.hiddenKey] = newtabSettings.mail.cleanHidden(backup.newtabHiddenAccounts);
     }
     const importedAdEnabled = settings["moduleEnabled:ad-blocker"];
     const importedAdSites = settings[adSitesKey];

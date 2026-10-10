@@ -495,7 +495,20 @@ body.has-image #attribution {
   line-height: 1.3;
   cursor: pointer;
 }
-.mail-toggle:hover { background: var(--chip-hover); }
+.mail-toggle:hover, .mail-add:not(:disabled):hover { background: var(--chip-hover); }
+/* Only while editing: the way to list an inbox Google does not know about. */
+.mail-add {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.mail-add:disabled { opacity: 0.5; cursor: default; }
 .mail-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 /* Only reachable while editing: a hidden account, waiting to be shown again. */
 .mail-row.is-hidden .mail-link { opacity: 0.45; }
