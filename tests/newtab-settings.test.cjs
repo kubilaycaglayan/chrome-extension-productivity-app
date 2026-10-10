@@ -204,4 +204,40 @@ assert.ok(settings.defaultGroups.length >= 2);
 assert.ok(settings.defaultGroups.every(group => group.bookmarks.length > 0));
 assert.notEqual(settings.randomId(), settings.randomId());
 
-console.log("PASS newtab settings: address sanitising, search routing, group limits, background validation");
+// Gmail accounts, which Chrome only ever names by the index Gmail carries in
+// its own URL.
+const { mail } = settings;
+assert.equal(mail.url(0), "https://mail.google.com/mail/u/0/");
+assert.equal(mail.url(3), "https://mail.google.com/mail/u/3/");
+for (const nonsense of [undefined, "two", -1, 1.5, mail.max, null]) {
+  assert.equal(mail.url(nonsense), "https://mail.google.com/mail/u/0/", `${String(nonsense)} must fall back to the first account`);
+}
+assert.equal(mail.slotFromUrl("https://mail.google.com/mail/u/2/#inbox"), 2);
+assert.equal(mail.slotFromUrl("https://mail.google.com/mail/u/0"), 0, "A bare index is still an index");
+for (const outside of [
+  "https://mail.google.com/mail/",
+  "https://mail.google.com/chat/u/1/",
+  `https://mail.google.com/mail/u/${mail.max}/`,
+  "https://mail.google.com.evil.example/mail/u/1/",
+  "http://mail.google.com/mail/u/1/",
+  "https://accounts.google.com/ServiceLogin",
+  "not a url",
+  null
+]) {
+  assert.equal(mail.slotFromUrl(outside), null, `${String(outside)} names no account`);
+}
+
+// Where a probe lands is the whole answer: its own index, or somebody else's.
+assert.equal(mail.signedIn(1, "https://mail.google.com/mail/u/1/?pli=1"), true);
+assert.equal(mail.signedIn(2, "https://mail.google.com/mail/u/0/"), false, "Bounced to another account is not signed in");
+assert.equal(mail.signedIn(0, "https://accounts.google.com/AccountChooser"), false);
+
+same(mail.clean([2, 0, "1", 0, -1, 99, 1.5, null, { index: 3 }]), [0, 1, 2], "Whole indices in range, in order, once each");
+same(mail.clean("nonsense"), []);
+assert.equal(mail.clean(Array.from({ length: 50 }, (_, n) => n)).length, mail.max);
+
+// One account has nothing to be told apart from, so it goes unnumbered.
+assert.equal(mail.label(0, 1), "Gmail");
+assert.equal(mail.label(1, 3), "Gmail \u2014 account 2");
+
+console.log("PASS newtab settings: address sanitising, search routing, group limits, background validation, Gmail accounts");

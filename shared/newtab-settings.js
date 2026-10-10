@@ -191,6 +191,70 @@ globalThis.newtabSettings = {
       .slice(0, this.limits.suggestions);
   },
 
+  // Gmail shortcuts, one per Google account this profile is signed into.
+  // Chrome numbers those accounts and Gmail carries the number in its own URL
+  // -- /mail/u/1/ is the second account signed in -- and that index is the
+  // only handle an extension has on them: nothing in the API surface lists
+  // the accounts, and no permission grants it. So the list is discovered,
+  // from Gmail URLs the browser already loads and from asking Gmail where
+  // each index lands, and kept in storage for the page to read.
+  mail: {
+    key: "newtabMailAccounts",
+    cacheMaxAge: 12 * 60 * 60 * 1000,
+    // Past this nobody is scanning a row of identical buttons anyway.
+    max: 6,
+    origin: "https://mail.google.com",
+
+    url(index) {
+      return `${this.origin}/mail/u/${this.slot(index) ?? 0}/`;
+    },
+
+    slot(value) {
+      const index = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+      return Number.isInteger(index) && index >= 0 && index < this.max ? index : null;
+    },
+
+    // The index out of a Gmail address, for the free half of the discovery:
+    // a tab that is on /mail/u/2/ proves account 2 exists.
+    slotFromUrl(value) {
+      let url;
+      try {
+        url = new URL(String(value ?? ""));
+      } catch {
+        return null;
+      }
+      if (url.origin !== this.origin) return null;
+      return this.slot(url.pathname.match(/^\/mail\/u\/(\d+)(?:\/|$)/)?.[1] ?? null);
+    },
+
+    // The other half: Gmail answers a probe for an index nobody is signed into
+    // by bouncing it to the login page, the account chooser, or another index.
+    // One that is signed in stays on its own.
+    signedIn(index, finalUrl) {
+      const slot = this.slot(index);
+      return slot !== null && this.slotFromUrl(finalUrl) === slot;
+    },
+
+    // Indices only ever come from Gmail itself, but they travel through
+    // storage, where a hand-edited or half-written value could be waiting.
+    clean(value) {
+      const slots = [];
+      for (const entry of Array.isArray(value) ? value : []) {
+        const slot = this.slot(entry);
+        if (slot === null || slots.includes(slot)) continue;
+        slots.push(slot);
+      }
+      return slots.sort((a, b) => a - b).slice(0, this.max);
+    },
+
+    // The index is the only name Gmail gives an account, so a button wears its
+    // position. One account has nothing to be told apart from, so it goes
+    // unnumbered.
+    label(position, total) {
+      return total > 1 ? `Gmail \u2014 account ${position + 1}` : "Gmail";
+    }
+  },
+
   // Typing a bare host should go there, like the omnibox does; anything else
   // is a Google search.
   searchUrl(query) {

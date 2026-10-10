@@ -2,11 +2,13 @@ import { initializeTabHistory } from "../modules/tab-history.js";
 import { initializeAdBlocker } from "../modules/ad-blocker.js";
 import { initializeTabMarkers } from "../modules/tab-marker.js";
 import { initializeCsvViewer } from "../modules/csv-viewer.js";
+import { initializeMailAccounts } from "../modules/mail-accounts.js";
 
 initializeTabHistory();
 initializeTabMarkers();
 initializeAdBlocker();
 initializeCsvViewer();
+initializeMailAccounts();
 
 chrome.commands.onCommand.addListener(command => {
   if (command !== "highlight-selection") return;

@@ -20,6 +20,7 @@ productivityModules.register("newtab", () => {
   const importBookmarks = element("import-bookmarks");
   const editToggle = element("edit-toggle");
   const extensionsToggle = element("extensions-toggle");
+  const mailLinks = element("mail-links");
   const panel = element("background-panel");
   const panelToggle = element("background-toggle");
   const panelMessage = element("background-message");
@@ -741,6 +742,49 @@ productivityModules.register("newtab", () => {
     return icon;
   }
 
+  // Gmail's envelope, drawn rather than fetched. The favicon service only
+  // answers for a site this profile has already collected an icon for, and a
+  // grey globe in the corner is no kind of shortcut.
+  const MAIL_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+    + '<path fill="#ea4335" d="M22 6.5v11c0 .83-.67 1.5-1.5 1.5H19V9.8l-7 5.1-7-5.1V19H3.5c-.83 0-1.5-.67-1.5-1.5v-11c0-1.2 1.36-1.9 2.33-1.2L12 11l7.67-5.7C20.64 4.6 22 5.3 22 6.5Z"/></svg>';
+
+  function mailIcon() {
+    const icon = document.createElement("img");
+    icon.className = "mail-icon";
+    icon.alt = "";
+    icon.width = 24;
+    icon.height = 24;
+    icon.src = `data:image/svg+xml,${encodeURIComponent(MAIL_ICON)}`;
+    return icon;
+  }
+
+  // Gmail shortcuts. The account list is discovered by the service worker --
+  // see modules/mail-accounts.js for why it cannot simply be read -- and the
+  // page only paints what is in storage. Until something is there, and if
+  // every account is signed out, that is one plain Gmail button.
+  function renderMailAccounts(accounts) {
+    const slots = accounts.length ? accounts : [0];
+    mailLinks.replaceChildren(...slots.map((slot, position) => {
+      const label = settings.mail.label(position, slots.length);
+      const link = document.createElement("a");
+      link.className = "mail-link";
+      link.href = settings.mail.url(slot);
+      link.title = label;
+      link.setAttribute("aria-label", label);
+      link.append(mailIcon());
+      if (slots.length > 1) {
+        const badge = document.createElement("span");
+        badge.className = "mail-index";
+        // The label already carries the number for a screen reader.
+        badge.setAttribute("aria-hidden", "true");
+        badge.textContent = String(position + 1);
+        link.append(badge);
+      }
+      return link;
+    }));
+    mailLinks.hidden = false;
+  }
+
   function iconButton(symbol, title, onClick, className = "") {
     const button = document.createElement("button");
     button.type = "button";
@@ -1119,6 +1163,10 @@ productivityModules.register("newtab", () => {
       background = settings.cleanBackground(changes[settings.backgroundKey].newValue);
       applyBackground();
     }
+    // A Gmail visit or a probe can add an account while this tab sits open.
+    if (changes[settings.mail.key]) {
+      renderMailAccounts(settings.mail.clean(changes[settings.mail.key].newValue?.accounts));
+    }
   }
 
   function onImageChange(event) {
@@ -1176,7 +1224,7 @@ productivityModules.register("newtab", () => {
   async function load() {
     let stored = {};
     try {
-      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey]);
+      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key]);
     } catch {
       setStatus("Could not read your saved bookmarks.");
     }
@@ -1186,10 +1234,12 @@ productivityModules.register("newtab", () => {
     if (!active) return;
     background = settings.cleanBackground(stored[settings.backgroundKey]);
     applyBackground();
+    renderMailAccounts(settings.mail.clean(stored[settings.mail.key]?.accounts));
     render();
     if (saved === undefined) await saveGroups("");
   }
 
+  renderMailAccounts([]);
   buildSwatches(colorSwatches, settings.colors, "color");
   buildSwatches(gradientSwatches, settings.gradients, "gradient");
   applyBackground();
@@ -1256,6 +1306,8 @@ productivityModules.register("newtab", () => {
     editToggle.removeEventListener("click", onEditToggle);
     extensionsToggle.removeEventListener("click", onManageExtensions);
     extensionsToggle.hidden = true;
+    mailLinks.replaceChildren();
+    mailLinks.hidden = true;
     panelToggle.removeEventListener("click", onPanelToggle);
     wallpaperBack.removeEventListener("click", onWallpaperBack);
     imageInput.removeEventListener("change", onImageChange);

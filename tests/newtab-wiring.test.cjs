@@ -113,13 +113,31 @@ assert.ok(script.includes("chrome.tabs.create"), "A refused navigation must stil
 assert.ok(script.includes("chrome.tabs?.update"), "The shortcut must degrade when the API is absent");
 assert.ok(manifest.permissions.includes("tabs"), "Navigating a tab needs the tabs permission");
 
+// Gmail shortcuts: real links in the one corner the page leaves free, one per
+// account, with the account's number on the button. What they can never be is
+// a probe from this page -- opening a new tab stays free of network calls, so
+// the account list is the service worker's to find.
+assert.ok(ids.has("mail-links"));
+assert.match(page, /id="mail-links"[^>]*aria-label="Gmail accounts"/s, "The row of buttons needs a name of its own");
+assert.match(page, /id="mail-links"[^>]*hidden/s, "The corner stays empty until the module mounts it");
+assert.match(css, /#mail-links \{[^}]*position: fixed;[^}]*top: 20px;[^}]*right: 20px/, "The buttons belong in the top right corner");
+assert.match(css, /\.mail-index \{[^}]*position: absolute/, "The account number rides on its button");
+assert.ok(script.includes("renderMailAccounts"), "The page must paint the accounts it finds in storage");
+assert.ok(script.includes("data:image/svg+xml,"), "The envelope is drawn: the favicon cache has no icon for a site this profile has not collected one for");
+assert.ok(script.includes("settings.mail.clean("), "A list out of storage must be sanitised before it becomes an href");
+assert.ok(script.includes("changes[settings.mail.key]"), "An account found while a tab is open must show up without a reload");
+assert.doesNotMatch(script, /fetch\([^)]*mail\.google\.com/, "The page must never probe Gmail itself");
+assert.ok(fs.existsSync("modules/mail-accounts.js"), "The discovery belongs to the service worker");
+assert.ok(fs.readFileSync("background/service-worker.js", "utf8").includes("initializeMailAccounts()"));
+assert.ok(manifest.host_permissions.includes("<all_urls>"), "Asking Gmail where an index lands needs its host");
+
 // Instead they are stacked explicitly, above the scrim and the page content.
 const depth = (selector) => {
   const found = css.match(new RegExp(`${selector} \\{[^}]*z-index: (\\d+)`));
   assert.ok(found, `${selector} must declare a z-index`);
   return Number(found[1]);
 };
-const stack = ["body\\.has-image #scrim", "body\\.has-image #app", "#attribution", "#edit-toggle, #background-toggle", "#background-panel"].map(depth);
+const stack = ["body\\.has-image #scrim", "body\\.has-image #app", "#attribution", "#mail-links", "#edit-toggle, #background-toggle", "#background-panel"].map(depth);
 assert.deepEqual(stack, [...new Set(stack)].sort((a, b) => a - b), "The scrim, page, credit, buttons and chooser must stack in that order");
 
 // A scrollbar appearing must never shift what the pointer is aimed at: that is
@@ -136,4 +154,4 @@ for (const fragment of ["newtabSettings.groupsKey", "newtabSettings.backgroundKe
   assert.ok(popup.includes(fragment), `popup.js must use ${fragment}`);
 }
 
-console.log("PASS newtab wiring: manifest, page assets, element ids, hidden status, combobox, import, drag styling, popup backups");
+console.log("PASS newtab wiring: manifest, page assets, element ids, hidden status, combobox, import, drag styling, Gmail shortcuts, popup backups");

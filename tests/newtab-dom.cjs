@@ -11,7 +11,7 @@ const PAGE_IDS = [
   "group-dialog", "group-form", "group-name", "group-dialog-title", "group-cancel",
   "bookmark-dialog", "bookmark-form", "bookmark-search", "bookmark-suggestions",
   "bookmark-label", "bookmark-url", "bookmark-error", "bookmark-dialog-title", "bookmark-cancel",
-  "status", "notice"
+  "mail-links", "status", "notice"
 ];
 
 function camel(name) {
@@ -199,6 +199,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
   elements.get("bookmark-suggestions").hidden = true;
   elements.get("attribution").hidden = true;
   elements.get("extensions-toggle").hidden = true;
+  elements.get("mail-links").hidden = true;
   const body = makeElement("body");
 
   const document = {
