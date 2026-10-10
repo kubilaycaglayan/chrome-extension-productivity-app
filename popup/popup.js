@@ -6,6 +6,7 @@ const MODULES = [
   ["newtab", "New Tab page", "Search bar with Google suggestions, draggable bookmark groups, and Google or custom wallpapers.", "browser", "🗂️"],
   ["csv-viewer", "CSV viewer", "Show CSV and TSV links as a sortable, filterable table instead of downloading them, and read text files that are laid out like one.", "browser", "📊"],
   ["text-highlights", "Text highlights", "Select text and press ⌘⇧S (Ctrl+Shift+S on Windows/Linux) to save a yellow highlight on this page.", "browser", "🖍️"],
+  ["code-wrap", "Code block wrapping", "Add a button to the top right of code blocks whose lines run off the edge, which wraps them onto the next line. Each block starts unwrapped. Off until enabled.", "browser", "↩️"],
   ["cookie-accepter", "Cookie accepter", "Automatically accept all cookie categories, including optional analytics and marketing, on recognized banners. Off until enabled.", "browser", "🍪"],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations.", "youtube", "🎛️"],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home.", "youtube", "🚫"],
