@@ -123,6 +123,7 @@ assert.match(page, /id="mail-links"[^>]*hidden/s, "The corner stays empty until 
 assert.match(css, /#mail-links \{[^}]*position: fixed;[^}]*top: 20px;[^}]*right: 20px/, "The buttons belong in the top right corner");
 assert.match(css, /#mail-links \{[^}]*flex-direction: column/, "One account per row, top to bottom");
 assert.match(css, /\.mail-email \{[^}]*text-overflow: ellipsis/, "A long email is cut short rather than pushing the button off the page");
+assert.match(css, /\.mail-email \{[^}]*font-size: 16px/, "The username is sized to be read at a glance -- as its own property, since `inherit` voids a font shorthand");
 assert.match(css, /#tab-groups \{ right: max\(0px, calc\(var\(--mail-room/, "The chips stop short of the column");
 assert.match(css, /#background-panel \{[^}]*max-height: min\([^;]*var\(--mail-bottom/, "The open chooser stops below the column");
 assert.ok(script.includes("renderMailAccounts"), "The page must paint the accounts it finds in storage");

@@ -257,6 +257,16 @@ globalThis.newtabSettings = {
       return cleaned.includes(key) ? cleaned.filter(entry => entry !== key) : [...cleaned, key];
     },
 
+    // What a button reads: the part before the @, which is how people tell
+    // their own accounts apart at a glance. Two accounts sharing it -- me@ at
+    // two domains -- would read the same, so those two keep their whole email.
+    shortName(account, accounts = []) {
+      const email = account?.email ?? "";
+      const name = email.split("@")[0];
+      const twins = accounts.filter(other => other.email.split("@")[0].toLowerCase() === name.toLowerCase());
+      return twins.length > 1 ? email : name;
+    },
+
     label(account) {
       return account?.email ? `Gmail \u2014 ${account.email}` : "Gmail";
     }

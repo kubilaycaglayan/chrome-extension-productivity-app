@@ -231,6 +231,8 @@ same(mail.toggleHidden([], "Me@gmail.com"), ["me@gmail.com"]);
 same(mail.toggleHidden(["me@gmail.com", "w@x.co"], "ME@gmail.com"), ["w@x.co"], "Showing one leaves the others hidden");
 same(mail.toggleHidden(["w@x.co"], "not an email"), ["w@x.co"]);
 
+assert.equal(mail.shortName({ email: "first.last@gmail.com" }, [{ email: "first.last@gmail.com" }]), "first.last");
+assert.equal(mail.shortName({ email: "me@a.co" }, [{ email: "me@a.co" }, { email: "ME@b.co" }]), "me@a.co", "A shared username keeps the whole email");
 assert.equal(mail.label(null), "Gmail");
 assert.equal(mail.label({ email: "me@gmail.com" }), "Gmail \u2014 me@gmail.com");
 

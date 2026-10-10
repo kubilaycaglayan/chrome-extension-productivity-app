@@ -793,7 +793,7 @@ productivityModules.register("newtab", () => {
     if (account) {
       const email = document.createElement("span");
       email.className = "mail-email";
-      email.textContent = account.email;
+      email.textContent = settings.mail.shortName(account, mailAccounts);
       link.append(email);
     }
     link.append(mailIcon());

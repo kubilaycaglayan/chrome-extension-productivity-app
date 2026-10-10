@@ -36,9 +36,9 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   const both = setup({ stored: accounts([{ email: "work@example.com", name: "Work" }, { email: "me@gmail.com" }]) });
   await settle();
   assert.deepEqual(describe(both), [
-    [WORK, "Gmail — work@example.com", "work@example.com"],
-    [ME, "Gmail — me@gmail.com", "me@gmail.com"]
-  ]);
+    [WORK, "Gmail — work@example.com", "work"],
+    [ME, "Gmail — me@gmail.com", "me"]
+  ], "A button reads the username; the label and link carry the whole email");
   assert.equal(links(both)[0].title, "Work — work@example.com", "A name, when Google has one, is in the tooltip");
   assert.equal(toggles(both).length, 0, "Hiding is an edit, so the switches wait for edit mode");
   assert.equal(both.body.style["--mail-room"], "232px", "The chips are told how much room the column takes");
@@ -61,7 +61,7 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   assert.match(both.status(), /me@gmail\.com hidden/);
 
   fire(both.element("edit-toggle"), "click");
-  assert.deepEqual(describe(both), [[WORK, "Gmail — work@example.com", "work@example.com"]], "Done editing, a hidden account is gone");
+  assert.deepEqual(describe(both), [[WORK, "Gmail — work@example.com", "work"]], "Done editing, a hidden account is gone");
   assert.equal(toggles(both).length, 0);
 
   /* ...and it comes back when shown again. */
@@ -85,12 +85,18 @@ const WORK = "https://mail.google.com/mail/?authuser=work%40example.com";
   /* Accounts signed in or out, or hidden from another tab, show up without
      a reload. */
   both.storageChange({ newtabMailAccounts: { newValue: { accounts: [{ email: "me@gmail.com" }], checkedAt: Date.now() } } });
-  assert.deepEqual(describe(both), [[ME, "Gmail — me@gmail.com", "me@gmail.com"]]);
+  assert.deepEqual(describe(both), [[ME, "Gmail — me@gmail.com", "me"]]);
   both.storageChange({ newtabMailHidden: { newValue: ["me@gmail.com"] } });
   assert.equal(links(both).length, 0);
   both.storageChange({ newtabMailHidden: { newValue: [] } });
   both.storageChange({ newtabMailAccounts: { newValue: { accounts: [], checkedAt: Date.now() } } });
   assert.deepEqual(describe(both), [["https://mail.google.com/mail/u/0/", "Gmail", null]], "Signed out still leaves somewhere to sign in");
+
+  /* Two accounts sharing a username would read the same, so those two keep
+     their whole email; the rest stay short. */
+  const twins = setup({ stored: accounts([{ email: "me@gmail.com" }, { email: "Me@example.com" }, { email: "work@example.com" }]) });
+  await settle();
+  assert.deepEqual(describe(twins).map(([, , text]) => text), ["me@gmail.com", "Me@example.com", "work"]);
 
   /* Storage is not a trusted source: the list travels through it and a
      hand-edited, half-written or older-format value must not reach an href. */

@@ -474,11 +474,13 @@ body.has-image #attribution {
 .mail-link:not(:has(.mail-email)) { width: 42px; justify-content: center; padding: 0; }
 .mail-email {
   max-width: 240px;
-  padding-left: 6px;
+  padding-left: 8px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font: 500 13px/1.3 inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 .mail-icon { flex: none; width: 24px; height: 24px; }
 .mail-toggle {
@@ -488,7 +490,9 @@ body.has-image #attribution {
   border-radius: 999px;
   background: var(--chip);
   color: var(--text);
-  font: 500 12px/1.3 inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
   cursor: pointer;
 }
 .mail-toggle:hover { background: var(--chip-hover); }

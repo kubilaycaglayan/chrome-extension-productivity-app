@@ -167,7 +167,7 @@ try {
     'https://mail.google.com/mail/?authuser=someone.with.a.long.address%40example.com',
     'https://mail.google.com/mail/?authuser=me%40gmail.com'
   ]);
-  assert.deepEqual(two.links.map(link => link.email), [work.email, me.email]);
+  assert.deepEqual(two.links.map(link => link.email), ['someone.with.a.long.address', 'me'], 'a button reads the username');
   for (const link of two.links) {
     assert.ok(link.topRight && link.hit, `${link.label} must be in the corner and clickable: ${JSON.stringify(link)}`);
     assert.ok(link.iconDrawn, `${link.label} must paint its envelope, not a broken image`);
@@ -190,7 +190,7 @@ try {
   assert.deepEqual((await evaluate(`chrome.storage.local.get('newtabMailHidden')`)).newtabMailHidden, ['me@gmail.com']);
   await evaluate(`document.getElementById('edit-toggle').click()`);
   await wait(100);
-  assert.deepEqual((await buttons()).links.map(link => link.email), [work.email], 'done editing, the hidden account is gone');
+  assert.deepEqual((await buttons()).links.map(link => link.email), ['someone.with.a.long.address'], 'done editing, the hidden account is gone');
   await evaluate(`chrome.storage.local.set({ newtabMailHidden: [] })`);
   await wait(300);
 
