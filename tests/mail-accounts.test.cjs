@@ -2,16 +2,24 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-// Discovering which Google accounts a profile is signed into. There is no API
-// for it, so the worker reads the index out of Gmail URLs the browser loads
-// and, at most twice a day, asks Gmail where each index lands. The page side
-// of this is tests/newtab-mail.test.cjs.
-const SIGNED_OUT = "https://accounts.google.com/ServiceLogin?service=mail&continue=https://mail.google.com/mail/u/1/";
+// Finding which Google accounts a profile is signed into. There is no API for
+// it, so the worker reads the list Chrome's own avatar menu is painted from,
+// accounts.google.com/ListAccounts, and keeps only the accounts whose session
+// is live. The page side of this is tests/newtab-mail.test.cjs.
+const LIST_URL = "https://accounts.google.com/ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard";
 
-function setup({ stored = {}, signedIn = [], offline = false } = {}) {
+// One ListAccounts entry, in the positional shape Google sends and Chromium
+// reads: [2] name, [3] email, [9] session valid, [10] id, [14] signed out.
+function entry(email, { name = "", valid = 1, signedOut = 0 } = {}) {
+  return ["gaia.l.a", 1, name, email, "https://lh3.googleusercontent.com/a/photo", 1, 1, 0, null, valid, "1234567890", null, null, null, signedOut, 1];
+}
+const answer = entries => JSON.stringify(["gaia.l.a.r", entries]);
+
+function setup({ stored = {}, reply = answer([]), offline = false, status = 200 } = {}) {
   const store = structuredClone(stored);
   const listeners = {};
   const fetches = [];
+  const sessionRules = [];
 
   const chrome = {
     storage: {
@@ -24,142 +32,167 @@ function setup({ stored = {}, signedIn = [], offline = false } = {}) {
       }
     },
     runtime: {
+      id: "productivity",
       onStartup: { addListener(listener) { listeners.startup = listener; } },
-      onInstalled: { addListener(listener) { listeners.installed = listener; } }
+      onInstalled: { addListener(listener) { listeners.installed = listener; } },
+      onMessage: { addListener(listener) { listeners.message = listener; } }
     },
-    tabs: { onUpdated: { addListener(listener) { listeners.updated = listener; } } }
+    tabs: { onUpdated: { addListener(listener) { listeners.updated = listener; } } },
+    declarativeNetRequest: {
+      async updateSessionRules(update) { sessionRules.push(structuredClone(update)); }
+    }
   };
 
   const context = vm.createContext({
     chrome,
     URL,
-    Set,
+    JSON,
     Date,
     Number,
+    String,
     Array,
-    // Gmail keeps a signed-in index on its own URL and bounces one nobody is
-    // signed into; `redirect: "follow"` means the page only sees where it
-    // ended up, which is `response.url`.
     async fetch(url, options) {
       fetches.push({ url, options });
       if (offline) throw new Error("offline");
-      const slot = Number(url.match(/\/mail\/u\/(\d+)\//)[1]);
-      return { ok: true, status: 200, url: signedIn.includes(slot) ? url : SIGNED_OUT };
+      return { ok: status === 200, status, text: async () => (typeof reply === "function" ? reply() : reply) };
     }
   });
   context.globalThis = context;
 
   const source = fs.readFileSync("modules/mail-accounts.js", "utf8")
-    // The same two lines modules/settings.js exports, inlined.
+    // The same lines modules/settings.js exports, inlined.
     .replace('import { isModuleEnabled } from "./settings.js";',
       'const isModuleEnabled = async id => (await chrome.storage.local.get(`moduleEnabled:${id}`))[`moduleEnabled:${id}`] !== false;')
-    .replace("export function initializeMailAccounts", "function initializeMailAccounts");
-  vm.runInContext(`${source}\ninitializeMailAccounts();`, context);
+    .replace(/export function /g, "function ");
+  vm.runInContext(`${source}\ninitializeMailAccounts();\nglobalThis.parseListAccounts = parseListAccounts;`, context);
 
   return {
     store,
     fetches,
+    sessionRules,
+    parse: context.parseListAccounts,
     get accounts() { return store.newtabMailAccounts?.accounts; },
     get checkedAt() { return store.newtabMailAccounts?.checkedAt; },
-    probed: () => fetches.map(call => call.url),
     startup: () => listeners.startup(),
     installed: () => listeners.installed({ reason: "update" }),
-    visit: url => listeners.updated(7, { url }, { id: 7, url })
+    visit: url => listeners.updated(7, { url }, { id: 7, url }),
+    // The listener answers nothing, so the work is waited on through storage.
+    async nudge(message = { type: "mail-accounts:refresh" }) {
+      listeners.message(message, {}, () => {});
+      for (let turn = 0; turn < 20; turn += 1) await Promise.resolve();
+    }
   };
 }
 
 const day = 24 * 60 * 60 * 1000;
+const json = value => JSON.parse(JSON.stringify(value));
 
 (async () => {
-  /* Two accounts signed in: the walk stops at the first index Gmail refuses. */
-  const two = setup({ signedIn: [0, 1] });
-  await two.startup();
-  assert.deepEqual(two.accounts, [0, 1]);
-  assert.deepEqual(two.probed(), [
-    "https://mail.google.com/mail/u/0/",
-    "https://mail.google.com/mail/u/1/",
-    "https://mail.google.com/mail/u/2/"
-  ], "One request past the last account is what proves it is the last");
-  for (const { options } of two.fetches) {
-    assert.equal(options.method, "HEAD", "An answer must cost headers, not an inbox");
-    assert.equal(options.credentials, "include", "The cookies are the question being asked");
-    assert.equal(options.cache, "no-store", "A cached redirect would answer for a session that has changed");
-  }
-  assert.ok(Date.now() - two.checkedAt < 5000, "The answer is stamped so it can go stale");
+  /* The bug this replaced: an account Chrome only remembers for "continue as"
+     is in the list, flagged signed out, and must not get a button. Nor must
+     one whose session has expired. Order is Google's. */
+  const mixed = setup({
+    reply: answer([
+      entry("work@example.com", { name: "Work" }),
+      entry("remembered@gmail.com", { signedOut: 1 }),
+      entry("expired@gmail.com", { valid: 0 }),
+      entry("me@gmail.com")
+    ])
+  });
+  await mixed.startup();
+  assert.deepEqual(json(mixed.accounts), [{ email: "work@example.com", name: "Work" }, { email: "me@gmail.com" }]);
+  assert.ok(Date.now() - mixed.checkedAt < 5000, "The answer is stamped so it can go stale");
 
-  /* A gap is the end of the list, not something to step over: index 2 is never
-     asked about once index 1 has been refused. */
-  const gap = setup({ signedIn: [0, 2] });
-  await gap.startup();
-  assert.deepEqual(gap.accounts, [0]);
-  assert.deepEqual(gap.probed(), ["https://mail.google.com/mail/u/0/", "https://mail.google.com/mail/u/1/"]);
+  const [{ url, options }] = mixed.fetches;
+  assert.equal(url, LIST_URL);
+  assert.equal(options.method, "POST", "ListAccounts refuses a GET");
+  assert.equal(options.credentials, "include", "The cookies are the question being asked");
+  assert.equal(options.cache, "no-store", "A cached answer would speak for a session that has changed");
+
+  /* Google refuses the extension's Origin, so a session rule strips it -- from
+     this request, from this extension, and nothing else. */
+  const [rule] = mixed.sessionRules[0].addRules;
+  assert.deepEqual(mixed.sessionRules[0].removeRuleIds, [rule.id], "Re-adding the rule must replace it, not collide with it");
+  assert.deepEqual(json(rule.action), { type: "modifyHeaders", requestHeaders: [{ header: "origin", operation: "remove" }] });
+  assert.equal(rule.condition.urlFilter, "|https://accounts.google.com/ListAccounts");
+  assert.deepEqual(json(rule.condition.initiatorDomains), ["productivity"]);
+  assert.deepEqual(json(rule.condition.resourceTypes), ["xmlhttprequest"]);
+  const adBlocker = fs.readFileSync("modules/ad-blocker.js", "utf8");
+  const csvViewer = fs.readFileSync("modules/csv-viewer.js", "utf8");
+  assert.ok(rule.id >= 1000400 && rule.id !== Number(csvViewer.match(/RULE_ID = (\d+)/)[1]), "The rule id must not land in another module's range");
+  assert.ok(adBlocker.includes("RULE_ID_START + 400"), "The ad blocker's range is the one checked above");
+
+  /* The parser is strict about the shape, and lenient about the flags an
+     older answer leaves off. */
+  const { parse } = mixed;
+  assert.equal(parse("<html>Error 403</html>"), null);
+  assert.equal(parse(JSON.stringify(["something.else", []])), null);
+  assert.deepEqual(json(parse(`)]}'\n${answer([entry("a@b.co")])}`)), [{ email: "a@b.co" }], "An XSSI guard is stripped");
+  assert.deepEqual(json(parse(JSON.stringify(["gaia.l.a.r", [["gaia.l.a", 1, "Old", "old@gmail.com"]]]))), [{ email: "old@gmail.com", name: "Old" }],
+    "No flags at all is the old, signed-in shape");
+  assert.deepEqual(json(parse(answer([entry("A@b.co"), entry("a@b.co"), entry("not an email"), entry(""), "junk", null]))), [{ email: "A@b.co" }]);
+  assert.equal(parse(answer(Array.from({ length: 20 }, (_, n) => entry(`u${n}@b.co`)))).length, 6);
 
   /* Signed out of Google altogether is a real answer, and an empty list is
      what the page turns back into its single plain shortcut. */
-  const out = setup({ stored: { newtabMailAccounts: { accounts: [0, 1], checkedAt: Date.now() - 2 * day } } });
+  const out = setup({ stored: { newtabMailAccounts: { accounts: [{ email: "me@gmail.com" }], checkedAt: Date.now() - 2 * day } } });
   await out.startup();
-  assert.deepEqual(out.accounts, [], "The probe is authoritative: a signed-out account loses its button");
+  assert.deepEqual(json(out.accounts), [], "The list is authoritative: a signed-out account loses its button");
 
-  /* Offline says nothing rather than reporting an empty list. */
-  const offline = setup({ stored: { newtabMailAccounts: { accounts: [0, 1], checkedAt: Date.now() - 2 * day } }, offline: true });
-  await offline.startup();
-  assert.deepEqual(offline.accounts, [0, 1], "A failed probe must not throw away a list that was right yesterday");
-  assert.equal(offline.fetches.length, 1, "There is no point walking the rest once Gmail is unreachable");
-
-  /* A fresh answer is left alone; a stale one is re-asked. */
-  const fresh = setup({ stored: { newtabMailAccounts: { accounts: [0], checkedAt: Date.now() - 60_000 } }, signedIn: [0, 1] });
-  await fresh.startup();
-  assert.equal(fresh.fetches.length, 0, "Twice a day is the budget");
-  assert.deepEqual(fresh.accounts, [0]);
-
-  const stale = setup({ stored: { newtabMailAccounts: { accounts: [0], checkedAt: Date.now() - 2 * day } }, signedIn: [0, 1] });
-  await stale.startup();
-  assert.deepEqual(stale.accounts, [0, 1]);
-
-  /* An update re-asks whatever the stamp says: the stored list may be months
-     old, and a fresh install has none at all. */
-  const updated = setup({ stored: { newtabMailAccounts: { accounts: [0], checkedAt: Date.now() } }, signedIn: [0, 1] });
-  await updated.installed();
-  assert.deepEqual(updated.accounts, [0, 1]);
-
-  /* The free half of the discovery: a Gmail tab names its account. */
-  const visited = setup({ stored: { newtabMailAccounts: { accounts: [0], checkedAt: Date.now() } }, signedIn: [0, 2] });
-  await visited.visit("https://mail.google.com/mail/u/2/#inbox");
-  assert.deepEqual(visited.accounts, [0, 2], "A tab on /mail/u/2/ is proof that account 2 exists");
-  assert.equal(visited.fetches.length, 0, "A visit inside the budget costs nothing");
-  assert.equal(visited.checkedAt, visited.store.newtabMailAccounts.checkedAt, "Watching a tab is not the same as checking");
-  await visited.visit("https://mail.google.com/mail/u/2/#sent");
-  assert.deepEqual(visited.accounts, [0, 2], "The same account twice is still one button");
-
-  /* ...and only a Gmail account URL counts. */
-  const ignored = setup({ stored: { newtabMailAccounts: { accounts: [0], checkedAt: Date.now() } } });
-  for (const url of [
-    "https://mail.google.com/chat/u/1/",
-    "https://mail.google.com/mail/",
-    "https://mail.google.com/mail/u/9/",
-    "https://mail.google.com.evil.example/mail/u/1/",
-    "https://accounts.google.com/AccountChooser",
-    "not a url",
-    undefined
-  ]) {
-    await ignored.visit(url);
+  /* Unreachable, refused or garbled says nothing rather than reporting an
+     empty list. */
+  for (const failing of [{ offline: true }, { status: 403 }, { reply: "<html>Bad Request</html>" }]) {
+    const kept = setup({ stored: { newtabMailAccounts: { accounts: [{ email: "me@gmail.com" }], checkedAt: 0 } }, ...failing });
+    await kept.startup();
+    assert.deepEqual(json(kept.accounts), [{ email: "me@gmail.com" }], `${JSON.stringify(failing)} must not throw away yesterday's list`);
+    assert.equal(kept.checkedAt, 0, "...nor stamp it as checked");
   }
-  assert.deepEqual(ignored.accounts, [0], `${JSON.stringify(ignored.accounts)} must still be the list`);
-  assert.equal(ignored.fetches.length, 0);
+
+  /* Startup keeps to the twice-a-day budget; an update re-asks regardless. */
+  const fresh = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: Date.now() - 60 * 60 * 1000 } }, reply: answer([entry("me@gmail.com")]) });
+  await fresh.startup();
+  assert.equal(fresh.fetches.length, 0, "Twice a day is the startup budget");
+  await fresh.installed();
+  assert.deepEqual(json(fresh.accounts), [{ email: "me@gmail.com" }]);
+
+  /* A new tab opening, or a visit to where accounts are signed into and out
+     of, re-asks once the list is more than a minute old -- which is what
+     makes a sign-out show up within a tab or two. */
+  const nudged = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: Date.now() - 2 * 60 * 1000 } }, reply: answer([entry("me@gmail.com")]) });
+  await nudged.nudge();
+  assert.equal(nudged.fetches.length, 1);
+  assert.deepEqual(json(nudged.accounts), [{ email: "me@gmail.com" }]);
+  await nudged.nudge();
+  await nudged.visit("https://mail.google.com/mail/u/0/#inbox");
+  assert.equal(nudged.fetches.length, 1, "A list a few seconds old is left alone");
+  await nudged.nudge({ type: "ad-blocker:get" });
+  assert.equal(nudged.fetches.length, 1, "Other modules' messages are not this one's business");
+
+  for (const page of ["https://mail.google.com/mail/u/1/", "https://accounts.google.com/Logout", "https://accounts.google.com/AccountChooser"]) {
+    const visited = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: Date.now() - 2 * 60 * 1000 } } });
+    await visited.visit(page);
+    assert.equal(visited.fetches.length, 1, `${page} is where accounts change`);
+  }
+  const ignored = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: 0 } } });
+  for (const elsewhere of ["https://mail.google.com.evil.example/mail/u/1/", "https://example.com/", "not a url", undefined]) {
+    await ignored.visit(elsewhere);
+  }
+  assert.equal(ignored.fetches.length, 0, "Unrelated tab updates cost nothing");
 
   /* Nothing happens at all for a profile that has the page switched off. */
-  const off = setup({ stored: { "moduleEnabled:newtab": false }, signedIn: [0, 1] });
+  const off = setup({ stored: { "moduleEnabled:newtab": false }, reply: answer([entry("me@gmail.com")]) });
   await off.startup();
   await off.installed();
   await off.visit("https://mail.google.com/mail/u/1/");
-  assert.equal(off.fetches.length, 0, "A page nobody uses must not call Gmail");
+  await off.nudge();
+  assert.equal(off.fetches.length, 0, "A page nobody uses must not call Google");
   assert.equal(off.accounts, undefined, "...and must not write a list either");
 
-  /* A visit and a probe both read-modify-write the same record, so they have
-     to queue rather than overwrite each other. */
-  const racing = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: Date.now() - 2 * day } }, signedIn: [0, 1] });
-  await Promise.all([racing.startup(), racing.visit("https://mail.google.com/mail/u/1/")]);
-  assert.deepEqual(racing.accounts, [0, 1], "Neither writer may drop the other's account");
+  /* Overlapping triggers queue, so the second sees the first one's stamp
+     instead of asking again. */
+  const racing = setup({ stored: { newtabMailAccounts: { accounts: [], checkedAt: 0 } }, reply: answer([entry("me@gmail.com")]) });
+  await Promise.all([racing.installed(), racing.visit("https://mail.google.com/mail/u/0/")]);
+  assert.equal(racing.fetches.length, 1);
 
   /* The worker cannot import the page's helpers, so the two copies of these
      constants are held to each other here. */
@@ -168,12 +201,12 @@ const day = 24 * 60 * 60 * 1000;
   const { mail } = settings.newtabSettings;
   const worker = fs.readFileSync("modules/mail-accounts.js", "utf8");
   assert.ok(worker.includes(`const KEY = "${mail.key}"`), "The worker must write the key the page reads");
-  assert.ok(worker.includes(`const ORIGIN = "${mail.origin}"`), "Both sides must mean the same Gmail");
+  assert.ok(worker.includes(`const REFRESH_MESSAGE = "${mail.refreshMessage}"`), "The page's nudge must be the message the worker listens for");
   assert.ok(worker.includes(`const MAX_ACCOUNTS = ${mail.max}`), "A list the page would trim is a list the worker should not write");
   assert.ok(worker.includes(`const CACHE_MAX_AGE = ${mail.cacheMaxAge / (60 * 60 * 1000)} * 60 * 60 * 1000`), "Both sides must agree on when an answer is stale");
   assert.ok(fs.readFileSync("background/service-worker.js", "utf8").includes("initializeMailAccounts()"), "The worker must actually run the discovery");
 
-  console.log("PASS mail accounts: index walk, gaps, signed out, offline, staleness, Gmail visits, module off, write ordering");
+  console.log("PASS mail accounts: ListAccounts, signed-out and expired accounts dropped, Origin rule, offline, staleness, nudges, module off, queueing");
 })().catch(error => {
   console.error(error);
   process.exitCode = 1;

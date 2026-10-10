@@ -57,6 +57,7 @@ productivityModules.register("newtab", () => {
   // A new tab opens as a clean board: the editing controls stay out of the way
   // until they are asked for.
   let editing = false;
+  let mailAccounts = [];
   let groups = [];
   let background = settings.defaultBackground;
   let collections = [];
@@ -758,31 +759,56 @@ productivityModules.register("newtab", () => {
     return icon;
   }
 
-  // Gmail shortcuts. The account list is discovered by the service worker --
-  // see modules/mail-accounts.js for why it cannot simply be read -- and the
-  // page only paints what is in storage. Until something is there, and if
-  // every account is signed out, that is one plain Gmail button.
-  function renderMailAccounts(accounts) {
-    const slots = accounts.length ? accounts : [0];
-    mailLinks.replaceChildren(...slots.map((slot, position) => {
-      const label = settings.mail.label(position, slots.length);
-      const link = document.createElement("a");
-      link.className = "mail-link";
-      link.href = settings.mail.url(slot);
-      link.title = label;
-      link.setAttribute("aria-label", label);
-      link.append(mailIcon());
-      if (slots.length > 1) {
-        const badge = document.createElement("span");
-        badge.className = "mail-index";
-        // The label already carries the number for a screen reader.
-        badge.setAttribute("aria-hidden", "true");
-        badge.textContent = String(position + 1);
-        link.append(badge);
-      }
-      return link;
-    }));
+  // Gmail shortcuts, a column of them in the top right corner, each wearing
+  // the email it opens. The account list is the service worker's to find --
+  // see modules/mail-accounts.js -- and the page only paints what is in
+  // storage. Until something is there, or signed out of Google, that is one
+  // plain Gmail button.
+  function mailRow(account) {
+    const label = settings.mail.label(account);
+    const link = document.createElement("a");
+    link.className = "mail-link";
+    link.href = settings.mail.url(account?.email);
+    link.title = account?.name ? `${account.name} \u2014 ${account.email}` : label;
+    link.setAttribute("aria-label", label);
+    if (account) {
+      const email = document.createElement("span");
+      email.className = "mail-email";
+      email.textContent = account.email;
+      link.append(email);
+    }
+    link.append(mailIcon());
+    const row = document.createElement("div");
+    row.className = "mail-row";
+    row.append(link);
+    return row;
+  }
+
+  function renderMailAccounts() {
+    const rows = (mailAccounts.length ? mailAccounts : [null]).map(mailRow);
+    mailLinks.replaceChildren(...rows);
     mailLinks.hidden = false;
+    // The chips centred above the search field stop short of the column, so
+    // they never scroll underneath it in a narrow window, and the background
+    // chooser stops below it, so it never covers an account when open.
+    const box = mailLinks.hidden ? null : mailLinks.getBoundingClientRect?.();
+    if (box?.width) {
+      document.body.style.setProperty("--mail-room", `${Math.ceil(box.width) + 32}px`);
+      document.body.style.setProperty("--mail-bottom", `${Math.ceil(box.bottom ?? box.top + box.height)}px`);
+    } else {
+      document.body.style.removeProperty("--mail-room");
+      document.body.style.removeProperty("--mail-bottom");
+    }
+  }
+
+  // The worker owns the list and decides whether it is stale; the page only
+  // says it is about to be looked at.
+  function nudgeMailAccounts() {
+    try {
+      chrome.runtime.sendMessage?.({ type: settings.mail.refreshMessage })?.catch?.(() => {});
+    } catch {
+      // No worker to ask: what is in storage is what there is.
+    }
   }
 
   function iconButton(symbol, title, onClick, className = "") {
@@ -1163,9 +1189,10 @@ productivityModules.register("newtab", () => {
       background = settings.cleanBackground(changes[settings.backgroundKey].newValue);
       applyBackground();
     }
-    // A Gmail visit or a probe can add an account while this tab sits open.
+    // An account signed in or out shows up without a reload.
     if (changes[settings.mail.key]) {
-      renderMailAccounts(settings.mail.clean(changes[settings.mail.key].newValue?.accounts));
+      mailAccounts = settings.mail.clean(changes[settings.mail.key].newValue?.accounts);
+      renderMailAccounts();
     }
   }
 
@@ -1234,12 +1261,14 @@ productivityModules.register("newtab", () => {
     if (!active) return;
     background = settings.cleanBackground(stored[settings.backgroundKey]);
     applyBackground();
-    renderMailAccounts(settings.mail.clean(stored[settings.mail.key]?.accounts));
+    mailAccounts = settings.mail.clean(stored[settings.mail.key]?.accounts);
+    renderMailAccounts();
     render();
     if (saved === undefined) await saveGroups("");
   }
 
-  renderMailAccounts([]);
+  renderMailAccounts();
+  nudgeMailAccounts();
   buildSwatches(colorSwatches, settings.colors, "color");
   buildSwatches(gradientSwatches, settings.gradients, "gradient");
   applyBackground();
@@ -1308,6 +1337,8 @@ productivityModules.register("newtab", () => {
     extensionsToggle.hidden = true;
     mailLinks.replaceChildren();
     mailLinks.hidden = true;
+    document.body.style.removeProperty("--mail-room");
+    document.body.style.removeProperty("--mail-bottom");
     panelToggle.removeEventListener("click", onPanelToggle);
     wallpaperBack.removeEventListener("click", onWallpaperBack);
     imageInput.removeEventListener("change", onImageChange);

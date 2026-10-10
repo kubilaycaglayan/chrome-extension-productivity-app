@@ -192,66 +192,50 @@ globalThis.newtabSettings = {
   },
 
   // Gmail shortcuts, one per Google account this profile is signed into.
-  // Chrome numbers those accounts and Gmail carries the number in its own URL
-  // -- /mail/u/1/ is the second account signed in -- and that index is the
-  // only handle an extension has on them: nothing in the API surface lists
-  // the accounts, and no permission grants it. So the list is discovered,
-  // from Gmail URLs the browser already loads and from asking Gmail where
-  // each index lands, and kept in storage for the page to read.
+  // Chrome lists no accounts to an extension, so the service worker reads the
+  // list Chrome's own avatar menu is painted from (modules/mail-accounts.js)
+  // and keeps it in storage: the accounts whose session is live, by email.
+  // The ones remembered only for "continue as" are already left out there.
   mail: {
     key: "newtabMailAccounts",
+    refreshMessage: "mail-accounts:refresh",
     cacheMaxAge: 12 * 60 * 60 * 1000,
-    // Past this nobody is scanning a row of identical buttons anyway.
+    // Past this nobody is scanning a column of buttons anyway.
     max: 6,
     origin: "https://mail.google.com",
 
-    url(index) {
-      return `${this.origin}/mail/u/${this.slot(index) ?? 0}/`;
+    email(value) {
+      if (typeof value !== "string") return null;
+      const email = value.trim();
+      return email.length <= 254 && /^[^\s@<>"]+@[^\s@<>"]+$/.test(email) ? email : null;
     },
 
-    slot(value) {
-      const index = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
-      return Number.isInteger(index) && index >= 0 && index < this.max ? index : null;
+    // Gmail takes the account by email as well as by index, and an email is
+    // the only name that cannot drift when another account signs in or out
+    // ahead of it. Without one, the first account.
+    url(email) {
+      const valid = this.email(email);
+      return valid
+        ? `${this.origin}/mail/?authuser=${encodeURIComponent(valid)}`
+        : `${this.origin}/mail/u/0/`;
     },
 
-    // The index out of a Gmail address, for the free half of the discovery:
-    // a tab that is on /mail/u/2/ proves account 2 exists.
-    slotFromUrl(value) {
-      let url;
-      try {
-        url = new URL(String(value ?? ""));
-      } catch {
-        return null;
-      }
-      if (url.origin !== this.origin) return null;
-      return this.slot(url.pathname.match(/^\/mail\/u\/(\d+)(?:\/|$)/)?.[1] ?? null);
-    },
-
-    // The other half: Gmail answers a probe for an index nobody is signed into
-    // by bouncing it to the login page, the account chooser, or another index.
-    // One that is signed in stays on its own.
-    signedIn(index, finalUrl) {
-      const slot = this.slot(index);
-      return slot !== null && this.slotFromUrl(finalUrl) === slot;
-    },
-
-    // Indices only ever come from Gmail itself, but they travel through
-    // storage, where a hand-edited or half-written value could be waiting.
+    // Accounts travel through storage, where a hand-edited, half-written or
+    // older-format value could be waiting, so only well-formed emails survive,
+    // once each, in the order Google listed them.
     clean(value) {
-      const slots = [];
+      const accounts = [];
       for (const entry of Array.isArray(value) ? value : []) {
-        const slot = this.slot(entry);
-        if (slot === null || slots.includes(slot)) continue;
-        slots.push(slot);
+        const email = this.email(entry?.email);
+        if (!email || accounts.some(account => account.email.toLowerCase() === email.toLowerCase())) continue;
+        const name = typeof entry.name === "string" ? entry.name.trim().slice(0, 80) : "";
+        accounts.push(name ? { email, name } : { email });
       }
-      return slots.sort((a, b) => a - b).slice(0, this.max);
+      return accounts.slice(0, this.max);
     },
 
-    // The index is the only name Gmail gives an account, so a button wears its
-    // position. One account has nothing to be told apart from, so it goes
-    // unnumbered.
-    label(position, total) {
-      return total > 1 ? `Gmail \u2014 account ${position + 1}` : "Gmail";
+    label(account) {
+      return account?.email ? `Gmail \u2014 ${account.email}` : "Gmail";
     }
   },
 

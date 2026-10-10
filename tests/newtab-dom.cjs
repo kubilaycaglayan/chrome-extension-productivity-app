@@ -71,7 +71,11 @@ function makeElement(tag, id = "") {
     listeners: new Map(),
     attributes: {},
     dataset: {},
-    style: {},
+    // Plain properties, plus the custom-property calls the page makes.
+    style: {
+      setProperty(name, value) { this[name] = String(value); },
+      removeProperty(name) { delete this[name]; }
+    },
     className: "",
     textContent: "",
     value: "",
@@ -178,6 +182,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     removeEventListener(name, handler) { if (name === "change") schemeListeners.delete(handler); }
   });
   const timers = new Map();
+  const messages = [];
   let nextTimer = 0;
   let lastCanvas = null;
   let pageHasFocus = true;
@@ -245,7 +250,13 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     setTimeout(handler) { timers.set(++nextTimer, handler); return nextTimer; },
     clearTimeout(id) { timers.delete(id); },
     chrome: {
-      runtime: { getURL: path => `chrome-extension://productivity/${path}` },
+      runtime: {
+        getURL: path => `chrome-extension://productivity/${path}`,
+        sendMessage(message) {
+          messages.push(message);
+          return Promise.resolve();
+        }
+      },
       i18n: { getUILanguage: () => "en-GB" },
       // null stands for "this browser has no such API".
       bookmarks: tree === null ? undefined : { search: () => Promise.resolve(bookmarks), getTree: () => Promise.resolve(tree) },
@@ -316,6 +327,7 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     tabGroupUpdates,
     tabGroupEvents,
     fetches,
+    messages,
     settings: context.newtabSettings,
     wallpapers: context.newtabWallpapers,
     get lastCanvas() { return lastCanvas; },

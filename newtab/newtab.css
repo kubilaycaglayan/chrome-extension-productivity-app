@@ -435,46 +435,52 @@ body.has-image #attribution {
 
 /* Corner controls, plus the extensions shortcut that shares their look while
    sitting in the search row instead. */
-/* Gmail shortcuts: one round button per signed-in Google account, in the one
-   corner the page leaves empty. The account's number rides in a corner badge,
-   because the number is all Gmail gives an account to be known by; a lone
-   account has nothing to be told apart from, so it goes unbadged. */
+/* Gmail shortcuts: a column of buttons in the one corner the page leaves
+   empty, one per signed-in Google account. Each wears the email it opens,
+   so the column grows down rather than across and the emails line up on
+   their right edge, against the envelope. */
 #mail-links {
   position: fixed;
   top: 20px;
   right: 20px;
   z-index: 3;
   display: flex;
-  /* Room for the badge that hangs off each button's corner. */
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: calc(100vw - 40px);
+}
+.mail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
 }
 .mail-link {
-  position: relative;
-  width: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
   height: 42px;
-  display: grid;
-  place-items: center;
+  padding: 0 8px;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 999px;
   background: var(--field);
   color: var(--text);
   text-decoration: none;
 }
 .mail-link:hover { background: var(--card-hover); }
-.mail-icon { width: 24px; height: 24px; }
-.mail-index {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  min-width: 17px;
-  padding: 1px 4px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--chip);
-  color: var(--text);
-  font: 600 10px/1.4 inherit;
-  text-align: center;
+/* A lone, unlabelled button stays round. */
+.mail-link:not(:has(.mail-email)) { width: 42px; justify-content: center; padding: 0; }
+.mail-email {
+  max-width: 240px;
+  padding-left: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 500 13px/1.3 inherit;
 }
+.mail-icon { flex: none; width: 24px; height: 24px; }
 
 #edit-toggle, #background-toggle {
   position: fixed;
@@ -507,7 +513,8 @@ body.has-image #attribution {
   bottom: 74px;
   z-index: 5;
   width: 340px;
-  max-height: min(78vh, 680px);
+  /* Tall enough for the chooser, short enough to stop below the Gmail column. */
+  max-height: min(78vh, 680px, calc(100vh - 86px - var(--mail-bottom, 0px)));
   overflow-y: auto;
   scrollbar-gutter: stable;
   padding: 16px;
@@ -629,16 +636,11 @@ dialog input::placeholder { color: var(--muted); }
 
 :is(button, a, input, label, [role="radio"]):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* The Gmail buttons are fixed to the viewport, the chips are centred in a
-   960px page. Once the window is narrow enough for the two to meet, the chips
-   stop short of the corner rather than scrolling underneath it -- one button's
-   width of room per account, which is as far as the row can grow in practice. */
-@media (max-width: 1140px) {
-  #tab-groups { right: var(--mail-room, 0px); }
-  body:has(#mail-links a) { --mail-room: 54px; }
-  body:has(#mail-links a + a) { --mail-room: 108px; }
-  body:has(#mail-links a + a + a) { --mail-room: 162px; }
-}
+/* The Gmail column is fixed to the viewport, the chips are centred in a
+   960px page. The page measures the column into --mail-room, and once the
+   window is narrow enough for the two to meet the chips stop short of it
+   rather than scrolling underneath. */
+#tab-groups { right: max(0px, calc(var(--mail-room, 0px) - (100vw - 100%) / 2)); }
 
 /* Too narrow to spend 58px on symmetry: the field takes the spacer's room. */
 @media (max-width: 560px) {

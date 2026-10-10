@@ -1,16 +1,16 @@
 // What the Gmail shortcuts claim needs a real browser to check. Two things, neither of
 // which node can answer:
 //
-//   * the buttons are where they say they are -- fixed in the top right corner, drawn,
-//     and the thing a click at that point actually hits, not covered by the scrim, the
-//     background chooser or the page content stacked around them;
-//   * Gmail answers the probe the discovery is built on. A HEAD request with cookies,
-//     sent from the extension's own origin, has to come back with the URL it ended up on
-//     rather than a CORS error -- and in a fresh profile, signed out of everything, that
-//     URL must be the login page, which is exactly how the worker reads "nobody here".
+//   * the buttons are where they say they are -- a column fixed in the top right corner,
+//     each wearing its email, drawn, and the thing a click at that point actually hits,
+//     not covered by the scrim, the background chooser or the page content around them;
+//   * Google answers the request the discovery is built on. A cookie-bearing POST to
+//     accounts.google.com/ListAccounts from the extension is refused while it carries
+//     the chrome-extension:// Origin; with the worker's session rule stripping it, a
+//     fresh profile signed out of everything gets the list back, empty.
 //
 // Signed-in detection itself cannot be checked here: a temporary profile has no Google
-// account. What is checked is the predicate both answers run through.
+// account. tests/mail-accounts.test.cjs holds the parser to the signed-in shape.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -81,7 +81,7 @@ try {
         return {
           href: link.href,
           label: link.getAttribute('aria-label'),
-          badge: link.querySelector('.mail-index')?.textContent ?? null,
+          email: link.querySelector('.mail-email')?.textContent ?? null,
           box: { top: box.top, right: box.right, width: box.width, height: box.height },
           painted: getComputedStyle(link).backgroundColor,
           topRight: box.top < view.height / 2 && box.right > view.width / 2,
@@ -103,43 +103,30 @@ try {
   assert.equal(fresh.links.length, 1, 'a page with no account list still offers Gmail');
   assert.equal(fresh.links[0].href, 'https://mail.google.com/mail/u/0/');
   assert.equal(fresh.links[0].label, 'Gmail');
-  assert.equal(fresh.links[0].badge, null, 'one account has nothing to be told apart from');
+  assert.equal(fresh.links[0].email, null, 'with no account known there is no email to show');
   assert.ok(fresh.links[0].topRight, `the shortcut must sit in the top right, not at ${JSON.stringify(fresh.links[0].box)}`);
   assert.ok(fresh.links[0].box.top >= 0 && fresh.links[0].box.right <= fresh.view.width, 'and inside the window');
   assert.equal(Math.round(fresh.links[0].box.width), 42);
   assert.ok(fresh.links[0].hit, 'a click in the middle of the button must reach the link');
   assert.notEqual(fresh.links[0].painted, 'rgba(0, 0, 0, 0)', 'an unpainted button is an invisible button');
 
-  /* The question the discovery actually asks Gmail. Signed out of everything, every
-     index has to come back pointing somewhere that is not itself. */
-  const probe = await evaluate(`(async () => {
-    const landings = [];
-    for (const slot of [0, 1]) {
-      try {
-        const response = await fetch(\`https://mail.google.com/mail/u/\${slot}/\`, {
-          method: 'HEAD', credentials: 'include', cache: 'no-store', redirect: 'follow'
-        });
-        landings.push({ slot, status: response.status, url: response.url });
-      } catch (error) {
-        landings.push({ slot, error: String(error) });
-      }
+  /* The question the discovery actually asks Google. From the extension's origin, as is,
+     it is refused -- which is why the worker strips the Origin first. */
+  const listAccounts = () => evaluate(`(async () => {
+    try {
+      const response = await fetch('https://accounts.google.com/ListAccounts?gpsia=1&source=ChromiumBrowser&json=standard', {
+        method: 'POST', body: ' ', credentials: 'include', cache: 'no-store'
+      });
+      return { status: response.status, body: (await response.text()).slice(0, 200) };
+    } catch (error) {
+      return { error: String(error) };
     }
-    return landings;
   })()`);
-  for (const landing of probe) {
-    assert.ok(!landing.error, `a HEAD to Gmail from the extension must be allowed, not ${landing.error}`);
-    assert.ok(landing.url, 'the probe must learn where it ended up');
-    const signedIn = new URL(landing.url).origin === 'https://mail.google.com'
-      && new RegExp(`^/mail/u/${landing.slot}(/|$)`).test(new URL(landing.url).pathname);
-    assert.equal(signedIn, false, `a profile with no Google account must not read as signed in: ${landing.url}`);
-  }
-  assert.ok(probe.some(landing => new URL(landing.url).host === 'accounts.google.com'),
-    `Gmail is expected to bounce a signed-out probe to the account pages, not ${JSON.stringify(probe)}`);
 
-  /* And the worker's own run of that walk, which starts on install. Signed out, it
-     stores an empty list -- the page's single-shortcut case, not a page with no
-     shortcut. Everything after this seeds the list by hand, so it has to wait for the
-     real probe to have had its say first. */
+  /* And the worker's own run, which starts on install: it installs the rule, asks, and
+     signed out stores an empty list -- the page's single-shortcut case, not a page with
+     no shortcut. Everything after this seeds the list by hand, so it has to wait for the
+     real answer to have had its say first. */
   const worker = (await call('Target.getTargets')).result.targetInfos
     .find(target => target.type === 'service_worker' && target.url.includes(extensionId));
   assert.ok(worker, 'the service worker must be running');
@@ -150,54 +137,74 @@ try {
     if (stored.newtabMailAccounts) break;
     await wait(200);
   }
-  assert.deepEqual(stored.newtabMailAccounts?.accounts, [], `the install probe must record what it found, got ${JSON.stringify(stored)}`);
+  assert.deepEqual(stored.newtabMailAccounts?.accounts, [], `the install run must record what it found, got ${JSON.stringify(stored)}`);
   assert.ok(Date.now() - stored.newtabMailAccounts.checkedAt < 300_000, 'and stamp it');
+  const rules = await evaluate(`chrome.declarativeNetRequest.getSessionRules()`, workerSession);
+  assert.ok(rules.some(rule => rule.condition.urlFilter === '|https://accounts.google.com/ListAccounts'), 'the Origin rule must be in place');
+  const allowed = await listAccounts();
+  assert.equal(allowed.status, 200, `with the rule, Google must answer: ${JSON.stringify(allowed)}`);
+  assert.equal(allowed.body, '["gaia.l.a.r",[]]', 'a signed-out profile is an empty list');
+  await evaluate(`chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: ${JSON.stringify(rules.map(rule => rule.id))} })`, workerSession);
+  const refused = await listAccounts();
+  assert.notEqual(refused.status, 200, 'without it Google refuses the extension -- if this passes, the rule may be dead weight');
   await wait(400);
   const signedOut = await buttons();
   assert.equal(signedOut.links.length, 1, 'an empty list is one plain Gmail button, never none');
-  assert.equal(signedOut.links[0].badge, null);
+  assert.equal(signedOut.links[0].email, null);
 
-  /* Two accounts discovered: a button each, numbered, both still reachable, and all of
-     it live on the page that was already open. */
-  await evaluate(`chrome.storage.local.set({ newtabMailAccounts: { accounts: [0, 1], checkedAt: Date.now() } })`);
+  /* Two accounts signed in: a row each, top to bottom, each wearing its email and
+     clickable, all of it live on the page that was already open. */
+  const seed = list => evaluate(`chrome.storage.local.set({ newtabMailAccounts: { accounts: ${JSON.stringify(list)}, checkedAt: Date.now() } })`);
+  const work = { email: 'someone.with.a.long.address@example.com', name: 'Work' };
+  const me = { email: 'me@gmail.com' };
+  await seed([work, me]);
   await wait(300);
   const two = await buttons();
   assert.equal(two.links.length, 2, 'an account found while the tab is open must appear without a reload');
   assert.deepEqual(two.links.map(link => link.href), [
-    'https://mail.google.com/mail/u/0/',
-    'https://mail.google.com/mail/u/1/'
+    'https://mail.google.com/mail/?authuser=someone.with.a.long.address%40example.com',
+    'https://mail.google.com/mail/?authuser=me%40gmail.com'
   ]);
-  assert.deepEqual(two.links.map(link => link.badge), ['1', '2']);
-  assert.deepEqual(two.links.map(link => link.label), ['Gmail \u2014 account 1', 'Gmail \u2014 account 2']);
+  assert.deepEqual(two.links.map(link => link.email), [work.email, me.email]);
   for (const link of two.links) {
     assert.ok(link.topRight && link.hit, `${link.label} must be in the corner and clickable: ${JSON.stringify(link)}`);
     assert.ok(link.iconDrawn, `${link.label} must paint its envelope, not a broken image`);
   }
-  assert.ok(two.links[1].box.right > two.links[0].box.right, 'account 2 sits to the right of account 1');
-  assert.ok(two.links[1].box.right - two.links[0].box.right >= 42, 'the buttons must not overlap each other');
+  assert.ok(Math.abs(two.links[0].box.right - two.links[1].box.right) <= 1, 'the column lines up on its right edge');
+  assert.ok(two.links[1].box.top >= two.links[0].box.top + two.links[0].box.height, 'the second account sits below the first, not over it');
 
   /* On a window narrow enough for the centred page to reach the fixed corner, the tab
-     group chips have to stop short of the buttons -- by one button's width per account,
-     which is a cascade that only a browser can be asked to resolve. */
+     group chips have to stop short of the column -- however wide its emails make it,
+     which is a cascade only a browser can be asked to resolve. */
   const room = async width => {
     await call('Emulation.setDeviceMetricsOverride', { width, height: 800, deviceScaleFactor: 0, mobile: false }, newtab);
     await wait(200);
-    return evaluate(`getComputedStyle(document.getElementById('tab-groups')).right`);
+    // A fresh profile has no tab groups, so the row is shown with a stand-in chip
+    // for the measurement: hidden, it has no used position to read.
+    return evaluate(`(() => {
+      const row = document.getElementById('tab-groups');
+      if (!row.children.length) row.innerHTML = '<button class="tab-group-chip">A stand-in tab group with a long title</button>';
+      row.hidden = false;
+      const chips = row.getBoundingClientRect();
+      const column = document.getElementById('mail-links').getBoundingClientRect();
+      return { right: getComputedStyle(document.getElementById('tab-groups')).right, gap: column.left - chips.right };
+    })()`);
   };
-  assert.equal(await room(1000), '108px', 'two accounts must hold two buttons of room for the chips');
-  await evaluate(`chrome.storage.local.set({ newtabMailAccounts: { accounts: [0], checkedAt: Date.now() } })`);
-  await wait(300);
-  assert.equal(await room(1000), '54px', 'and one account one');
-  assert.equal(await room(1400), '0px', 'a window with space to spare leaves the chips centred');
+  const narrow = await room(1100);
+  assert.notEqual(narrow.right, '0px', 'a narrow window must hold room for the column');
+  assert.ok(narrow.gap >= 0, `the chips must end before the column starts, not ${narrow.gap}px into it`);
+  const wide = await room(1900);
+  assert.equal(wide.right, '0px', `a window with space to spare leaves the chips centred: ${JSON.stringify(wide)}`);
   await call('Emulation.clearDeviceMetricsOverride', {}, newtab);
-  await evaluate(`chrome.storage.local.set({ newtabMailAccounts: { accounts: [0, 1], checkedAt: Date.now() } })`);
-  await wait(300);
 
-  /* The chooser opens in the opposite corner but is the page's topmost layer; it must
-     not end up covering these buttons. */
+  /* The chooser opens below the column but is the page's topmost layer; however long
+     the column runs, it must not end up covering these buttons. */
+  await seed(Array.from({ length: 6 }, (_, n) => ({ email: `account${n}@example.com` })));
+  await wait(300);
   await evaluate(`document.getElementById('background-toggle').click()`);
   await wait(200);
   const withPanel = await buttons();
+  assert.equal(withPanel.links.length, 6);
   for (const link of withPanel.links) {
     assert.ok(link.hit, 'the open chooser must not cover the Gmail buttons');
   }
@@ -210,7 +217,7 @@ try {
   assert.equal(off.hidden, true, 'a disabled page must take its corner with it');
   assert.equal(off.links.length, 0);
 
-  console.log('PASS Chrome drew the Gmail shortcuts in the top right corner, kept them clickable beside the open chooser, numbered one button per discovered account live, and let the worker ask Gmail where each index lands.');
+  console.log('PASS Chrome drew the Gmail column in the top right corner with each account\'s email, kept it clickable beside the open chooser, kept the chips clear of it, and let the worker read ListAccounts past the Origin Google refuses.');
   await call('Browser.close');
   closed = true;
 } finally {
