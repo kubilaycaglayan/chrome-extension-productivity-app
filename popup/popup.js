@@ -13,7 +13,7 @@ const MODULES = [
   ["mackolik-dark-theme", "Mackolik dark theme", "Repaint every arsiv.mackolik.com page dark, keeping the site's own colour coding.", "mackolik", "🌙"],
   ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus.", "mackolik", "🧹"],
   ["x-keyword-filter", "X keyword filter", "Hide posts on X and Twitter that contain your blocked phrases.", "x", "🛡️"],
-  ["github-creation-date", "GitHub creation date", "Show a repository's creation date beside its About heading.", "other-sites", "🐙"],
+  ["github-creation-date", "GitHub", "Show a repository's creation date beside its About heading, and add a link to the target branch's commits on pull requests.", "other-sites", "🐙"],
   ["huggingface-model-date", "Hugging Face model date", "Show when a model repository was first uploaded beside its title.", "other-sites", "🤗"],
   ["calendar-highlight-today", "Calendar: highlight today", "Outline today's date cell in red in Google Calendar.", "other-sites", "📅"],
   ["scrollbar-width", "Wider scrollbars", "Make Hugging Face scrollbars easier to grab.", "other-sites", "↔️"]

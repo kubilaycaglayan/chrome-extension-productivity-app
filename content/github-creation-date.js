@@ -5,6 +5,7 @@ productivityModules.register("github-creation-date", () => {
   let pending = "";
   const dates = new Map();
   const marker = "data-productivity-repo-creation-date";
+  const commitsMarker = "data-productivity-base-commits";
 
   function repoFromUrl() {
     const match = location.pathname.match(/^\/([^/]+)\/([^/]+)/);
@@ -32,8 +33,50 @@ productivityModules.register("github-creation-date", () => {
     }
   }
 
+  // The branch a pull request merges into, read from its header ("merge into <base> from
+  // <head>"). The base is the first branch name linking into this repository; a fork's
+  // head branch links into the fork instead.
+  function baseBranch(owner, repo) {
+    const prefix = `/${owner}/${repo}/tree/`;
+    const link = [...document.querySelectorAll('a[data-component="BranchName"]')].find(node =>
+      node.pathname.startsWith(prefix)
+    );
+    return link ? link.pathname.slice(prefix.length) : "";
+  }
+
+  // A pull request's tab bar gains a link to the history of the branch it targets. It is
+  // cloned from the PR's own Commits tab so it keeps GitHub's styling, and is dropped
+  // again as soon as the page is no longer that pull request or its target changes.
+  function showBaseCommitsLink() {
+    const match = location.pathname.match(/^\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
+    const branch = match ? baseBranch(match[1], match[2]) : "";
+    const href = branch ? `/${match[1]}/${match[2]}/commits/${branch}/` : "";
+    document.querySelectorAll(`[${commitsMarker}]`).forEach(node => {
+      if (node.getAttribute("href") !== href || !node.parentElement?.closest("nav")) node.remove();
+    });
+    if (!href || document.querySelector(`[${commitsMarker}]`)) return;
+    const commitsPath = `/${match[1]}/${match[2]}/pull/${match[3]}/commits`;
+    const tab = [...document.querySelectorAll("nav a[href]")].find(node =>
+      node.pathname === commitsPath
+    );
+    if (!tab) return;
+    const link = tab.cloneNode(true);
+    link.setAttribute(commitsMarker, "");
+    link.removeAttribute("id");
+    link.removeAttribute("aria-current");
+    link.removeAttribute("data-discover");
+    [...link.classList].filter(name => /selected/i.test(name)).forEach(name => link.classList.remove(name));
+    link.href = href;
+    link.title = `Commits on ${decodeURIComponent(branch)}, the branch this pull request targets`;
+    link.querySelectorAll("span").forEach(node => node.remove());
+    for (const node of [...link.childNodes]) if (node.nodeType === Node.TEXT_NODE) node.remove();
+    link.append(`${decodeURIComponent(branch)} commits`);
+    tab.parentElement.appendChild(link);
+  }
+
   async function update() {
     if (!active) return;
+    showBaseCommitsLink();
     const target = repoFromUrl();
     const id = target?.id || "";
     if (id !== currentRepo) {
@@ -88,6 +131,6 @@ productivityModules.register("github-creation-date", () => {
     observer.disconnect();
     window.removeEventListener("popstate", queueUpdate);
     document.removeEventListener("turbo:load", queueUpdate);
-    document.querySelectorAll(`[${marker}]`).forEach(node => node.remove());
+    document.querySelectorAll(`[${marker}], [${commitsMarker}]`).forEach(node => node.remove());
   };
 });

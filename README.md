@@ -31,7 +31,7 @@ needs, such as search suggestions on the new tab page.
 | 🎛️ **YouTube recommendations** | Adds a button to show or hide the recommendations column. |
 | 🚫 **YouTube Shorts blocker** | Hides Shorts and sends Shorts pages back to Home. |
 | 🛡️ **X keyword filter** | Hides posts on X / Twitter that contain phrases you've blocked. |
-| 🐙 **GitHub creation date** | Shows when a repository was created, next to its About heading. |
+| 🐙 **GitHub** | Shows when a repository was created, next to its About heading, and adds a link to the target branch’s commits to pull request tabs. |
 | 🤗 **Hugging Face model date** | Shows when a model was first uploaded, next to its title. |
 | 📅 **Calendar: highlight today** | Outlines today's date in Google Calendar. |
 | ↔️ **Wider scrollbars** | Makes Hugging Face scrollbars easier to grab. |
