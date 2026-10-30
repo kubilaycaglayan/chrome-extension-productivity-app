@@ -10,6 +10,7 @@ const MODULES = [
   ["cookie-accepter", "Cookie accepter", "Automatically accept all cookie categories, including optional analytics and marketing, on recognized banners. Off until enabled.", "browser", "🍪"],
   ["youtube-section-toggle", "YouTube recommendations", "Add a button to show or hide recommendations.", "youtube", "🎛️"],
   ["youtube-shorts-blocker", "YouTube Shorts blocker", "Hide Shorts and redirect Shorts pages to Home.", "youtube", "🚫"],
+  ["netflix-series-tags", "Netflix series tags", "Add a prominent SERIES tag to series cards as Netflix loads them.", "netflix", "🎬"],
   ["mackolik-dark-theme", "Mackolik dark theme", "Repaint every arsiv.mackolik.com page dark, keeping the site's own colour coding.", "mackolik", "🌙"],
   ["mackolik-featured-video", "Mackolik cleanup", "Enlarge text, highlight teams, show TV channels for followed matches, and hide ads, the right panel, video, header, and menus.", "mackolik", "🧹"],
   ["x-keyword-filter", "X keyword filter", "Hide posts on X and Twitter that contain your blocked phrases.", "x", "🛡️"],

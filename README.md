@@ -30,6 +30,7 @@ needs, such as search suggestions on the new tab page.
 | --- | --- |
 | 🎛️ **YouTube recommendations** | Adds a button to show or hide the recommendations column. |
 | 🚫 **YouTube Shorts blocker** | Hides Shorts and sends Shorts pages back to Home. |
+| 🎬 **Netflix series tags** | Adds a prominent SERIES badge to series cards as Netflix loads them. |
 | 🛡️ **X keyword filter** | Hides posts on X / Twitter that contain phrases you've blocked. |
 | 🐙 **GitHub** | Shows when a repository was created, next to its About heading, and adds a link to the target branch’s commits to pull request tabs. |
 | 🤗 **Hugging Face model date** | Shows when a model was first uploaded, next to its title. |
