@@ -10,6 +10,37 @@ initializeAdBlocker();
 initializeCsvViewer();
 initializeMailAccounts();
 
+const strongPasswordMenuId = "suggest-strong-password";
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: strongPasswordMenuId,
+    title: "Suggest strong password",
+    contexts: ["editable"]
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId !== strongPasswordMenuId || tab?.id == null) return;
+  // Keep generation and insertion in the target frame. The password never
+  // crosses the extension messaging boundary or enters service-worker state.
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id, frameIds: [info.frameId ?? 0] },
+    func: () => {
+      const field = document.activeElement;
+      if (!(field instanceof HTMLInputElement) || field.type !== "password" || field.disabled || field.readOnly) return;
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+";
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      let password = "";
+      for (const byte of bytes) password += alphabet[byte % alphabet.length];
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+      setter?.call(field, password);
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+      field.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }).catch(() => {});
+});
+
 chrome.commands.onCommand.addListener(command => {
   if (command !== "highlight-selection") return;
   chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([tab]) => {
@@ -36,6 +67,27 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "github-recent-repositories") {
+    if (!sender.url?.startsWith("https://github.com/")) return;
+    const { login } = message;
+    if (typeof login !== "string" || !/^[\w-]+$/.test(login)) {
+      sendResponse({ error: "Invalid GitHub user" });
+      return;
+    }
+    fetch(`https://api.github.com/users/${encodeURIComponent(login)}/repos?sort=updated&direction=desc&per_page=10`, {
+      headers: { Accept: "application/vnd.github+json" }
+    }).then(async response => {
+      if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+      const data = await response.json();
+      sendResponse({ repositories: data.map(repo => ({
+        full_name: repo.full_name,
+        name: repo.name,
+        updated_at: repo.updated_at
+      })).slice(0, 10) });
+    }).catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+
   if (message?.type === "huggingface-model-created-at") {
     if (!sender.url?.startsWith("https://huggingface.co/")) return;
 
