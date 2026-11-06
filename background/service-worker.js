@@ -67,27 +67,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type === "github-recent-repositories") {
-    if (!sender.url?.startsWith("https://github.com/")) return;
-    const { login } = message;
-    if (typeof login !== "string" || !/^[\w-]+$/.test(login)) {
-      sendResponse({ error: "Invalid GitHub user" });
-      return;
-    }
-    fetch(`https://api.github.com/users/${encodeURIComponent(login)}/repos?sort=updated&direction=desc&per_page=10`, {
-      headers: { Accept: "application/vnd.github+json" }
-    }).then(async response => {
-      if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
-      const data = await response.json();
-      sendResponse({ repositories: data.map(repo => ({
-        full_name: repo.full_name,
-        name: repo.name,
-        updated_at: repo.updated_at
-      })).slice(0, 10) });
-    }).catch(error => sendResponse({ error: error.message }));
-    return true;
-  }
-
   if (message?.type === "huggingface-model-created-at") {
     if (!sender.url?.startsWith("https://huggingface.co/")) return;
 

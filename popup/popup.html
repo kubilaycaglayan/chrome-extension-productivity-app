@@ -46,17 +46,19 @@
       <section class="module-group" aria-labelledby="browser-heading">
         <h3 id="browser-heading" class="group-heading"><span aria-hidden="true">🧭</span> Browser &amp; new tab</h3>
         <div id="group-browser" class="module-list"></div>
-        <label class="site-pause" for="ad-blocker-pause-toggle">Pause ad blocker on this site <input id="ad-blocker-pause-toggle" type="checkbox" role="switch" disabled></label>
+        <section class="ad-blocker-controls" aria-label="Ad blocker site controls">
+          <div class="site-pause"><span id="ad-blocker-site-label">Ad blocker on this site</span><button id="ad-blocker-pause-toggle" type="button" aria-pressed="false" disabled>Disable here</button></div>
+          <details class="panel">
+            <summary>More site exceptions</summary>
+            <div class="ad-blocker-sites">
+              <label for="ad-blocker-sites" class="name">Paused sites</label>
+              <p class="description">One hostname per line. Subdomains are included. Use the button above to add or remove the current site.</p>
+              <textarea id="ad-blocker-sites" rows="4" disabled></textarea>
+              <button id="save-ad-blocker-sites" type="button" disabled>Save sites</button>
+            </div>
+          </details>
+        </section>
         <label class="site-pause" for="cookie-pause-toggle">Pause cookie accepter on this site <input id="cookie-pause-toggle" type="checkbox" role="switch" disabled></label>
-        <details class="panel">
-          <summary>Ad blocker sites</summary>
-          <div class="ad-blocker-sites">
-            <label for="ad-blocker-sites" class="name">Paused sites</label>
-            <p class="description">One hostname per line. Subdomains are included. The switch above adds and removes the site you are on.</p>
-            <textarea id="ad-blocker-sites" rows="4" disabled></textarea>
-            <button id="save-ad-blocker-sites" type="button" disabled>Save sites</button>
-          </div>
-        </details>
       </section>
       <section class="module-group" aria-labelledby="youtube-heading">
         <h3 id="youtube-heading" class="group-heading"><span aria-hidden="true">▶️</span> YouTube</h3>

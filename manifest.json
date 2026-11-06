@@ -121,6 +121,8 @@
     },
     {
       "matches": [
+        "https://github.com/",
+        "https://github.com/dashboard*",
         "https://github.com/*/*"
       ],
       "js": [

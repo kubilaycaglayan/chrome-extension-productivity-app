@@ -151,10 +151,13 @@ button:disabled { opacity: .5; cursor: wait; }
 .import-button { position: relative; overflow: hidden; }
 .import-button input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .backup-note { margin: 7px 0 10px; color: var(--muted); font-size: 10px; line-height: 1.4; }
-.site-pause { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px; color: var(--muted); font-size: 11px; cursor: pointer; }
+.site-pause { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px; color: var(--muted); font-size: 11px; }
+.ad-blocker-controls { margin-top: 8px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-sunken); }
+.ad-blocker-controls .site-pause { padding: 8px 0; }
+.ad-blocker-controls .panel { border-top: 1px solid var(--line); }
 
 #status { margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
-:is(.module input, .dark-mode-option input, .site-pause input, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
+:is(.module input, .dark-mode-option input, .site-pause button, .panel summary, .highlight-settings textarea, .keyword-settings textarea, button, .import-button):focus-visible,
 .import-button:focus-within { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -531,9 +531,9 @@ function adSitesCoveringCurrent() {
 }
 function refreshAdPauseToggle() {
   if (!adBlockerReady) return;
-  // Off unless this site is on the list, which is the state a fresh profile starts in and
-  // the one the switch returns to when a save fails.
-  adPauseToggle.checked = adSitesCoveringCurrent().length > 0;
+  const paused = adSitesCoveringCurrent().length > 0;
+  adPauseToggle.textContent = paused ? "Enable here" : "Disable here";
+  adPauseToggle.setAttribute("aria-pressed", String(paused));
   adPauseToggle.disabled = !currentSite;
 }
 async function initializeAdControls() {
@@ -570,12 +570,12 @@ async function saveAdSites(sites, saved) {
     refreshAdPauseToggle();
   }
 }
-adPauseToggle.addEventListener("change", () => {
+adPauseToggle.addEventListener("click", () => {
   if (!currentSite) {
     refreshAdPauseToggle();
     return;
   }
-  const paused = adPauseToggle.checked;
+  const paused = adSitesCoveringCurrent().length === 0;
   // Resuming has to clear every entry that reaches this site, or the switch would come
   // back checked and the click would read as having done nothing. Where that entry is a
   // parent domain, its other subdomains lose their pause too, so the status line says so

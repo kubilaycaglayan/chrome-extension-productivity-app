@@ -6,6 +6,8 @@ productivityModules.register("github-creation-date", () => {
   const dates = new Map();
   const marker = "data-productivity-repo-creation-date";
   const commitsMarker = "data-productivity-base-commits";
+  const sidebarMarker = "data-productivity-github-sidebar";
+  const sidebarRequest = "data-productivity-github-repositories";
 
   function repoFromUrl() {
     const match = location.pathname.match(/^\/([^/]+)\/([^/]+)/);
@@ -74,9 +76,69 @@ productivityModules.register("github-creation-date", () => {
     tab.parentElement.appendChild(link);
   }
 
+  function addSidebarShortcuts() {
+    const login = document.querySelector('meta[name="user-login"]')?.content;
+    if (!login || !/^[\w-]+$/.test(login)) return;
+    const home = location.pathname === "/" || location.pathname.startsWith("/dashboard");
+    const targets = [...document.querySelectorAll("h2, h3")];
+    const feed = [...document.querySelectorAll('a[href="/dashboard"], a[href="/dashboard-feed"], nav a[href]')]
+      .find(node => /^feed$/i.test(node.textContent.trim()) || /^feed$/i.test(node.getAttribute("aria-label") || ""));
+    if (feed?.parentElement && !document.querySelector(`[${sidebarMarker}]`)) {
+      const links = document.createElement("div");
+      links.setAttribute(sidebarMarker, "");
+      Object.assign(links.style, { display: "flex", flexDirection: "column", gap: "8px", margin: "8px 0" });
+      for (const [label, href] of [["Repositories", `/${login}?tab=repositories`], ["My profile", `/${login}`]]) {
+        const link = document.createElement("a");
+        link.href = href;
+        link.textContent = label;
+        Object.assign(link.style, { color: "var(--fgColor-default)", fontSize: "14px", fontWeight: "600", textDecoration: "none" });
+        links.appendChild(link);
+      }
+      feed.parentElement.insertAdjacentElement("afterend", links);
+    }
+    if (!home) return;
+    const topHeading = targets.find(node => node.textContent.trim() === "Top repositories");
+    const topSection = topHeading?.parentElement?.parentElement;
+    if (!topSection) return;
+    let list = topSection.parentElement?.querySelector(`[${sidebarRequest}]`);
+    if (!list) {
+      const panel = document.createElement("section");
+      panel.setAttribute(sidebarRequest, "");
+      Object.assign(panel.style, { marginBottom: "16px", fontSize: "12px" });
+      const title = document.createElement("h2");
+      title.textContent = "Recently updated";
+      Object.assign(title.style, { fontSize: "12px", fontWeight: "600", margin: "0 0 8px" });
+      list = document.createElement("div");
+      list.setAttribute("data-productivity-github-repository-list", "");
+      Object.assign(list.style, { display: "flex", flexDirection: "column", gap: "6px" });
+      panel.append(title, list);
+      topSection.parentElement.insertBefore(panel, topSection);
+    } else {
+      list = list.querySelector('[data-productivity-github-repository-list]');
+    }
+    if (!list) return;
+    if (list.dataset.loaded || list.dataset.loading) return;
+    list.dataset.loading = "true";
+    chrome.runtime.sendMessage({ type: "github-recent-repositories", login }).then(result => {
+      if (!active || !list.isConnected) return;
+      delete list.dataset.loading;
+      if (!Array.isArray(result?.repositories)) return;
+      list.dataset.loaded = "true";
+      for (const repo of result.repositories.slice(0, 10)) {
+        const link = document.createElement("a");
+        link.href = `/${repo.full_name}`;
+        link.textContent = repo.name;
+        link.title = `${repo.full_name} · Updated ${new Date(repo.updated_at).toLocaleDateString()}`;
+        Object.assign(link.style, { color: "var(--fgColor-muted)", textDecoration: "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" });
+        list.appendChild(link);
+      }
+    }).catch(() => { delete list.dataset.loading; });
+  }
+
   async function update() {
     if (!active) return;
     showBaseCommitsLink();
+    addSidebarShortcuts();
     const target = repoFromUrl();
     const id = target?.id || "";
     if (id !== currentRepo) {
@@ -131,6 +193,6 @@ productivityModules.register("github-creation-date", () => {
     observer.disconnect();
     window.removeEventListener("popstate", queueUpdate);
     document.removeEventListener("turbo:load", queueUpdate);
-    document.querySelectorAll(`[${marker}], [${commitsMarker}]`).forEach(node => node.remove());
+    document.querySelectorAll(`[${marker}], [${commitsMarker}], [${sidebarMarker}]`).forEach(node => node.remove());
   };
 });
