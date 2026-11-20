@@ -13,7 +13,7 @@ productivityModules.register("huggingface-model-date", () => {
     return { owner, model, id: `${owner}/${model}` };
   }
 
-  function showDate({ createdAt, lastModified }) {
+  function showDate({ createdAt, lastModified, repoSize }) {
     const heading = document.querySelector("main h1, article h1, h1");
     if (!heading || heading.querySelector(`[${marker}]`)) return;
     const date = new Date(createdAt);
@@ -27,7 +27,13 @@ productivityModules.register("huggingface-model-date", () => {
     if (lastModified && !Number.isNaN(new Date(lastModified).getTime())) {
       label.textContent += ` · Updated ${formatDate(lastModified)}`;
     }
-    label.title = "Hugging Face repository upload and last update dates";
+    if (Number.isFinite(repoSize) && repoSize >= 0) {
+      const units = ["B", "kB", "MB", "GB", "TB", "PB"];
+      const unit = repoSize === 0 ? 0 : Math.min(Math.floor(Math.log10(repoSize) / 3), units.length - 1);
+      const size = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(repoSize / 1000 ** unit);
+      label.textContent += ` · Repo size ${size} ${units[unit]}`;
+    }
+    label.title = "Hugging Face repository upload date, last update date, and current file size";
     Object.assign(label.style, {
       display: "inline-block", verticalAlign: "middle", fontWeight: "normal",
       fontSize: "0.7em", color: "var(--fgColor-muted, #71717a)"
@@ -58,7 +64,7 @@ productivityModules.register("huggingface-model-date", () => {
       });
       if (result?.error) throw new Error(result.error);
       if (!result?.createdAt) throw new Error("Missing upload date");
-      dates.set(id, { createdAt: result.createdAt, lastModified: result.lastModified });
+      dates.set(id, { createdAt: result.createdAt, lastModified: result.lastModified, repoSize: result.repoSize });
       if (active && version === requestVersion) showDate(dates.get(id));
     } catch (error) {
       console.warn("[Hugging Face Model Date]", error);

@@ -79,12 +79,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const query = new URLSearchParams();
     query.append("expand[]", "createdAt");
     query.append("expand[]", "lastModified");
-    fetch(`https://huggingface.co/api/models/${encodeURIComponent(owner)}/${encodeURIComponent(model)}?${query}`)
+    const modelApi = `https://huggingface.co/api/models/${encodeURIComponent(owner)}/${encodeURIComponent(model)}`;
+    // Sum the current revision, not usedStorage (which includes repository history).
+    const repoSize = (async () => {
+      let url = `${modelApi}/tree/main?recursive=true&limit=1000`;
+      let total = 0;
+      while (url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Hugging Face tree API returned ${response.status}`);
+        const entries = await response.json();
+        for (const entry of entries) {
+          if (entry.type === "file" && Number.isFinite(entry.size) && entry.size >= 0) {
+            total += entry.size;
+          }
+        }
+        const next = response.headers.get("Link")?.match(/<([^>]+)>;\s*rel="next"/);
+        url = next ? new URL(next[1], url).href : "";
+        if (url && new URL(url).origin !== "https://huggingface.co") {
+          throw new Error("Invalid Hugging Face pagination URL");
+        }
+      }
+      return total;
+    })().catch(() => null);
+    fetch(`${modelApi}?${query}`)
       .then(async response => {
         if (!response.ok) throw new Error(`Hugging Face API returned ${response.status}`);
         const data = await response.json();
         if (typeof data.createdAt !== "string") throw new Error("Missing upload date");
-        sendResponse({ createdAt: data.createdAt, lastModified: data.lastModified });
+        sendResponse({ createdAt: data.createdAt, lastModified: data.lastModified, repoSize: await repoSize });
       }).catch(error => sendResponse({ error: error.message }));
     return true;
   }
