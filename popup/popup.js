@@ -21,6 +21,22 @@ const MODULES = [
 ];
 
 const status = document.getElementById("status");
+document.getElementById("generate-password").addEventListener("click", async event => {
+  const button = event.currentTarget;
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+";
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  let password = "";
+  for (const byte of bytes) password += alphabet[byte % alphabet.length];
+  try {
+    await navigator.clipboard.writeText(password);
+    status.textContent = "Strong password generated and copied to clipboard.";
+    button.textContent = "Copied! Generate another";
+  } catch {
+    status.textContent = "Could not copy the password. Please try again.";
+    button.textContent = "Generate & copy password";
+  }
+});
 const inputs = new Map();
 const teamEditor = document.getElementById("highlight-teams");
 const followedEditor = document.getElementById("followed-teams");

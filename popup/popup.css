@@ -138,6 +138,8 @@ h1 { margin: 0; font-size: 17px; line-height: 1.2; letter-spacing: .01em; }
 
 button, .import-button { display: inline-flex; align-items: center; justify-content: center; min-height: 29px; padding: 5px 10px; border: 1px solid var(--line-button); border-radius: 6px; background: var(--button); color: var(--text); font: 600 11px system-ui, sans-serif; cursor: pointer; }
 button:hover, .import-button:hover { border-color: var(--cyan); }
+.password-button { width: 100%; margin: 8px 0 2px; border-color: var(--cyan); background: var(--cyan); color: var(--on-accent); }
+.password-button:hover { background: var(--cyan-strong); }
 .highlight-settings button { margin-top: 8px; border-color: var(--cyan); background: var(--cyan); color: var(--on-accent); }
 .highlight-settings button:hover { background: var(--cyan-strong); }
 .keyword-settings { padding: 4px 0 12px; }
