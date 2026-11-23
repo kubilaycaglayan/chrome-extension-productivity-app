@@ -289,6 +289,44 @@ async function initialize() {
     wordEditor.value = blockedWords.join("\n");
     wordEditor.disabled = false;
     saveWords.disabled = false;
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    let hostname = "";
+    try { hostname = new URL(activeTab?.url).hostname.toLowerCase(); } catch {}
+    const siteModules = {
+      "youtube.com": ["youtube-section-toggle", "youtube-shorts-blocker"],
+      "netflix.com": ["netflix-series-tags"],
+      "arsiv.mackolik.com": ["mackolik-dark-theme", "mackolik-featured-video"],
+      "x.com": ["x-keyword-filter"],
+      "twitter.com": ["x-keyword-filter"],
+      "github.com": ["github-creation-date"],
+      "huggingface.co": ["huggingface-model-date", "scrollbar-width"],
+      "calendar.google.com": ["calendar-highlight-today"]
+    };
+    const related = new Set(Object.entries(siteModules)
+      .filter(([site]) => hostname === site || hostname.endsWith(`.${site}`))
+      .flatMap(([, ids]) => ids));
+    const relatedGroup = MODULES.find(([id, , , group]) => related.has(id) && group !== "other-sites")?.[3];
+    if (relatedGroup) {
+      // Move the entire section so its configuration forms travel with the switches.
+      const section = document.getElementById(`group-${relatedGroup}`).closest(".module-group");
+      const firstGroup = settingsView.querySelector(".module-group");
+      if (section !== firstGroup) firstGroup.before(section);
+    }
+    let relatedList;
+    if (related.size && !relatedGroup) {
+      const section = document.createElement("section");
+      section.className = "module-group";
+      section.setAttribute("aria-labelledby", "current-site-heading");
+      const heading = document.createElement("h3");
+      heading.id = "current-site-heading";
+      heading.className = "group-heading";
+      heading.textContent = `On this site · ${hostname}`;
+      relatedList = document.createElement("div");
+      relatedList.className = "module-list";
+      section.append(heading, relatedList);
+      const firstGroup = settingsView.querySelector(".module-group");
+      firstGroup.before(section);
+    }
     for (const [id, name, description, group, icon] of MODULES) {
       const key = `moduleEnabled:${id}`;
       const row = document.createElement("label");
@@ -334,7 +372,16 @@ async function initialize() {
         }
       });
       row.append(emoji, copy, input);
-      document.getElementById(`group-${group}`).appendChild(row);
+      const list = relatedList && related.has(id) ? relatedList : document.getElementById(`group-${group}`);
+      list.appendChild(row);
+      // Keep browser-wide configuration beside the module it controls, too.
+      if (id === "ad-blocker") {
+        const controls = document.getElementById("ad-blocker-sites").closest?.(".ad-blocker-controls");
+        if (controls) list.appendChild(controls);
+      } else if (id === "cookie-accepter") {
+        const controls = document.getElementById("cookie-pause-toggle").closest?.("label");
+        if (controls) list.appendChild(controls);
+      }
     }
     status.textContent = "Changes apply immediately and are saved.";
     await initializeAdControls();

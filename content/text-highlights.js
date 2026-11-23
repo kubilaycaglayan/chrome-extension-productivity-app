@@ -1,6 +1,7 @@
 (() => {
   const HIGHLIGHT_NAME = "productivity-text-highlight";
   const COLOR = "#fff176";
+  const TEXT_COLOR = "#1a1a1a";
   const pageKey = `textHighlights:${location.origin}${location.pathname}${location.search}`;
   let renderTimer;
 
@@ -103,7 +104,7 @@
 
   globalThis.productivityModules?.register("text-highlights", () => {
     const style = document.createElement("style");
-    style.textContent = `::highlight(${HIGHLIGHT_NAME}) { background-color: ${COLOR}; color: inherit; }`;
+    style.textContent = `::highlight(${HIGHLIGHT_NAME}) { background-color: ${COLOR}; color: ${TEXT_COLOR}; text-shadow: none; }`;
     (document.documentElement || document).append(style);
     const saveSelection = async () => {
       const selection = window.getSelection();
