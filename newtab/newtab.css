@@ -88,12 +88,7 @@ body.has-image {
   --card: rgba(12, 15, 20, 0.58);
   --card-hover: rgba(12, 15, 20, 0.76);
 }
-body.has-image #drag-hint {
-  padding: 5px 11px;
-  border-radius: 999px;
-  color: var(--text);
-  background: rgba(10, 12, 16, 0.72);
-}
+
 body.has-image #attribution {
   padding: 4px 9px;
   border-radius: 9px;
@@ -292,7 +287,7 @@ body.has-image #attribution {
 }
 .tile.drop-before::before { left: -3px; }
 .tile.drop-after::after { right: -3px; }
-#drag-hint { width: fit-content; margin: 10px auto 0; color: var(--muted); font-size: 12px; text-align: center; }
+
 .group-name {
   flex: 1;
   min-width: 0;
@@ -737,7 +732,6 @@ dialog input::placeholder { color: var(--muted); }
     --card: rgba(236, 238, 243, 0.64);
     --card-hover: rgba(236, 238, 243, 0.82);
   }
-  body.has-image #drag-hint { background: rgba(239, 241, 245, 0.78); }
   body.has-image #attribution { background: rgba(239, 241, 245, 0.85); }
   #suggestions, #bookmark-suggestions { background: rgba(233, 236, 241, 0.97); }
   #background-panel { background: rgba(233, 236, 241, 0.95); }
@@ -774,3 +768,8 @@ body.canvas-layout #search-row .layout-handle { right: 0; }
 #tab-groups > .layout-handle { position: sticky; top: 0; right: 0; flex: none; }
 
 body.canvas-layout .icon-button.handle { display: none; }
+
+/* The existing whitespace and group headings are larger grab areas in edit mode. */
+body.editing :is(#search-row, #search, #tab-groups, #mail-links, #groups > .group, .group-header, .group-name, .tiles, .group-empty, .mail-row) { cursor: grab; }
+body.editing .group-header { touch-action: none; user-select: none; }
+body.editing .layout-moving, body.editing .layout-moving :is(.group-header, .group-name) { cursor: grabbing; }

@@ -179,7 +179,6 @@ for (const theme of themes) {
     ["Suggestion text", text, blend(read.layer("#suggestions, #bookmark-suggestions", "background"), scrim)],
     ["Chooser text", text, blend(read.layer("#background-panel", "background"), scrim)],
     ["Photo credit", muted, blend(read.layer("body\\.has-image #attribution", "background"), scrim)],
-    ["Drag hint", text, blend(read.layer("body\\.has-image #drag-hint", "background"), scrim)]
   ];
   for (const [name, foreground, background] of onPhoto) {
     const ratio = contrast(rgb(foreground), background);

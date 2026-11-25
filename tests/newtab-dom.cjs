@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const PAGE_IDS = [
-  "app", "search-row", "search-area", "search", "query", "suggestions", "tab-groups", "groups", "new-group", "new-group-name", "add-group", "drag-hint",
+  "app", "search-row", "search-area", "search", "query", "suggestions", "tab-groups", "groups", "new-group", "new-group-name", "add-group",
   "import-bookmarks", "group-actions", "attribution", "edit-toggle", "extensions-toggle", "background-panel", "background-toggle", "background-message",
   "color-swatches", "gradient-swatches", "wallpaper-section", "wallpaper-collections",
   "wallpaper-images", "wallpaper-back", "background-image", "background-reset",

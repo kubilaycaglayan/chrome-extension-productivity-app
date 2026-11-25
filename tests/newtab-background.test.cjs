@@ -143,7 +143,6 @@ function withBackdrop(extra = {}) {
   assert.equal(page.body.style.backgroundColor, page.settings.colors[4][1]);
   page.storageChange({ [page.settings.groupsKey]: { newValue: [{ id: "g9", name: "Elsewhere", bookmarks: [] }] } });
   assert.deepEqual(page.groupNames(), ["Elsewhere"]);
-  assert.equal(page.element("drag-hint").hidden, true, "One group needs no drag hint");
 
   /* A cached collection list is reused instead of refetched. */
   const cached = withBackdrop({

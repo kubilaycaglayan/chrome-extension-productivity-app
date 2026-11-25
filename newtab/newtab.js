@@ -152,16 +152,6 @@ productivityModules.register("newtab", () => {
     return snapshot;
   }
 
-  function overlaps(node, key) {
-    const box = sectionBox(node);
-    return sections().some(([other, otherKey]) => {
-      if (otherKey === key || other.hidden) return false;
-      const target = sectionBox(other);
-      return box.x < target.x + target.width && box.x + box.width > target.x
-        && box.y < target.y + target.height && box.y + box.height > target.y;
-    });
-  }
-
   function pruneLayout() {
     for (const key of Object.keys(layout)) {
       if (key.startsWith("group:") && !groups.some(group => key === `group:${group.id}`)) delete layout[key];
@@ -197,16 +187,41 @@ productivityModules.register("newtab", () => {
       refreshCanvas();
       return;
     }
-    const rejected = cancelled || overlaps(node, key);
     node.classList.remove("layout-moving");
     placement = null;
-    if (rejected) {
+    if (cancelled) {
       layout = previous;
       refreshCanvas();
-      setStatus(cancelled ? "Move cancelled." : "That space is occupied. Section returned to its starting position.");
+      setStatus("Move cancelled.");
     } else {
       refreshCanvas();
       void saveLayout();
+    }
+  }
+
+  function startPointerPlacement(event, node, key, captureNode = node) {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    placement = { ...beginPlacement(node, key), startX: event.clientX, startY: event.clientY,
+      scrollX: globalThis.scrollX || 0, scrollY: globalThis.scrollY || 0 };
+    captureNode.setPointerCapture?.(event.pointerId);
+    node.classList.add("layout-moving");
+  }
+
+  function onSectionPointerDown(event) {
+    if (!editing || placement || event.defaultPrevented) return;
+    const available = sections();
+    for (let target = event.target; target; target = target.parentNode) {
+      // Interactive children retain their own clicks, text selection and tile dragging.
+      if (["A", "BUTTON", "INPUT", "TEXTAREA", "SELECT", "OPTION", "LABEL", "SUMMARY"].includes(target.tagName)
+        || target.isContentEditable || target.getAttribute?.("contenteditable") === "true"
+        || target.draggable || ["button", "link", "combobox", "listbox"].includes(target.getAttribute?.("role"))) return;
+      const section = available.find(([node]) => node === target);
+      if (section) {
+        startPointerPlacement(event, section[0], section[1]);
+        return;
+      }
     }
   }
 
@@ -218,16 +233,10 @@ productivityModules.register("newtab", () => {
     handle.type = "button";
     handle.className = "icon-button layout-handle";
     handle.textContent = "✥";
-    handle.title = `Move ${label}. Arrow keys move; Shift moves faster. Overlapping drops return to start.`;
+    handle.title = `Move ${label}. Arrow keys move; Shift moves faster.`;
     handle.setAttribute("aria-label", `Place ${label} anywhere`);
     handle.addEventListener("pointerdown", event => {
-      if (event.button !== undefined && event.button !== 0) return;
-      event.preventDefault();
-      event.stopPropagation();
-      placement = { ...beginPlacement(node, key), startX: event.clientX, startY: event.clientY,
-        scrollX: globalThis.scrollX || 0, scrollY: globalThis.scrollY || 0 };
-      handle.setPointerCapture?.(event.pointerId);
-      node.classList.add("layout-moving");
+      startPointerPlacement(event, node, key, handle);
     });
     handle.addEventListener("keydown", event => {
       const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
@@ -1408,8 +1417,6 @@ productivityModules.register("newtab", () => {
       }
     }
     element("group-actions").hidden = !editing;
-    // The hint explains dragging, which is only on offer while editing.
-    element("drag-hint").hidden = !editing;
     placementHandle(searchSection, "search", "search");
     placementHandle(tabGroupList, "tabs", "Chrome tab groups");
     refreshCanvas();
@@ -1508,6 +1515,7 @@ productivityModules.register("newtab", () => {
   }
 
   function onDocumentPointerDown(event) {
+    onSectionPointerDown(event);
     if (!panel.hidden && !panel.contains(event.target) && !panelToggle.contains(event.target)) togglePanel(false);
     if (suggestions.length && !suggestionList.contains(event.target) && event.target !== query) closeSuggestions();
   }

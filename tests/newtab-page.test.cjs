@@ -46,14 +46,12 @@ function drag(from, to, { at = "before", axis = "x" } = {}) {
      demand, so everything below has to switch it on first. */
   assert.equal(page.body.classList.contains("editing"), false, "A new tab opens out of edit mode");
   assert.equal(page.element("edit-toggle").getAttribute("aria-pressed"), "false");
-  assert.equal(page.element("drag-hint").hidden, true, "The drag hint belongs to edit mode");
   assert.equal(page.tiles(0)[0].draggable, false, "Tiles only drag while editing");
   assert.equal(queryAll(page.cards()[0], "button").length, 0, "No rename, delete, handle or add button while reading");
   fire(page.element("edit-toggle"), "click");
   assert.equal(page.body.classList.contains("editing"), true);
   assert.equal(page.element("edit-toggle").getAttribute("aria-pressed"), "true");
   assert.equal(page.element("edit-toggle").getAttribute("aria-label"), "Done editing");
-  assert.equal(page.element("drag-hint").hidden, false);
   assert.equal(page.tiles(0)[0].draggable, true);
   assert.ok(button(page.cards()[0], "Rename Daily"), "Edit mode brings the group controls back");
 

@@ -75,8 +75,8 @@ assert.match(css, /\.tile a, \.add-tile \{[^}]*flex-direction: column/, "The fav
 assert.ok(css.includes(".tile-actions"), "A tile's controls live in its corner");
 assert.ok(script.includes('addIcon.className = "favicon add-icon"'), "The add control is a tile of its own");
 
-// Dragging needs the hint and the styling that shows where a drop will land.
-assert.ok(ids.has("drag-hint"));
+// Dragging styles show where a reordered shortcut will land.
+assert.ok(!ids.has("drag-hint"), "The placement instruction text is removed");
 for (const rule of [".group.dragging", ".tile.dragging", ".group.drop-into", ".tile.drop-before", ".group.drop-after"]) {
   assert.ok(css.includes(rule), `newtab.css must style ${rule}`);
 }
