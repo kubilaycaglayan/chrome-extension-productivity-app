@@ -103,7 +103,7 @@ body.has-image #attribution {
 #app {
   max-width: 960px;
   margin: 0 auto;
-  padding-top: clamp(48px, 12vh, 140px);
+  padding-top: clamp(40px, 8vh, 96px);
 }
 
 /* Search */
@@ -114,7 +114,7 @@ body.has-image #attribution {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 10px;
 }
 #tab-groups {
   position: absolute;
@@ -240,8 +240,8 @@ body.has-image #attribution {
 #groups {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-  margin-top: clamp(32px, 7vh, 64px);
+  gap: 10px;
+  margin-top: clamp(20px, 4vh, 36px);
 }
 
 /* Each card keeps its natural height. Small implicit rows let taller groups
@@ -259,12 +259,12 @@ body.has-image #attribution {
    card. The card's own translucent fill, over the scrim, already does the work
    the blur was there for. */
 .group {
-  padding: 16px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--card);
 }
-.group-header { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.group-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
 .icon-button.handle { cursor: grab; font-size: 15px; }
 .icon-button.handle:active { cursor: grabbing; }
 .group.dragging, .tile.dragging { opacity: .4; }
@@ -414,7 +414,7 @@ body.has-image #attribution {
 .ghost-button:hover { background: var(--card-hover); }
 .primary-button { border-color: transparent; background: var(--accent-fill); color: var(--accent); font-weight: 600; }
 .primary-button:hover { background: var(--accent-fill-hover); }
-#group-actions { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px; }
+#group-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; }
 
 /* Adding a group reads like the cards it will join: the same surface, with the
    name field in place of the tiles. */
@@ -548,7 +548,7 @@ body.has-image #attribution {
   max-height: min(78vh, 680px, calc(100vh - 86px - var(--mail-bottom, 0px)));
   overflow-y: auto;
   scrollbar-gutter: stable;
-  padding: 16px;
+  padding: 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(16, 19, 25, 0.94);
@@ -742,3 +742,16 @@ dialog input::placeholder { color: var(--muted); }
   #suggestions, #bookmark-suggestions { background: rgba(233, 236, 241, 0.97); }
   #background-panel { background: rgba(233, 236, 241, 0.95); }
 }
+
+/* Placement controls occupy no space and never resize their contents. */
+.group { position: relative; }
+.layout-handle {
+  position: absolute;
+  top: -14px;
+  right: 0;
+  z-index: 5;
+  cursor: move;
+  touch-action: none;
+}
+.layout-moving { z-index: 10; }
+#mail-links { overflow: visible; }

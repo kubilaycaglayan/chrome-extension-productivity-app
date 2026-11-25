@@ -69,6 +69,8 @@ productivityModules.register("newtab", () => {
   let background = settings.defaultBackground;
   let collections = [];
   let dragged = null;
+  let layout = {};
+  let placement = null;
   let focusAfterRender = null;
   let statusTimer;
   let tabGroupRevision = 0;
@@ -79,10 +81,76 @@ productivityModules.register("newtab", () => {
     })
     : null;
 
-  // The masonry grid uses 4px rows. Reserve 16px after each card to match
-  // the space between columns, including when a card grows after rendering.
+  // Keep the existing flow and order; moving an element only adds an offset.
+  function applyPlacement(node, key) {
+    const point = layout[key] ?? { x: 0, y: 0 };
+    node.style.translate = `${point.x}px ${point.y}px`;
+  }
+
+  async function saveLayout() {
+    try {
+      await chrome.storage.local.set({ [settings.layoutKey]: layout });
+      if (active) setStatus("Position saved.");
+    } catch {
+      if (active) setStatus("Could not save that position. Try again.");
+    }
+  }
+
+  function placementHandle(node, key, label) {
+    applyPlacement(node, key);
+    if (!editing) return;
+    const handle = document.createElement("button");
+    handle.type = "button";
+    handle.className = "icon-button layout-handle";
+    handle.textContent = "✥";
+    handle.title = `Place ${label} anywhere. Arrow keys move; Shift moves faster; Home restores position.`;
+    handle.setAttribute("aria-label", `Place ${label} anywhere`);
+    handle.addEventListener("pointerdown", event => {
+      if (event.button !== undefined && event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      placement = { node, key, startX: event.clientX, startY: event.clientY,
+        original: { ...(layout[key] ?? { x: 0, y: 0 }) }, box: node.getBoundingClientRect() };
+      node.classList.add("layout-moving");
+    });
+    handle.addEventListener("keydown", event => {
+      const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
+      if (!delta && event.key !== "Home") return;
+      event.preventDefault();
+      event.stopPropagation();
+      const point = layout[key] ?? { x: 0, y: 0 };
+      const step = event.shiftKey ? 20 : 4;
+      layout[key] = event.key === "Home" ? { x: 0, y: 0 }
+        : { x: point.x + delta[0] * step, y: point.y + delta[1] * step };
+      applyPlacement(node, key);
+      void saveLayout();
+    });
+    node.append(handle);
+  }
+
+  function onPlacementMove(event) {
+    if (!placement) return;
+    const { node, key, original, box, startX, startY } = placement;
+    const dx = Math.max(-box.left, Math.min(event.clientX - startX, (globalThis.innerWidth || 1920) - box.left - box.width));
+    const dy = Math.max(-box.top, Math.min(event.clientY - startY, (globalThis.innerHeight || 1080) - box.top - box.height));
+    layout[key] = { x: Math.round(original.x + dx), y: Math.round(original.y + dy) };
+    applyPlacement(node, key);
+  }
+
+  function onPlacementEnd(event) {
+    if (!placement) return;
+    const { node, key, original } = placement;
+    node.classList.remove("layout-moving");
+    placement = null;
+    if (event.type === "pointercancel") {
+      layout[key] = original;
+      applyPlacement(node, key);
+    } else void saveLayout();
+  }
+
+  // The masonry grid uses 4px rows and a 10px space after each card.
   function sizeGroup(card) {
-    const rows = Math.max(1, Math.ceil((card.getBoundingClientRect().height + 16) / 4));
+    const rows = Math.max(1, Math.ceil((card.getBoundingClientRect().height + 10) / 4));
     card.style.gridRowEnd = `span ${rows}`;
   }
 
@@ -915,6 +983,7 @@ productivityModules.register("newtab", () => {
     if (editing) rows.push(addInboxRow());
     mailLinks.replaceChildren(...rows);
     mailLinks.hidden = rows.length === 0;
+    placementHandle(mailLinks, "mail", "inboxes");
     // The chips centred above the search field stop short of the column, so
     // they never scroll underneath it in a narrow window, and the background
     // chooser stops below it, so it never covers an account when open.
@@ -1185,6 +1254,7 @@ productivityModules.register("newtab", () => {
       card.append(empty);
     }
     card.append(tiles);
+    placementHandle(card, `group:${group.id}`, group.name);
     return card;
   }
 
@@ -1222,6 +1292,9 @@ productivityModules.register("newtab", () => {
     element("group-actions").hidden = !editing;
     // The hint explains dragging, which is only on offer while editing.
     element("drag-hint").hidden = !editing || groups.length < 2;
+    const searchArea = element("search-area");
+    for (const handle of searchArea.querySelectorAll(".layout-handle")) handle.remove();
+    placementHandle(searchArea, "search", "search");
     restoreFocus();
   }
 
@@ -1370,6 +1443,14 @@ productivityModules.register("newtab", () => {
 
   function onStorageChanged(changes, area) {
     if (area !== "local") return;
+    if (changes[settings.layoutKey]) {
+      const incoming = settings.cleanLayout(changes[settings.layoutKey].newValue);
+      if (JSON.stringify(incoming) !== JSON.stringify(layout)) {
+        layout = incoming;
+        render();
+        renderMailAccounts();
+      }
+    }
     if (changes[settings.groupsKey]) {
       groups = settings.cleanGroups(changes[settings.groupsKey].newValue);
       render();
@@ -1443,7 +1524,7 @@ productivityModules.register("newtab", () => {
   async function load() {
     let stored = {};
     try {
-      stored = await chrome.storage.local.get([settings.groupsKey, settings.backgroundKey, settings.mail.key, settings.mail.hiddenKey, settings.mail.customKey]);
+      stored = await chrome.storage.local.get([settings.groupsKey, settings.layoutKey, settings.backgroundKey, settings.mail.key, settings.mail.hiddenKey, settings.mail.customKey]);
     } catch {
       setStatus("Could not read your saved bookmarks.");
     }
@@ -1451,6 +1532,7 @@ productivityModules.register("newtab", () => {
     const saved = stored[settings.groupsKey];
     groups = saved === undefined ? await startingGroups() : settings.cleanGroups(saved);
     if (!active) return;
+    layout = settings.cleanLayout(stored[settings.layoutKey]);
     background = settings.cleanBackground(stored[settings.backgroundKey]);
     applyBackground();
     mailAccounts = settings.mail.clean(stored[settings.mail.key]?.accounts);
@@ -1497,6 +1579,9 @@ productivityModules.register("newtab", () => {
   inboxCancel.addEventListener("click", onInboxCancel);
   bookmarkSearch.addEventListener("input", onBookmarkSearchInput);
   bookmarkSearch.addEventListener("keydown", onBookmarkSearchKeyDown);
+  document.addEventListener("pointermove", onPlacementMove);
+  document.addEventListener("pointerup", onPlacementEnd);
+  document.addEventListener("pointercancel", onPlacementEnd);
   document.addEventListener("pointerdown", onDocumentPointerDown);
   document.addEventListener("keydown", onKeyDown);
   chrome.storage.onChanged.addListener(onStorageChanged);
@@ -1543,6 +1628,10 @@ productivityModules.register("newtab", () => {
     inboxCancel.removeEventListener("click", onInboxCancel);
     bookmarkSearch.removeEventListener("input", onBookmarkSearchInput);
     bookmarkSearch.removeEventListener("keydown", onBookmarkSearchKeyDown);
+    placement = null;
+    document.removeEventListener("pointermove", onPlacementMove);
+    document.removeEventListener("pointerup", onPlacementEnd);
+    document.removeEventListener("pointercancel", onPlacementEnd);
     document.removeEventListener("pointerdown", onDocumentPointerDown);
     document.removeEventListener("keydown", onKeyDown);
     chrome.storage.onChanged.removeListener(onStorageChanged);

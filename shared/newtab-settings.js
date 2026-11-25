@@ -3,6 +3,19 @@
 globalThis.newtabSettings = {
   moduleId: "newtab",
   groupsKey: "newtabGroups",
+  layoutKey: "newtabLayout",
+
+  // Offsets are independent of bookmark order; older installs need no migration.
+  cleanLayout(value) {
+    const layout = {};
+    if (!value || typeof value !== "object" || Array.isArray(value)) return layout;
+    for (const [key, point] of Object.entries(value).slice(0, 30)) {
+      if (!/^(search|mail|group:.{1,120})$/.test(key)) continue;
+      if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) continue;
+      layout[key] = { x: Math.round(Math.max(-20000, Math.min(20000, point.x))), y: Math.round(Math.max(-20000, Math.min(20000, point.y))) };
+    }
+    return layout;
+  },
   backgroundKey: "newtabBackground",
   limits: { groups: 24, bookmarks: 60, name: 60, label: 40, imagePixels: 2560, imageBytes: 4_000_000, credit: 160, suggestions: 8 },
   // Backdrop, the service behind Chrome's own New Tab wallpapers.

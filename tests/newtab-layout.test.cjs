@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const { setup, fire, queryAll, settle } = require('./newtab-dom.cjs');
+
+(async () => {
+  const page = setup();
+  await settle();
+  const original = JSON.stringify(page.store.newtabGroups);
+  assert.equal(page.store.newtabLayout, undefined, 'Existing layouts require no migration or storage rewrite');
+  fire(page.element('edit-toggle'), 'click');
+  const handle = queryAll(page.cards()[0], '.layout-handle')[0];
+  fire(handle, 'pointerdown', { button: 0, clientX: 10, clientY: 10 });
+  fire(page.body, 'pointermove', { clientX: 130, clientY: 90 });
+  fire(page.body, 'pointerup', { type: 'pointerup' });
+  await settle();
+  const key = `group:${page.store.newtabGroups[0].id}`;
+  assert.equal(page.store.newtabLayout[key].x, 120);
+  assert.equal(page.store.newtabLayout[key].y, 80);
+  assert.equal(JSON.stringify(page.store.newtabGroups), original, 'Free placement must preserve groups and shortcut order');
+  fire(page.element('edit-toggle'), 'click');
+  assert.equal(page.cards()[0].style.translate, '120px 80px', 'Done editing preserves position');
+  const reopened = setup({ stored: page.store });
+  await settle();
+  assert.equal(reopened.cards()[0].style.translate, '120px 80px', 'Reopening preserves position');
+  fire(reopened.element('edit-toggle'), 'click');
+  const search = queryAll(reopened.element('search-area'), '.layout-handle')[0];
+  fire(search, 'keydown', { key: 'ArrowRight', shiftKey: true });
+  await settle();
+  assert.equal(reopened.store.newtabLayout.search.x, 20);
+  fire(search, 'keydown', { key: 'Home' });
+  await settle();
+  assert.equal(reopened.store.newtabLayout.search.x, 0);
+  assert.equal(reopened.settings.cleanLayout({ search: { x: Infinity, y: 0 } }).search, undefined);
+  console.log('PASS newtab layout: preserved order, pointer placement, keyboard movement, persistence and validation');
+})().catch(error => { console.error(error); process.exitCode = 1; });
