@@ -5,14 +5,19 @@ globalThis.newtabSettings = {
   groupsKey: "newtabGroups",
   layoutKey: "newtabLayout",
 
-  // Offsets are independent of bookmark order; older installs need no migration.
+  // Legacy offsets remain readable. A width marks a fixed canvas coordinate.
   cleanLayout(value) {
     const layout = {};
     if (!value || typeof value !== "object" || Array.isArray(value)) return layout;
     for (const [key, point] of Object.entries(value).slice(0, 30)) {
-      if (!/^(search|mail|group:.{1,120})$/.test(key)) continue;
+      if (!/^(search|mail|tabs|group:.{1,120})$/.test(key)) continue;
       if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) continue;
       layout[key] = { x: Math.round(Math.max(-20000, Math.min(20000, point.x))), y: Math.round(Math.max(-20000, Math.min(20000, point.y))) };
+      if (Number.isFinite(point.width) && point.width > 0) {
+        layout[key].x = Math.max(0, layout[key].x);
+        layout[key].y = Math.max(16, layout[key].y);
+        layout[key].width = Math.max(1, Math.min(20000, point.width));
+      }
     }
     return layout;
   },

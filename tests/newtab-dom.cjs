@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const PAGE_IDS = [
-  "app", "search-area", "search", "query", "suggestions", "tab-groups", "groups", "new-group", "new-group-name", "add-group", "drag-hint",
+  "app", "search-row", "search-area", "search", "query", "suggestions", "tab-groups", "groups", "new-group", "new-group-name", "add-group", "drag-hint",
   "import-bookmarks", "group-actions", "attribution", "edit-toggle", "extensions-toggle", "background-panel", "background-toggle", "background-message",
   "color-swatches", "gradient-swatches", "wallpaper-section", "wallpaper-collections",
   "wallpaper-images", "wallpaper-back", "background-image", "background-reset",
@@ -96,6 +96,7 @@ function makeElement(tag, id = "") {
     },
     append(...kids) {
       for (const kid of kids) {
+        if (kid.parentNode) kid.remove();
         kid.parentNode = node;
         node.children.push(kid);
       }
@@ -132,7 +133,13 @@ function makeElement(tag, id = "") {
       node.open = false;
       for (const handler of [...(node.listeners.get("close") ?? [])]) handler({ target: node });
     },
-    getBoundingClientRect() { return node.rect; },
+    getBoundingClientRect() {
+      if (!node.classList.contains("canvas-section")) return node.rect;
+      const left = parseFloat(node.style.left);
+      const top = parseFloat(node.style.top);
+      const width = parseFloat(node.style.width);
+      return { left, top, width, height: node.rect.height, right: left + width, bottom: top + node.rect.height };
+    },
     querySelectorAll(selector) { return queryAll(node, selector); },
     querySelector(selector) { return queryAll(node, selector)[0] ?? null; }
   };
@@ -197,6 +204,9 @@ function setup({ stored = {}, bookmarks = [], tree = [], topSites = [], tabs = {
     elements.get("wallpaper-back"),
     elements.get("background-message")
   );
+  elements.get("app").append(elements.get("search-row"), elements.get("groups"));
+  elements.get("search-row").append(elements.get("tab-groups"), elements.get("extensions-toggle"), elements.get("search-area"));
+  elements.get("tab-groups").hidden = true;
   elements.get("search-area").append(elements.get("search"), elements.get("suggestions"));
   elements.get("search").append(elements.get("query"));
   elements.get("app").hidden = true;

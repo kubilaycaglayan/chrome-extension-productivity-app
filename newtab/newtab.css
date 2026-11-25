@@ -755,3 +755,22 @@ dialog input::placeholder { color: var(--muted); }
 }
 .layout-moving { z-index: 10; }
 #mail-links { overflow: visible; }
+
+/* Canvas coordinates are document coordinates. Keep their containing block
+   independent of the centered app and preserve widths on smaller windows. */
+body.canvas-layout #app { position: static; max-width: none; padding-top: 0; }
+body.canvas-layout #groups { display: contents; }
+body.canvas-layout :is(#search-row, #tab-groups, #mail-links, .group).canvas-section {
+  position: absolute;
+  right: auto;
+  bottom: auto;
+  max-width: none;
+  margin: 0;
+  z-index: 1;
+}
+body.canvas-layout .canvas-section.layout-moving { z-index: 10; }
+body.canvas-layout #tab-groups { overflow: visible; }
+body.canvas-layout #search-row .layout-handle { right: 0; }
+#tab-groups > .layout-handle { position: sticky; top: 0; right: 0; flex: none; }
+
+body.canvas-layout .icon-button.handle { display: none; }

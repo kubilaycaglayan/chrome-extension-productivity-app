@@ -81,13 +81,95 @@ productivityModules.register("newtab", () => {
     })
     : null;
 
-  // Keep the existing flow and order; moving an element only adds an offset.
+  const searchSection = element("search-row");
+  const tabGroupsHome = tabGroupList.parentNode;
+  const canvasMode = () => Object.values(layout).some(point => point.width);
+
+  function sections() {
+    return [[searchSection, "search", "search"], [tabGroupList, "tabs", "Chrome tab groups"],
+      [mailLinks, "mail", "inboxes"],
+      ...[...groupList.children].map(card => [card, `group:${card.dataset.groupId}`, "bookmark group"])];
+  }
+
+  function sectionBox(node) {
+    const box = node.getBoundingClientRect();
+    return { x: box.left + (globalThis.scrollX || 0), y: box.top + (globalThis.scrollY || 0),
+      width: box.width, height: box.height };
+  }
+
   function applyPlacement(node, key) {
-    const point = layout[key] ?? { x: 0, y: 0 };
-    node.style.translate = `${point.x}px ${point.y}px`;
+    const point = layout[key];
+    if (point?.width) {
+      node.classList.add("canvas-section");
+      node.style.translate = "none";
+      node.style.left = `${point.x}px`;
+      node.style.top = `${point.y}px`;
+      node.style.width = `${point.width}px`;
+    } else {
+      node.classList.remove("canvas-section");
+      for (const property of ["left", "top", "width"]) node.style.removeProperty(property);
+      node.style.translate = `${point?.x || 0}px ${point?.y || 0}px`;
+    }
+  }
+
+  function refreshCanvas() {
+    const canvas = canvasMode();
+    document.body.classList.toggle("canvas-layout", canvas);
+    // Tab groups must be independent of the search section's coordinates.
+    if (canvas && tabGroupList.parentNode !== app) app.append(tabGroupList);
+    if (!canvas && tabGroupList.parentNode !== tabGroupsHome) tabGroupsHome.append(tabGroupList);
+    let bottom = 0;
+    let right = 0;
+    for (const [node, key] of sections()) {
+      if (canvas && !layout[key]?.width && !node.hidden) {
+        // Newly added sections get free space below the existing canvas.
+        const last = Math.max(16, ...sections().filter(([other, otherKey]) => !other.hidden && layout[otherKey]?.width)
+          .map(([other, otherKey]) => layout[otherKey].y + other.getBoundingClientRect().height));
+        const groupWidth = Object.entries(layout).find(([otherKey, point]) => otherKey.startsWith("group:") && point.width)?.[1].width ?? 310;
+        layout[key] = { x: 24, y: last + 16, width: key.startsWith("group:") ? groupWidth : Math.max(200, sectionBox(node).width) };
+      }
+      applyPlacement(node, key);
+      if (!node.hidden && layout[key]?.width) {
+        bottom = Math.max(bottom, layout[key].y + node.getBoundingClientRect().height);
+        right = Math.max(right, layout[key].x + layout[key].width);
+      }
+    }
+    // An explicit scroll area also keeps bottom/right sections reachable.
+    document.body.style.minHeight = canvas ? `${bottom + 80}px` : "";
+    document.body.style.minWidth = canvas ? `${right + 24}px` : "";
+    const actions = element("group-actions");
+    actions.style.marginTop = canvas ? `${bottom + 32}px` : "";
+  }
+
+  function captureLayout() {
+    const snapshot = {};
+    // Measure everything before changing flow or positioning.
+    for (const [node, key] of sections()) {
+      if (node.hidden) continue;
+      const box = sectionBox(node);
+      snapshot[key] = { x: Math.max(0, Math.round(box.x)), y: Math.max(16, Math.round(box.y)), width: box.width };
+    }
+    return snapshot;
+  }
+
+  function overlaps(node, key) {
+    const box = sectionBox(node);
+    return sections().some(([other, otherKey]) => {
+      if (otherKey === key || other.hidden) return false;
+      const target = sectionBox(other);
+      return box.x < target.x + target.width && box.x + box.width > target.x
+        && box.y < target.y + target.height && box.y + box.height > target.y;
+    });
+  }
+
+  function pruneLayout() {
+    for (const key of Object.keys(layout)) {
+      if (key.startsWith("group:") && !groups.some(group => key === `group:${group.id}`)) delete layout[key];
+    }
   }
 
   async function saveLayout() {
+    pruneLayout();
     try {
       await chrome.storage.local.set({ [settings.layoutKey]: layout });
       if (active) setStatus("Position saved.");
@@ -96,56 +178,84 @@ productivityModules.register("newtab", () => {
     }
   }
 
+  function beginPlacement(node, key) {
+    const previous = JSON.parse(JSON.stringify(layout));
+    if (!canvasMode()) {
+      layout = captureLayout();
+      refreshCanvas();
+    }
+    return { node, key, previous, original: { ...layout[key] } };
+  }
+
+  function finishPlacement(cancelled = false) {
+    if (!placement) return;
+    const { node, key, previous, original } = placement;
+    if (!cancelled && layout[key].x === original.x && layout[key].y === original.y) {
+      node.classList.remove("layout-moving");
+      placement = null;
+      layout = previous;
+      refreshCanvas();
+      return;
+    }
+    const rejected = cancelled || overlaps(node, key);
+    node.classList.remove("layout-moving");
+    placement = null;
+    if (rejected) {
+      layout = previous;
+      refreshCanvas();
+      setStatus(cancelled ? "Move cancelled." : "That space is occupied. Section returned to its starting position.");
+    } else {
+      refreshCanvas();
+      void saveLayout();
+    }
+  }
+
   function placementHandle(node, key, label) {
     applyPlacement(node, key);
+    for (const handle of node.querySelectorAll(".layout-handle")) handle.remove();
     if (!editing) return;
     const handle = document.createElement("button");
     handle.type = "button";
     handle.className = "icon-button layout-handle";
     handle.textContent = "✥";
-    handle.title = `Place ${label} anywhere. Arrow keys move; Shift moves faster; Home restores position.`;
+    handle.title = `Move ${label}. Arrow keys move; Shift moves faster. Overlapping drops return to start.`;
     handle.setAttribute("aria-label", `Place ${label} anywhere`);
     handle.addEventListener("pointerdown", event => {
       if (event.button !== undefined && event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
-      placement = { node, key, startX: event.clientX, startY: event.clientY,
-        original: { ...(layout[key] ?? { x: 0, y: 0 }) }, box: node.getBoundingClientRect() };
+      placement = { ...beginPlacement(node, key), startX: event.clientX, startY: event.clientY,
+        scrollX: globalThis.scrollX || 0, scrollY: globalThis.scrollY || 0 };
+      handle.setPointerCapture?.(event.pointerId);
       node.classList.add("layout-moving");
     });
     handle.addEventListener("keydown", event => {
       const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key];
-      if (!delta && event.key !== "Home") return;
+      if (!delta) return;
       event.preventDefault();
       event.stopPropagation();
-      const point = layout[key] ?? { x: 0, y: 0 };
+      placement = beginPlacement(node, key);
+      const point = placement.original;
       const step = event.shiftKey ? 20 : 4;
-      layout[key] = event.key === "Home" ? { x: 0, y: 0 }
-        : { x: point.x + delta[0] * step, y: point.y + delta[1] * step };
+      layout[key] = { ...point, x: Math.max(0, point.x + delta[0] * step), y: Math.max(16, point.y + delta[1] * step) };
       applyPlacement(node, key);
-      void saveLayout();
+      finishPlacement();
     });
     node.append(handle);
   }
 
   function onPlacementMove(event) {
     if (!placement) return;
-    const { node, key, original, box, startX, startY } = placement;
-    const dx = Math.max(-box.left, Math.min(event.clientX - startX, (globalThis.innerWidth || 1920) - box.left - box.width));
-    const dy = Math.max(-box.top, Math.min(event.clientY - startY, (globalThis.innerHeight || 1080) - box.top - box.height));
-    layout[key] = { x: Math.round(original.x + dx), y: Math.round(original.y + dy) };
+    const { node, key, original, startX, startY, scrollX, scrollY } = placement;
+    layout[key] = { ...original,
+      x: Math.max(0, Math.round(original.x + event.clientX - startX + (globalThis.scrollX || 0) - scrollX)),
+      y: Math.max(16, Math.round(original.y + event.clientY - startY + (globalThis.scrollY || 0) - scrollY)) };
     applyPlacement(node, key);
+    refreshCanvas();
   }
 
   function onPlacementEnd(event) {
-    if (!placement) return;
-    const { node, key, original } = placement;
-    node.classList.remove("layout-moving");
-    placement = null;
-    if (event.type === "pointercancel") {
-      layout[key] = original;
-      applyPlacement(node, key);
-    } else void saveLayout();
+    finishPlacement(event.type === "pointercancel");
   }
 
   // The masonry grid uses 4px rows and a 10px space after each card.
@@ -220,6 +330,8 @@ productivityModules.register("newtab", () => {
         return chip;
       }));
       tabGroupList.hidden = !visible.length;
+      placementHandle(tabGroupList, "tabs", "Chrome tab groups");
+      refreshCanvas();
     } catch {
       if (active && revision === tabGroupRevision) {
         tabGroupList.replaceChildren();
@@ -257,7 +369,12 @@ productivityModules.register("newtab", () => {
   }
 
   function saveGroups(message) {
-    return persist({ [settings.groupsKey]: groups }, message);
+    const values = { [settings.groupsKey]: groups };
+    if (canvasMode()) {
+      pruneLayout();
+      values[settings.layoutKey] = layout;
+    }
+    return persist(values, message);
   }
 
   /* Background */
@@ -984,6 +1101,7 @@ productivityModules.register("newtab", () => {
     mailLinks.replaceChildren(...rows);
     mailLinks.hidden = rows.length === 0;
     placementHandle(mailLinks, "mail", "inboxes");
+    refreshCanvas();
     // The chips centred above the search field stop short of the column, so
     // they never scroll underneath it in a narrow window, and the background
     // chooser stops below it, so it never covers an account when open.
@@ -1291,16 +1409,17 @@ productivityModules.register("newtab", () => {
     }
     element("group-actions").hidden = !editing;
     // The hint explains dragging, which is only on offer while editing.
-    element("drag-hint").hidden = !editing || groups.length < 2;
-    const searchArea = element("search-area");
-    for (const handle of searchArea.querySelectorAll(".layout-handle")) handle.remove();
-    placementHandle(searchArea, "search", "search");
+    element("drag-hint").hidden = !editing;
+    placementHandle(searchSection, "search", "search");
+    placementHandle(tabGroupList, "tabs", "Chrome tab groups");
+    refreshCanvas();
     restoreFocus();
   }
 
   /* Edit mode: one switch for every control that changes the board */
 
   function setEditing(on) {
+    if (placement) finishPlacement(true);
     editing = on;
     document.body.classList.toggle("editing", editing);
     editToggle.setAttribute("aria-pressed", String(editing));
@@ -1397,6 +1516,10 @@ productivityModules.register("newtab", () => {
     if (event.key === "Escape" && !panel.hidden) {
       togglePanel(false);
       panelToggle.focus();
+      return;
+    }
+    if (event.key === "Escape" && placement) {
+      finishPlacement(true);
       return;
     }
     if (event.key === "Escape" && editing) {
